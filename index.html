@@ -330,7 +330,7 @@ main { max-width: 1100px; margin: 0 auto; padding: 28px 20px; }
       </p>
       <div class="field full">
         <label>Gemini API-key</label>
-        <input id="apiKeyInput" type="password" placeholder="AIzaSy…">
+        <input id="apiKeyInput" type="password" autocapitalize="off" autocorrect="off" spellcheck="false" autocomplete="off" placeholder="AIzaSy…">
       </div>
       <p class="settings-text" style="color:var(--brass-dark);">
         De key wordt alleen lokaal in je browser bewaard (localStorage) en nergens anders naartoe gestuurd dan rechtstreeks naar Google.
@@ -346,7 +346,7 @@ main { max-width: 1100px; margin: 0 auto; padding: 28px 20px; }
         </p>
         <ol class="settings-text" style="padding-left:18px;margin:6px 0;">
           <li>Nieuw project aanmaken (naam maakt niet uit)</li>
-          <li>Linksmenu → Build → Firestore Database → "Create database" → kies een regio dichtbij (bv. europe-west) → start in testmodus</li>
+          <li>Linksmenu → Databases & Storage → Firestore → "Create database" → kies een regio dichtbij (bv. europe-west) → start in testmodus</li>
           <li>Tabblad "Rules" → vervang de inhoud door de open regels hieronder → Publiceren</li>
           <li>⚙ Project settings → onderaan "Your apps" → webapp toevoegen (`</>`-icoon) → kopieer het hele <span class="mono">firebaseConfig</span>-object</li>
           <li>Plak dat object hieronder en bewaar. Doe dit op elk apparaat met dezelfde config.</li>
@@ -364,7 +364,7 @@ service cloud.firestore {
         </p>
         <div class="field full">
           <label>Firebase-configuratie</label>
-          <textarea id="firebaseConfigInput" rows="6" placeholder='{"apiKey": "...", "authDomain": "...", "projectId": "...", ...}'></textarea>
+          <textarea id="firebaseConfigInput" rows="6" autocapitalize="off" autocorrect="off" spellcheck="false" autocomplete="off" placeholder='{"apiKey": "...", "authDomain": "...", "projectId": "...", ...}'></textarea>
         </div>
         <button class="btn-outline" id="importLocalBtn" type="button" style="margin-top:4px;">Importeer lokale vondsten naar synchronisatie</button>
         <p class="settings-text" id="syncStatus"></p>
@@ -514,8 +514,14 @@ async function resizeImageWithLimit(file, maxChars = 700000) {
 }
 
 function parseFirebaseConfig(raw) {
-  const trimmed = raw.trim();
+  let trimmed = raw.trim();
   if (!trimmed) return null;
+  // Verwijder eventuele meegeplakte // commentaarregels (bv. uit de Firebase-codevoorbeelden)
+  trimmed = trimmed.replace(/^\s*\/\/.*$/gm, '');
+  // Herstel "slimme aanhalingstekens" die iOS/iPadOS soms automatisch invoegt
+  trimmed = trimmed
+    .replace(/[\u201C\u201D\u201E\u201F]/g, '"')
+    .replace(/[\u2018\u2019\u201A\u201B]/g, "'");
   const start = trimmed.indexOf('{');
   const end = trimmed.lastIndexOf('}');
   if (start === -1 || end === -1) throw new Error('Geen geldig configuratie-object gevonden');
