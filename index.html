@@ -570,6 +570,7 @@ let analyzing = false;
 let syncMode = false;
 let firestoreDb = null;
 let unsubscribeSnapshot = null;
+let persistenceAttempted = false;
 
 const IDENTIFY_PROMPT = `Je bent een expert in antiek, vintage verzamelobjecten, keramiek, speelgoed, hifi-apparatuur, glaswerk en vlooienmarktvondsten. Bekijk de foto goed en geef ALLEEN een JSON-object terug, zonder andere tekst, markdown-opmaak of uitleg eromheen, in exact dit formaat:
 {"naam": "korte titel van het object", "categorie": "vrije omschrijving, bv. keramiek, speelgoed, meubels, audio, glaswerk, religieus object", "merkMaker": "merk of maker indien herkenbaar, anders lege string", "periode": "geschatte periode of decennium indien herkenbaar, anders lege string", "materiaal": "materiaal indien duidelijk zichtbaar, anders lege string", "conditie": "korte inschatting van de staat in enkele woorden", "waardeMin": geheel getal in euro of null, "waardeMax": geheel getal in euro of null, "toelichting": "1 tot 2 zinnen met de redenering achter de inschatting"}
@@ -687,9 +688,16 @@ function initSync() {
       firebase.initializeApp(config);
     }
     firestoreDb = firebase.firestore();
-    firestoreDb.enablePersistence({ synchronizeTabs: true }).catch(() => {
-      // Persistentie niet beschikbaar (bv. meerdere open tabbladen of oudere browser) — app werkt dan alleen online.
-    });
+    if (!persistenceAttempted) {
+      persistenceAttempted = true;
+      try {
+        firestoreDb.enablePersistence({ synchronizeTabs: true }).catch(() => {
+          // Persistentie niet beschikbaar (bv. meerdere open tabbladen of oudere browser) — app werkt dan alleen online.
+        });
+      } catch (persistErr) {
+        // Kan al gestart zijn in dit tabblad — geen probleem, gewoon doorgaan zonder offline-cache.
+      }
+    }
     syncMode = true;
     updateSyncBadge();
     clearGlobalError();
