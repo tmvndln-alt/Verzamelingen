@@ -332,6 +332,7 @@ main { max-width: 1100px; margin: 0 auto; padding: 28px 20px; }
         <label>Gemini API-key</label>
         <input id="apiKeyInput" type="password" autocapitalize="off" autocorrect="off" spellcheck="false" autocomplete="off" placeholder="AIzaSy…">
       </div>
+      <p class="settings-text" id="geminiStatus"></p>
       <p class="settings-text" style="color:var(--brass-dark);">
         De key wordt alleen lokaal in je browser bewaard (localStorage) en nergens anders naartoe gestuurd dan rechtstreeks naar Google.
       </p>
@@ -930,12 +931,24 @@ document.getElementById('exportBtn').onclick = handleExport;
 searchInput.addEventListener('input', render);
 overlay.addEventListener('click', (e) => { if (e.target === overlay) closeForm(); });
 
+function updateGeminiStatus() {
+  const geminiStatus = document.getElementById('geminiStatus');
+  if (getApiKey()) {
+    geminiStatus.style.color = 'var(--forest-mid)';
+    geminiStatus.textContent = '✓ Gemini-key is ingesteld.';
+  } else {
+    geminiStatus.style.color = 'var(--brass-dark)';
+    geminiStatus.textContent = 'Nog geen Gemini-key ingesteld — AI-herkenning werkt pas als je er een toevoegt.';
+  }
+}
+
 function openSettings() {
   apiKeyInput.value = getApiKey();
   const config = getFirebaseConfig();
   firebaseConfigInput.value = config ? JSON.stringify(config, null, 2) : '';
   syncStatus.textContent = syncMode ? 'Synchronisatie is actief op dit apparaat.' : '';
   syncStatus.style.color = 'var(--forest-mid)';
+  updateGeminiStatus();
   settingsOverlay.classList.add('open');
 }
 function closeSettings() {
@@ -952,6 +965,7 @@ document.getElementById('saveSettings').onclick = () => {
   } else {
     localStorage.removeItem(GEMINI_KEY_STORAGE);
   }
+  updateGeminiStatus();
 
   const rawConfig = firebaseConfigInput.value.trim();
   if (!rawConfig) {
