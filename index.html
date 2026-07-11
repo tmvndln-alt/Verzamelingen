@@ -557,6 +557,13 @@ function initSync() {
   const config = getFirebaseConfig();
   if (unsubscribeSnapshot) { unsubscribeSnapshot(); unsubscribeSnapshot = null; }
   if (!config) { syncMode = false; updateSyncBadge(); loadItems(); return; }
+  if (typeof firebase === 'undefined') {
+    syncMode = false;
+    updateSyncBadge();
+    showGlobalError('De Firebase-bibliotheek kon niet geladen worden. Controleer je internetverbinding en herlaad de pagina.');
+    loadItems();
+    return;
+  }
   try {
     if (!firebase.apps.length) {
       firebase.initializeApp(config);
@@ -578,14 +585,14 @@ function initSync() {
         items.sort((a, b) => (b.volgnummer || 0) - (a.volgnummer || 0));
         render();
       },
-      () => {
-        showGlobalError('Synchroniseren lukt niet. Controleer je Firebase-configuratie en de databaseregels bij instellingen.');
+      (err) => {
+        showGlobalError('Synchroniseren lukt niet (' + (err && err.code ? err.code : 'onbekende fout') + '). Controleer de databaseregels bij instellingen.');
       }
     );
   } catch (e) {
     syncMode = false;
     updateSyncBadge();
-    showGlobalError('De Firebase-configuratie kon niet worden geladen. Controleer of je het hele object hebt geplakt.');
+    showGlobalError('Verbinden met Firebase mislukt: ' + (e && e.message ? e.message : String(e)));
     loadItems();
   }
 }
