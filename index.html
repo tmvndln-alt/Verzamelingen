@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Vondstenboek</title>
+<link rel="manifest" href="data:application/manifest+json,{%22name%22:%22Vondstenboek%22,%22short_name%22:%22Vondstenboek%22,%22display%22:%22standalone%22,%22start_url%22:%22.%22,%22background_color%22:%22%23EFE7D2%22,%22theme_color%22:%221B2A1E%22}">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&family=Work+Sans:wght@400;500;600&display=swap');
+
+:root {
+  --ink: #1B2A1E;
+  --paper: #EFE7D2;
+  --cream: #F8F3E6;
+  --brass: #B8873B;
+  --brass-dark: #8F6B2C;
+  --rust: #9C3B2E;
+  --forest-mid: #3A5745;
+  --text-dark: #241F17;
+  --line: #D9CDAE;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--text-dark);
+  font-family: 'Work Sans', sans-serif;
+  padding-bottom: 60px;
+}
+.serif { font-family: 'Fraunces', serif; }
+.mono { font-family: 'IBM Plex Mono', monospace; }
+
+header {
+  padding: 24px 20px;
+  border-bottom: 1px solid var(--line);
+}
+.header-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 16px;
+}
+.eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--brass-dark);
+  margin: 0 0 4px;
+}
+h1 {
+  font-size: 32px;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0;
+}
+.btn-row { display: flex; gap: 8px; }
+button {
+  font-family: 'Work Sans', sans-serif;
+  border: none;
+  cursor: pointer;
+  border-radius: 3px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.btn-primary { background: var(--ink); color: var(--cream); }
+.btn-primary:hover { background: var(--forest-mid); }
+.btn-brass { background: var(--brass); color: var(--ink); }
+.btn-brass:hover { background: var(--brass-dark); color: var(--cream); }
+.btn-outline { background: transparent; border: 1px solid var(--line); color: var(--ink); padding: 6px 10px; font-size: 12px; }
+.btn-outline.danger { color: var(--rust); }
+button:disabled { opacity: 0.4; cursor: default; }
+
+main { max-width: 1100px; margin: 0 auto; padding: 28px 20px; }
+
+.search-wrap { max-width: 380px; margin-bottom: 24px; position: relative; }
+.search-wrap input {
+  width: 100%;
+  padding: 10px 12px 10px 34px;
+  border: 1px solid var(--line);
+  background: var(--cream);
+  border-radius: 3px;
+  font-size: 14px;
+  font-family: 'Work Sans', sans-serif;
+}
+.search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--brass-dark); font-size: 14px; }
+
+.empty-state { text-align: center; padding: 80px 20px; }
+.empty-state p.title { font-size: 20px; margin-bottom: 6px; color: var(--forest-mid); }
+.empty-state p.hint { font-size: 13px; color: var(--brass-dark); }
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 24px;
+}
+.card {
+  background: var(--cream);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  overflow: hidden;
+  transition: transform .15s ease, box-shadow .15s ease;
+  display: flex;
+  flex-direction: column;
+}
+.card:hover { transform: translateY(-3px); box-shadow: 0 10px 24px -12px rgba(27,42,30,0.35); }
+.photo-wrap { position: relative; }
+.photo-wrap img, .photo-placeholder {
+  width: 100%;
+  height: 192px;
+  object-fit: cover;
+  display: block;
+  clip-path: polygon(0% 0%,100% 0%,100% 93%,95% 97%,90% 93%,85% 97%,80% 93%,75% 97%,70% 93%,65% 97%,60% 93%,55% 97%,50% 93%,45% 97%,40% 93%,35% 97%,30% 93%,25% 97%,20% 93%,15% 97%,10% 93%,5% 97%,0% 93%);
+}
+.photo-placeholder { background: var(--line); display: flex; align-items: center; justify-content: center; color: var(--brass-dark); font-size: 12px; }
+.stamp {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  transform: rotate(-8deg);
+  border: 1.5px solid var(--rust);
+  color: var(--rust);
+  background: rgba(255,255,255,0.88);
+  font-size: 10px;
+  padding: 3px 8px;
+  border-radius: 2px;
+}
+.card-body { padding: 14px; flex: 1; display: flex; flex-direction: column; gap: 3px; }
+.card-body h3 { font-size: 17px; font-weight: 600; color: var(--ink); margin: 0; line-height: 1.2; }
+.tag { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--brass-dark); }
+.value { font-size: 14px; color: var(--rust); margin: 2px 0 0; }
+.loc { font-size: 12px; color: var(--forest-mid); margin: 2px 0 0; }
+.card-actions { margin-top: 10px; display: flex; gap: 6px; }
+
+/* Modal */
+.overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(27,42,30,0.55);
+  z-index: 50;
+  align-items: flex-start;
+  justify-content: center;
+  overflow-y: auto;
+  padding: 16px;
+}
+.overlay.open { display: flex; }
+.modal {
+  background: var(--cream);
+  width: 100%;
+  max-width: 560px;
+  border-radius: 3px;
+  margin: 24px 0;
+}
+.modal-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--line);
+}
+.modal-head h2 { font-size: 20px; font-weight: 600; color: var(--ink); margin: 0; }
+.modal-head button { background: none; padding: 4px; font-size: 18px; color: var(--ink); }
+.modal-body { padding: 16px 20px; display: flex; flex-direction: column; gap: 14px; }
+.error-box {
+  display: none;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+  background: #F4E4DE;
+  color: var(--rust);
+  padding: 10px 12px;
+  border-radius: 3px;
+}
+.error-box.show { display: flex; }
+
+.photo-drop {
+  width: 100%;
+  height: 170px;
+  border: 2px dashed var(--line);
+  border-radius: 3px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--brass-dark);
+  font-size: 14px;
+  cursor: pointer;
+  background: none;
+}
+.photo-preview-wrap { position: relative; }
+.photo-preview-wrap img { width: 100%; height: 208px; object-fit: cover; border-radius: 3px; display: block; }
+.photo-preview-wrap .change-btn {
+  position: absolute; bottom: 8px; right: 8px;
+  background: rgba(255,255,255,0.9); color: var(--ink);
+  font-size: 12px; padding: 5px 9px;
+}
+
+.field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.field { display: flex; flex-direction: column; gap: 4px; }
+.field.full { grid-column: 1 / -1; }
+.field label {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--brass-dark);
+  font-family: 'IBM Plex Mono', monospace;
+}
+.field input, .field textarea {
+  background: var(--cream);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 8px 10px;
+  font-size: 14px;
+  font-family: 'Work Sans', sans-serif;
+  color: var(--text-dark);
+}
+.field input:focus, .field textarea:focus { outline: 2px solid var(--brass); outline-offset: 1px; }
+
+.modal-foot {
+  padding: 14px 20px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.btn-icon { background: transparent; border: 1px solid var(--line); color: var(--ink); padding: 10px 12px; font-size: 15px; }
+.btn-icon:hover { background: var(--cream); }
+.ai-btn { width: 100%; margin-top: 10px; justify-content: center; }
+.ai-hint { font-size: 12px; margin-top: 6px; color: var(--forest-mid); font-family: 'IBM Plex Mono', monospace; }
+.settings-modal .modal { max-width: 440px; }
+.settings-text { font-size: 13px; line-height: 1.5; color: var(--text-dark); }
+.settings-text a { color: var(--brass-dark); }
+.spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(0,0,0,0.2); border-top-color: currentColor; border-radius: 50%; animation: spin .7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) { .card { transition: none; } .spinner { animation: none; } }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div>
+      <p class="eyebrow mono">Persoonlijke inventaris</p>
+      <h1 class="serif">Vondstenboek</h1>
+      <p class="mono" id="syncBadge" style="font-size:11px;color:var(--forest-mid);margin:4px 0 0;"></p>
+    </div>
+    <div class="btn-row">
+      <button class="btn-icon" id="settingsBtn" title="AI-instellingen" aria-label="AI-instellingen">⚙</button>
+      <button class="btn-brass" id="exportBtn"><span>⬇</span> Naar Excel</button>
+      <button class="btn-primary" id="addBtn"><span>+</span> Nieuwe vondst</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div id="globalError" class="error-box" style="max-width:600px;margin-bottom:16px;"></div>
+
+  <div class="search-wrap">
+    <span class="search-icon">🔍</span>
+    <input id="searchInput" type="text" placeholder="Zoek op naam, categorie, merk, locatie…">
+  </div>
+
+  <div id="emptyState" class="empty-state" style="display:none;">
+    <p class="title serif" id="emptyTitle">De schappen zijn nog leeg.</p>
+    <p class="hint mono" id="emptyHint">Voeg je eerste vondst toe met een foto.</p>
+  </div>
+
+  <div id="grid" class="grid"></div>
+</main>
+
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h2 class="serif" id="modalTitle">Nieuwe vondst</h2>
+      <button id="closeModal">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="error-box" id="errorBox"></div>
+
+      <div>
+        <label class="mono" style="font-size:10.5px;text-transform:uppercase;letter-spacing:0.06em;color:var(--brass-dark);display:block;margin-bottom:6px;">Foto</label>
+        <div id="photoArea"></div>
+        <input type="file" id="fileInput" accept="image/*" capture="environment" style="display:none;">
+        <div id="aiArea"></div>
+      </div>
+
+      <div class="field-grid">
+        <div class="field full"><label>Naam</label><input id="f_naam"></div>
+        <div class="field"><label>Categorie</label><input id="f_categorie"></div>
+        <div class="field"><label>Merk / maker</label><input id="f_merkMaker"></div>
+        <div class="field"><label>Periode</label><input id="f_periode"></div>
+        <div class="field"><label>Materiaal</label><input id="f_materiaal"></div>
+        <div class="field"><label>Conditie</label><input id="f_conditie"></div>
+        <div class="field"><label>Waarde vanaf (€)</label><input id="f_waardeMin" type="number"></div>
+        <div class="field"><label>Waarde tot (€)</label><input id="f_waardeMax" type="number"></div>
+        <div class="field"><label>Aankoopprijs (€)</label><input id="f_aankoopprijs" type="number"></div>
+        <div class="field"><label>Locatie in huis</label><input id="f_locatie"></div>
+        <div class="field full"><label>Notities</label><textarea id="f_notities" rows="2"></textarea></div>
+        <div class="field full"><label>AI-toelichting</label><textarea id="f_toelichting" rows="2"></textarea></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-outline" id="cancelBtn">Annuleren</button>
+      <button class="btn-primary" id="saveBtn">Bewaar in vondstenboek</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay settings-modal" id="settingsOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h2 class="serif">AI-herkenning</h2>
+      <button id="closeSettings">✕</button>
+    </div>
+    <div class="modal-body">
+      <p class="settings-text">
+        Vul hier je gratis Google Gemini API-key in om foto's automatisch te laten herkennen.
+        Je haalt een key op via <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a>
+        — inloggen met een Google-account, geen creditcard nodig.
+      </p>
+      <div class="field full">
+        <label>Gemini API-key</label>
+        <input id="apiKeyInput" type="password" placeholder="AIzaSy…">
+      </div>
+      <p class="settings-text" style="color:var(--brass-dark);">
+        De key wordt alleen lokaal in je browser bewaard (localStorage) en nergens anders naartoe gestuurd dan rechtstreeks naar Google.
+      </p>
+
+      <hr style="border:none;border-top:1px solid var(--line);margin:4px 0;">
+
+      <div>
+        <h2 class="serif" style="font-size:17px;margin:0 0 6px;">Synchroniseren tussen apparaten</h2>
+        <p class="settings-text">
+          Wil je dezelfde collectie zien op iPad én iPhone? Maak eenmalig een gratis Firestore-database aan via
+          <a href="https://console.firebase.google.com" target="_blank" rel="noopener">console.firebase.google.com</a>:
+        </p>
+        <ol class="settings-text" style="padding-left:18px;margin:6px 0;">
+          <li>Nieuw project aanmaken (naam maakt niet uit)</li>
+          <li>Linksmenu → Build → Firestore Database → "Create database" → kies een regio dichtbij (bv. europe-west) → start in testmodus</li>
+          <li>Tabblad "Rules" → vervang de inhoud door de open regels hieronder → Publiceren</li>
+          <li>⚙ Project settings → onderaan "Your apps" → webapp toevoegen (`</>`-icoon) → kopieer het hele <span class="mono">firebaseConfig</span>-object</li>
+          <li>Plak dat object hieronder en bewaar. Doe dit op elk apparaat met dezelfde config.</li>
+        </ol>
+        <pre class="mono" style="background:var(--paper);border:1px solid var(--line);border-radius:3px;padding:8px 10px;font-size:11px;overflow-x:auto;white-space:pre-wrap;">rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}</pre>
+        <p class="settings-text" style="color:var(--rust);">
+          Let op: deze regels maken de database open voor iedereen die de configuratie kent. Voor een privéverzameling is dat een aanvaardbaar risico zolang je de config niet deelt, maar het is geen echte beveiliging.
+        </p>
+        <div class="field full">
+          <label>Firebase-configuratie</label>
+          <textarea id="firebaseConfigInput" rows="6" placeholder='{"apiKey": "...", "authDomain": "...", "projectId": "...", ...}'></textarea>
+        </div>
+        <button class="btn-outline" id="importLocalBtn" type="button" style="margin-top:4px;">Importeer lokale vondsten naar synchronisatie</button>
+        <p class="settings-text" id="syncStatus"></p>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-outline" id="cancelSettings">Annuleren</button>
+      <button class="btn-primary" id="saveSettings">Bewaar instellingen</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+// ---------- IndexedDB helpers ----------
+const DB_NAME = 'vondstenboek';
+const STORE = 'items';
+let dbPromise = null;
+
+function getDB() {
+  if (dbPromise) return dbPromise;
+  dbPromise = new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, 1);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if (!db.objectStoreNames.contains(STORE)) {
+        db.createObjectStore(STORE, { keyPath: 'id' });
+      }
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+  return dbPromise;
+}
+
+async function dbGetAll() {
+  const db = await getDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE, 'readonly');
+    const req = tx.objectStore(STORE).getAll();
+    req.onsuccess = () => resolve(req.result || []);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function dbPut(item) {
+  const db = await getDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE, 'readwrite');
+    tx.objectStore(STORE).put(item);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+async function dbDelete(id) {
+  const db = await getDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE, 'readwrite');
+    tx.objectStore(STORE).delete(id);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+// ---------- State ----------
+let items = [];
+let editingId = null;
+let currentPhoto = null;
+
+const grid = document.getElementById('grid');
+const emptyState = document.getElementById('emptyState');
+const emptyTitle = document.getElementById('emptyTitle');
+const emptyHint = document.getElementById('emptyHint');
+const searchInput = document.getElementById('searchInput');
+const overlay = document.getElementById('overlay');
+const modalTitle = document.getElementById('modalTitle');
+const errorBox = document.getElementById('errorBox');
+const photoArea = document.getElementById('photoArea');
+const fileInput = document.getElementById('fileInput');
+const aiArea = document.getElementById('aiArea');
+const settingsOverlay = document.getElementById('settingsOverlay');
+const apiKeyInput = document.getElementById('apiKeyInput');
+const firebaseConfigInput = document.getElementById('firebaseConfigInput');
+const syncStatus = document.getElementById('syncStatus');
+const syncBadge = document.getElementById('syncBadge');
+
+const fieldIds = ['naam','categorie','merkMaker','periode','materiaal','conditie','waardeMin','waardeMax','aankoopprijs','locatie','notities','toelichting'];
+const GEMINI_KEY_STORAGE = 'vondstenboek_gemini_key';
+const FIREBASE_CONFIG_STORAGE = 'vondstenboek_firebase_config';
+let analyzing = false;
+let syncMode = false;
+let firestoreDb = null;
+let unsubscribeSnapshot = null;
+
+const IDENTIFY_PROMPT = `Je bent een expert in antiek, vintage verzamelobjecten, keramiek, speelgoed, hifi-apparatuur, glaswerk en vlooienmarktvondsten. Bekijk de foto goed en geef ALLEEN een JSON-object terug, zonder andere tekst, markdown-opmaak of uitleg eromheen, in exact dit formaat:
+{"naam": "korte titel van het object", "categorie": "vrije omschrijving, bv. keramiek, speelgoed, meubels, audio, glaswerk, religieus object", "merkMaker": "merk of maker indien herkenbaar, anders lege string", "periode": "geschatte periode of decennium indien herkenbaar, anders lege string", "materiaal": "materiaal indien duidelijk zichtbaar, anders lege string", "conditie": "korte inschatting van de staat in enkele woorden", "waardeMin": geheel getal in euro of null, "waardeMax": geheel getal in euro of null, "toelichting": "1 tot 2 zinnen met de redenering achter de inschatting"}
+Wees realistisch en voorzichtig met waardeschattingen; het zijn indicaties, geen taxaties.`;
+
+function fmtNum(id) { return 'f_' + id; }
+
+function formatInventoryNumber(n) {
+  return 'VB-' + String(n).padStart(4, '0');
+}
+
+function resizeImage(file, maxWidth = 1000, quality = 0.78) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = () => reject(new Error('Kan afbeelding niet lezen'));
+      img.src = e.target.result;
+    };
+    reader.onerror = () => reject(new Error('Kan bestand niet lezen'));
+    reader.readAsDataURL(file);
+  });
+}
+
+// Foto's blijven ruim onder de 1MB-documentlimiet van Firestore, ook als synchronisatie uitstaat.
+async function resizeImageWithLimit(file, maxChars = 700000) {
+  let width = 1000;
+  let quality = 0.78;
+  let dataUrl = await resizeImage(file, width, quality);
+  let attempts = 0;
+  while (dataUrl.length > maxChars && attempts < 6) {
+    width = Math.round(width * 0.8);
+    quality = Math.max(0.4, quality - 0.1);
+    dataUrl = await resizeImage(file, width, quality);
+    attempts++;
+  }
+  return dataUrl;
+}
+
+function parseFirebaseConfig(raw) {
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  const start = trimmed.indexOf('{');
+  const end = trimmed.lastIndexOf('}');
+  if (start === -1 || end === -1) throw new Error('Geen geldig configuratie-object gevonden');
+  const objectText = trimmed.slice(start, end + 1);
+  // eslint-disable-next-line no-new-func
+  const parsed = new Function('return (' + objectText + ');')();
+  if (!parsed || !parsed.apiKey || !parsed.projectId) throw new Error('Configuratie mist verplichte velden');
+  return parsed;
+}
+
+function getFirebaseConfig() {
+  const raw = localStorage.getItem(FIREBASE_CONFIG_STORAGE);
+  if (!raw) return null;
+  try { return JSON.parse(raw); } catch { return null; }
+}
+
+function showGlobalError(msg) {
+  const el = document.getElementById('globalError');
+  el.textContent = msg;
+  el.classList.add('show');
+}
+function clearGlobalError() {
+  const el = document.getElementById('globalError');
+  el.textContent = '';
+  el.classList.remove('show');
+}
+
+function updateSyncBadge() {
+  syncBadge.textContent = syncMode ? '● gesynchroniseerd' : '';
+}
+
+function initSync() {
+  const config = getFirebaseConfig();
+  if (unsubscribeSnapshot) { unsubscribeSnapshot(); unsubscribeSnapshot = null; }
+  if (!config) { syncMode = false; updateSyncBadge(); loadItems(); return; }
+  try {
+    if (!firebase.apps.length) {
+      firebase.initializeApp(config);
+    } else {
+      firebase.app().delete().catch(() => {});
+      firebase.initializeApp(config);
+    }
+    firestoreDb = firebase.firestore();
+    firestoreDb.enablePersistence({ synchronizeTabs: true }).catch(() => {
+      // Persistentie niet beschikbaar (bv. meerdere open tabbladen of oudere browser) — app werkt dan alleen online.
+    });
+    syncMode = true;
+    updateSyncBadge();
+    clearGlobalError();
+    unsubscribeSnapshot = firestoreDb.collection('vondsten').onSnapshot(
+      (snapshot) => {
+        clearGlobalError();
+        items = snapshot.docs.map((d) => d.data());
+        items.sort((a, b) => (b.volgnummer || 0) - (a.volgnummer || 0));
+        render();
+      },
+      () => {
+        showGlobalError('Synchroniseren lukt niet. Controleer je Firebase-configuratie en de databaseregels bij instellingen.');
+      }
+    );
+  } catch (e) {
+    syncMode = false;
+    updateSyncBadge();
+    showGlobalError('De Firebase-configuratie kon niet worden geladen. Controleer of je het hele object hebt geplakt.');
+    loadItems();
+  }
+}
+
+function showError(msg) {
+  errorBox.textContent = msg;
+  errorBox.classList.add('show');
+}
+function clearError() {
+  errorBox.textContent = '';
+  errorBox.classList.remove('show');
+}
+
+function getApiKey() {
+  return localStorage.getItem(GEMINI_KEY_STORAGE) || '';
+}
+
+async function analyzeWithGemini(dataUrl, apiKey) {
+  const match = dataUrl.match(/^data:(.+);base64,(.*)$/);
+  if (!match) throw new Error('Ongeldige afbeelding');
+  const [, mimeType, base64] = match;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`;
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{
+        parts: [
+          { text: IDENTIFY_PROMPT },
+          { inline_data: { mime_type: mimeType, data: base64 } },
+        ],
+      }],
+    }),
+  });
+  if (!response.ok) {
+    if (response.status === 400 || response.status === 403) throw new Error('De API-key lijkt ongeldig. Controleer deze bij instellingen.');
+    throw new Error('AI-analyse mislukt');
+  }
+  const data = await response.json();
+  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!text) throw new Error('Geen antwoord van de AI ontvangen');
+  const clean = text.replace(/```json|```/g, '').trim();
+  return JSON.parse(clean);
+}
+
+function renderPhotoArea() {
+  if (currentPhoto) {
+    photoArea.innerHTML = `
+      <div class="photo-preview-wrap">
+        <img src="${currentPhoto}" alt="Vondst">
+        <button class="change-btn" id="changePhotoBtn" type="button">Andere foto</button>
+      </div>`;
+    document.getElementById('changePhotoBtn').onclick = () => fileInput.click();
+  } else {
+    photoArea.innerHTML = `<button class="photo-drop" id="photoDropBtn" type="button">📷 Foto toevoegen</button>`;
+    document.getElementById('photoDropBtn').onclick = () => fileInput.click();
+  }
+  renderAiArea();
+}
+
+function renderAiArea() {
+  if (!currentPhoto) { aiArea.innerHTML = ''; return; }
+  const hasKey = !!getApiKey();
+  if (analyzing) {
+    aiArea.innerHTML = `<button class="btn-brass ai-btn" disabled><span class="spinner"></span> AI bekijkt de foto…</button>`;
+    return;
+  }
+  aiArea.innerHTML = `<button class="btn-brass ai-btn" id="analyzeBtn" type="button">✨ Laat AI dit herkennen</button>`;
+  document.getElementById('analyzeBtn').onclick = handleAnalyze;
+  if (!hasKey) {
+    aiArea.innerHTML += `<p class="ai-hint">Nog geen API-key ingesteld — klik op ⚙ rechtsboven om er een toe te voegen.</p>`;
+  }
+}
+
+async function handleAnalyze() {
+  const apiKey = getApiKey();
+  if (!apiKey) { showError('Stel eerst een gratis Gemini API-key in via het ⚙-icoon rechtsboven.'); return; }
+  clearError();
+  analyzing = true;
+  renderAiArea();
+  try {
+    const s = await analyzeWithGemini(currentPhoto, apiKey);
+    document.getElementById('f_naam').value = s.naam || document.getElementById('f_naam').value;
+    document.getElementById('f_categorie').value = s.categorie || '';
+    document.getElementById('f_merkMaker').value = s.merkMaker || '';
+    document.getElementById('f_periode').value = s.periode || '';
+    document.getElementById('f_materiaal').value = s.materiaal || '';
+    document.getElementById('f_conditie').value = s.conditie || '';
+    document.getElementById('f_waardeMin').value = s.waardeMin ?? '';
+    document.getElementById('f_waardeMax').value = s.waardeMax ?? '';
+    document.getElementById('f_toelichting').value = s.toelichting || '';
+  } catch (err) {
+    showError('De AI kon deze foto niet analyseren. Vul de gegevens eventueel handmatig aan, of probeer het opnieuw.');
+  } finally {
+    analyzing = false;
+    renderAiArea();
+  }
+}
+
+fileInput.addEventListener('change', async (e) => {
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+  clearError();
+  try {
+    currentPhoto = await resizeImageWithLimit(file);
+    renderPhotoArea();
+  } catch (err) {
+    showError('De foto kon niet worden geladen. Probeer een andere foto.');
+  }
+  e.target.value = '';
+});
+
+function openForm(item) {
+  clearError();
+  currentPhoto = item ? item.photoData : null;
+  editingId = item ? item.id : null;
+  modalTitle.textContent = item ? 'Vondst bewerken' : 'Nieuwe vondst';
+  fieldIds.forEach((id) => {
+    const el = document.getElementById(fmtNum(id));
+    el.value = item ? (item[id] ?? '') : '';
+  });
+  renderPhotoArea();
+  overlay.classList.add('open');
+}
+
+function closeForm() {
+  overlay.classList.remove('open');
+  editingId = null;
+  currentPhoto = null;
+  analyzing = false;
+}
+
+async function loadItems() {
+  if (syncMode) return; // items komen binnen via de onSnapshot-listener
+  items = await dbGetAll();
+  items.sort((a, b) => (b.volgnummer || 0) - (a.volgnummer || 0));
+  render();
+}
+
+async function saveItem(item) {
+  if (syncMode) {
+    await firestoreDb.collection('vondsten').doc(item.id).set(item);
+  } else {
+    await dbPut(item);
+    await loadItems();
+  }
+}
+
+async function deleteItem(id) {
+  if (syncMode) {
+    await firestoreDb.collection('vondsten').doc(id).delete();
+  } else {
+    await dbDelete(id);
+    await loadItems();
+  }
+}
+
+async function importLocalItems() {
+  if (!syncMode) {
+    syncStatus.style.color = 'var(--rust)';
+    syncStatus.textContent = 'Stel eerst synchronisatie in en bewaar de instellingen voordat je importeert.';
+    return;
+  }
+  syncStatus.style.color = 'var(--forest-mid)';
+  syncStatus.textContent = 'Lokale vondsten worden geïmporteerd…';
+  document.getElementById('importLocalBtn').disabled = true;
+  try {
+    const localItems = await dbGetAll();
+    if (localItems.length === 0) {
+      syncStatus.textContent = 'Geen lokale vondsten gevonden op dit apparaat om te importeren.';
+      return;
+    }
+    let count = 0;
+    for (const item of localItems) {
+      await firestoreDb.collection('vondsten').doc(item.id).set(item, { merge: true });
+      count++;
+    }
+    syncStatus.textContent = `${count} lokale vondst${count === 1 ? '' : 'en'} geïmporteerd naar de synchronisatie.`;
+  } catch (err) {
+    syncStatus.style.color = 'var(--rust)';
+    syncStatus.textContent = 'Importeren is niet gelukt. Probeer het opnieuw.';
+  } finally {
+    document.getElementById('importLocalBtn').disabled = false;
+  }
+}
+
+function render() {
+  const q = searchInput.value.trim().toLowerCase();
+  const filtered = items.filter((it) => {
+    if (!q) return true;
+    return [it.naam, it.categorie, it.merkMaker, it.periode, it.locatie]
+      .filter(Boolean).some((v) => v.toLowerCase().includes(q));
+  });
+
+  document.getElementById('exportBtn').disabled = items.length === 0;
+
+  if (filtered.length === 0) {
+    grid.innerHTML = '';
+    emptyState.style.display = 'block';
+    if (items.length === 0) {
+      emptyTitle.textContent = 'De schappen zijn nog leeg.';
+      emptyHint.textContent = 'Voeg je eerste vondst toe met een foto.';
+    } else {
+      emptyTitle.textContent = 'Niets gevonden.';
+      emptyHint.textContent = 'Probeer een andere zoekterm.';
+    }
+    return;
+  }
+  emptyState.style.display = 'none';
+
+  grid.innerHTML = filtered.map((it) => {
+    const photoHtml = it.photoData
+      ? `<img src="${it.photoData}" alt="${escapeHtml(it.naam)}">`
+      : `<div class="photo-placeholder">geen foto</div>`;
+    const valueHtml = (it.waardeMin || it.waardeMax)
+      ? `<p class="value">€ ${it.waardeMin ?? '?'}${it.waardeMax ? ' – € ' + it.waardeMax : ''}</p>`
+      : '';
+    const locHtml = it.locatie ? `<p class="loc">${escapeHtml(it.locatie)}</p>` : '';
+    const catHtml = it.categorie ? `<span class="tag">${escapeHtml(it.categorie)}</span>` : '';
+    return `
+      <div class="card">
+        <div class="photo-wrap">
+          ${photoHtml}
+          <span class="stamp mono">${it.inventarisnummer}</span>
+        </div>
+        <div class="card-body">
+          <h3 class="serif">${escapeHtml(it.naam)}</h3>
+          ${catHtml}
+          ${valueHtml}
+          ${locHtml}
+          <div class="card-actions">
+            <button class="btn-outline" data-edit="${it.id}">Bewerken</button>
+            <button class="btn-outline danger" data-delete="${it.id}">Verwijder</button>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+
+  grid.querySelectorAll('[data-edit]').forEach((btn) => {
+    btn.onclick = () => {
+      const item = items.find((i) => i.id === btn.dataset.edit);
+      if (item) openForm(item);
+    };
+  });
+  grid.querySelectorAll('[data-delete]').forEach((btn) => {
+    btn.onclick = async () => {
+      if (!confirm('Deze vondst definitief verwijderen?')) return;
+      try {
+        await deleteItem(btn.dataset.delete);
+      } catch (err) {
+        showGlobalError('Verwijderen is niet gelukt.');
+      }
+    };
+  });
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str || '';
+  return div.innerHTML;
+}
+
+async function handleSave() {
+  clearError();
+  if (!currentPhoto) { showError('Voeg eerst een foto toe.'); return; }
+  const naam = document.getElementById('f_naam').value.trim();
+  if (!naam) { showError('Geef het object een naam.'); return; }
+
+  const id = editingId || String(Date.now());
+  const existing = editingId ? items.find((i) => i.id === editingId) : null;
+  const volgnummer = existing ? existing.volgnummer : (Math.max(0, ...items.map((i) => i.volgnummer || 0)) + 1);
+
+  const item = {
+    id,
+    volgnummer,
+    inventarisnummer: existing ? existing.inventarisnummer : formatInventoryNumber(volgnummer),
+    photoData: currentPhoto,
+    naam,
+    categorie: document.getElementById('f_categorie').value.trim(),
+    merkMaker: document.getElementById('f_merkMaker').value.trim(),
+    periode: document.getElementById('f_periode').value.trim(),
+    materiaal: document.getElementById('f_materiaal').value.trim(),
+    conditie: document.getElementById('f_conditie').value.trim(),
+    waardeMin: document.getElementById('f_waardeMin').value === '' ? null : Number(document.getElementById('f_waardeMin').value),
+    waardeMax: document.getElementById('f_waardeMax').value === '' ? null : Number(document.getElementById('f_waardeMax').value),
+    aankoopprijs: document.getElementById('f_aankoopprijs').value === '' ? null : Number(document.getElementById('f_aankoopprijs').value),
+    locatie: document.getElementById('f_locatie').value.trim(),
+    notities: document.getElementById('f_notities').value.trim(),
+    toelichting: document.getElementById('f_toelichting').value.trim(),
+    datumToegevoegd: existing ? existing.datumToegevoegd : new Date().toISOString(),
+  };
+
+  try {
+    await saveItem(item);
+    closeForm();
+  } catch (err) {
+    showError('Opslaan is niet gelukt. Mogelijk is de opslagruimte vol of is de synchronisatie niet goed ingesteld.');
+  }
+}
+
+function handleExport() {
+  const rows = items.map((it) => ({
+    'Inventarisnummer': it.inventarisnummer,
+    'Naam': it.naam,
+    'Categorie': it.categorie,
+    'Merk/Maker': it.merkMaker,
+    'Periode': it.periode,
+    'Materiaal': it.materiaal,
+    'Conditie': it.conditie,
+    'Geschatte waarde min (€)': it.waardeMin ?? '',
+    'Geschatte waarde max (€)': it.waardeMax ?? '',
+    'Aankoopprijs (€)': it.aankoopprijs ?? '',
+    'Locatie in huis': it.locatie,
+    'Notities': it.notities,
+    'AI-toelichting': it.toelichting,
+    'Datum toegevoegd': it.datumToegevoegd ? new Date(it.datumToegevoegd).toLocaleDateString('nl-NL') : '',
+  }));
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws['!cols'] = [
+    { wch: 14 }, { wch: 28 }, { wch: 16 }, { wch: 18 }, { wch: 12 },
+    { wch: 14 }, { wch: 16 }, { wch: 16 }, { wch: 16 }, { wch: 14 },
+    { wch: 18 }, { wch: 32 }, { wch: 32 }, { wch: 14 },
+  ];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Vondstenboek');
+  XLSX.writeFile(wb, `vondstenboek-${new Date().toISOString().slice(0,10)}.xlsx`);
+}
+
+// ---------- Events ----------
+document.getElementById('addBtn').onclick = () => openForm(null);
+document.getElementById('closeModal').onclick = closeForm;
+document.getElementById('cancelBtn').onclick = closeForm;
+document.getElementById('saveBtn').onclick = handleSave;
+document.getElementById('exportBtn').onclick = handleExport;
+searchInput.addEventListener('input', render);
+overlay.addEventListener('click', (e) => { if (e.target === overlay) closeForm(); });
+
+function openSettings() {
+  apiKeyInput.value = getApiKey();
+  const config = getFirebaseConfig();
+  firebaseConfigInput.value = config ? JSON.stringify(config, null, 2) : '';
+  syncStatus.textContent = syncMode ? 'Synchronisatie is actief op dit apparaat.' : '';
+  syncStatus.style.color = 'var(--forest-mid)';
+  settingsOverlay.classList.add('open');
+}
+function closeSettings() {
+  settingsOverlay.classList.remove('open');
+}
+document.getElementById('settingsBtn').onclick = openSettings;
+document.getElementById('closeSettings').onclick = closeSettings;
+document.getElementById('cancelSettings').onclick = closeSettings;
+document.getElementById('importLocalBtn').onclick = importLocalItems;
+document.getElementById('saveSettings').onclick = () => {
+  const key = apiKeyInput.value.trim();
+  if (key) {
+    localStorage.setItem(GEMINI_KEY_STORAGE, key);
+  } else {
+    localStorage.removeItem(GEMINI_KEY_STORAGE);
+  }
+
+  const rawConfig = firebaseConfigInput.value.trim();
+  if (!rawConfig) {
+    localStorage.removeItem(FIREBASE_CONFIG_STORAGE);
+    syncStatus.style.color = 'var(--forest-mid)';
+    syncStatus.textContent = 'Synchronisatie uitgeschakeld — gegevens blijven lokaal op dit apparaat.';
+    renderAiArea();
+    initSync();
+    return;
+  }
+  try {
+    const parsed = parseFirebaseConfig(rawConfig);
+    localStorage.setItem(FIREBASE_CONFIG_STORAGE, JSON.stringify(parsed));
+    syncStatus.style.color = 'var(--forest-mid)';
+    syncStatus.textContent = 'Instellingen bewaard, synchronisatie wordt gestart…';
+    renderAiArea();
+    initSync();
+  } catch (err) {
+    syncStatus.style.color = 'var(--rust)';
+    syncStatus.textContent = 'Kon de configuratie niet lezen. Plak het hele firebaseConfig-object, inclusief { }.';
+  }
+};
+settingsOverlay.addEventListener('click', (e) => { if (e.target === settingsOverlay) closeSettings(); });
+
+initSync();
+</script>
+</body>
+</html>
