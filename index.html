@@ -202,6 +202,53 @@ main { max-width: 1100px; margin: 0 auto; padding: 28px 20px; }
   background: rgba(255,255,255,0.9); color: var(--ink);
   font-size: 12px; padding: 5px 9px;
 }
+.photo-thumb-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+  gap: 8px;
+}
+.photo-thumb {
+  position: relative;
+  height: 88px;
+  border-radius: 3px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+}
+.photo-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.photo-thumb .cover-tag {
+  position: absolute; bottom: 3px; left: 3px;
+  font-size: 9px; background: rgba(255,255,255,0.9); color: var(--forest-mid);
+  padding: 1px 5px; border-radius: 2px; font-family: 'IBM Plex Mono', monospace;
+}
+.photo-thumb .remove-btn {
+  position: absolute; top: 3px; right: 3px;
+  width: 20px; height: 20px; border-radius: 50%;
+  background: rgba(0,0,0,0.55); color: #fff;
+  font-size: 13px; line-height: 1; padding: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.photo-thumb-add {
+  height: 88px;
+  border: 2px dashed var(--line);
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--brass-dark);
+  font-size: 22px;
+  background: none;
+}
+.photo-count-badge {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  font-size: 10px;
+  background: rgba(0,0,0,0.6);
+  color: #fff;
+  padding: 2px 7px;
+  border-radius: 10px;
+  font-family: 'IBM Plex Mono', monospace;
+}
 
 .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .field { display: flex; flex-direction: column; gap: 4px; }
@@ -237,6 +284,48 @@ main { max-width: 1100px; margin: 0 auto; padding: 28px 20px; }
 .ai-btn { width: 100%; margin-top: 10px; justify-content: center; }
 .ai-hint { font-size: 12px; margin-top: 6px; color: var(--forest-mid); font-family: 'IBM Plex Mono', monospace; }
 .settings-modal .modal { max-width: 440px; }
+.detail-photo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 8px;
+}
+.detail-photo-grid img {
+  width: 100%;
+  height: 130px;
+  object-fit: cover;
+  border-radius: 3px;
+  border: 1px solid var(--line);
+}
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 16px;
+}
+.detail-grid .full { grid-column: 1 / -1; }
+.detail-field-label {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--brass-dark);
+  font-family: 'IBM Plex Mono', monospace;
+  margin: 0 0 2px;
+}
+.detail-field-value {
+  font-size: 14px;
+  color: var(--text-dark);
+  margin: 0;
+  white-space: pre-wrap;
+}
+.detail-stamp {
+  display: inline-block;
+  border: 1.5px solid var(--rust);
+  color: var(--rust);
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 2px;
+  font-family: 'IBM Plex Mono', monospace;
+  transform: rotate(-4deg);
+}
 .settings-text { font-size: 13px; line-height: 1.5; color: var(--text-dark); }
 .settings-text a { color: var(--brass-dark); }
 .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(0,0,0,0.2); border-top-color: currentColor; border-radius: 50%; animation: spin .7s linear infinite; }
@@ -256,6 +345,7 @@ main { max-width: 1100px; margin: 0 auto; padding: 28px 20px; }
     </div>
     <div class="btn-row">
       <button class="btn-icon" id="settingsBtn" title="AI-instellingen" aria-label="AI-instellingen">⚙</button>
+      <button class="btn-brass" id="exportPdfBtn"><span>⬇</span> Naar PDF</button>
       <button class="btn-brass" id="exportBtn"><span>⬇</span> Naar Excel</button>
       <button class="btn-primary" id="addBtn"><span>+</span> Nieuwe vondst</button>
     </div>
@@ -288,9 +378,9 @@ main { max-width: 1100px; margin: 0 auto; padding: 28px 20px; }
       <div class="error-box" id="errorBox"></div>
 
       <div>
-        <label class="mono" style="font-size:10.5px;text-transform:uppercase;letter-spacing:0.06em;color:var(--brass-dark);display:block;margin-bottom:6px;">Foto</label>
+        <label class="mono" style="font-size:10.5px;text-transform:uppercase;letter-spacing:0.06em;color:var(--brass-dark);display:block;margin-bottom:6px;">Foto's (max 5)</label>
         <div id="photoArea"></div>
-        <input type="file" id="fileInput" accept="image/*" capture="environment" style="display:none;">
+        <input type="file" id="fileInput" accept="image/*" multiple style="display:none;">
         <div id="aiArea"></div>
       </div>
 
@@ -312,6 +402,20 @@ main { max-width: 1100px; margin: 0 auto; padding: 28px 20px; }
     <div class="modal-foot">
       <button class="btn-outline" id="cancelBtn">Annuleren</button>
       <button class="btn-primary" id="saveBtn">Bewaar in vondstenboek</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="detailOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h2 class="serif" id="detailTitle">Vondst</h2>
+      <button id="closeDetail">✕</button>
+    </div>
+    <div class="modal-body" id="detailBody"></div>
+    <div class="modal-foot">
+      <button class="btn-outline" id="detailCloseBtn">Sluiten</button>
+      <button class="btn-primary" id="detailEditBtn">Bewerken</button>
     </div>
   </div>
 </div>
@@ -380,7 +484,8 @@ service cloud.firestore {
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
 // ---------- IndexedDB helpers ----------
 const DB_NAME = 'vondstenboek';
@@ -436,7 +541,9 @@ async function dbDelete(id) {
 // ---------- State ----------
 let items = [];
 let editingId = null;
-let currentPhoto = null;
+let currentPhotos = [];
+const MAX_PHOTOS = 5;
+const PHOTO_MAX_CHARS = 180000;
 
 const grid = document.getElementById('grid');
 const emptyState = document.getElementById('emptyState');
@@ -451,6 +558,7 @@ const fileInput = document.getElementById('fileInput');
 const aiArea = document.getElementById('aiArea');
 const settingsOverlay = document.getElementById('settingsOverlay');
 const apiKeyInput = document.getElementById('apiKeyInput');
+const detailOverlay = document.getElementById('detailOverlay');
 const firebaseConfigInput = document.getElementById('firebaseConfigInput');
 const syncStatus = document.getElementById('syncStatus');
 const syncBadge = document.getElementById('syncBadge');
@@ -468,6 +576,12 @@ const IDENTIFY_PROMPT = `Je bent een expert in antiek, vintage verzamelobjecten,
 Wees realistisch en voorzichtig met waardeschattingen; het zijn indicaties, geen taxaties.`;
 
 function fmtNum(id) { return 'f_' + id; }
+
+function getItemPhotos(item) {
+  if (item && Array.isArray(item.photos) && item.photos.length) return item.photos;
+  if (item && item.photoData) return [item.photoData];
+  return [];
+}
 
 function formatInventoryNumber(n) {
   return 'VB-' + String(n).padStart(4, '0');
@@ -657,22 +771,33 @@ async function analyzeWithGemini(dataUrl, apiKey) {
 }
 
 function renderPhotoArea() {
-  if (currentPhoto) {
-    photoArea.innerHTML = `
-      <div class="photo-preview-wrap">
-        <img src="${currentPhoto}" alt="Vondst">
-        <button class="change-btn" id="changePhotoBtn" type="button">Andere foto</button>
-      </div>`;
-    document.getElementById('changePhotoBtn').onclick = () => fileInput.click();
-  } else {
-    photoArea.innerHTML = `<button class="photo-drop" id="photoDropBtn" type="button">📷 Foto toevoegen</button>`;
-    document.getElementById('photoDropBtn').onclick = () => fileInput.click();
-  }
+  const thumbs = currentPhotos.map((src, idx) => `
+    <div class="photo-thumb">
+      <img src="${src}" alt="Foto ${idx + 1}">
+      ${idx === 0 ? '<span class="cover-tag">omslag</span>' : ''}
+      <button class="remove-btn" type="button" data-remove-photo="${idx}" aria-label="Verwijder foto">✕</button>
+    </div>`).join('');
+  const addTile = currentPhotos.length < MAX_PHOTOS
+    ? `<button class="photo-thumb-add" id="photoAddBtn" type="button" aria-label="Foto toevoegen">+</button>`
+    : '';
+  photoArea.innerHTML = currentPhotos.length
+    ? `<div class="photo-thumb-grid">${thumbs}${addTile}</div>`
+    : `<button class="photo-drop" id="photoDropBtn" type="button">📷 Foto('s) toevoegen</button>`;
+
+  const addBtn = document.getElementById('photoAddBtn') || document.getElementById('photoDropBtn');
+  if (addBtn) addBtn.onclick = () => fileInput.click();
+
+  photoArea.querySelectorAll('[data-remove-photo]').forEach((btn) => {
+    btn.onclick = () => {
+      currentPhotos.splice(Number(btn.dataset.removePhoto), 1);
+      renderPhotoArea();
+    };
+  });
   renderAiArea();
 }
 
 function renderAiArea() {
-  if (!currentPhoto) { aiArea.innerHTML = ''; return; }
+  if (!currentPhotos.length) { aiArea.innerHTML = ''; return; }
   const hasKey = !!getApiKey();
   if (analyzing) {
     aiArea.innerHTML = `<button class="btn-brass ai-btn" disabled><span class="spinner"></span> AI bekijkt de foto…</button>`;
@@ -682,17 +807,20 @@ function renderAiArea() {
   document.getElementById('analyzeBtn').onclick = handleAnalyze;
   if (!hasKey) {
     aiArea.innerHTML += `<p class="ai-hint">Nog geen API-key ingesteld — klik op ⚙ rechtsboven om er een toe te voegen.</p>`;
+  } else if (currentPhotos.length > 1) {
+    aiArea.innerHTML += `<p class="ai-hint">De AI bekijkt alleen de omslagfoto (de eerste).</p>`;
   }
 }
 
 async function handleAnalyze() {
   const apiKey = getApiKey();
   if (!apiKey) { showError('Stel eerst een gratis Gemini API-key in via het ⚙-icoon rechtsboven.'); return; }
+  if (!currentPhotos.length) return;
   clearError();
   analyzing = true;
   renderAiArea();
   try {
-    const s = await analyzeWithGemini(currentPhoto, apiKey);
+    const s = await analyzeWithGemini(currentPhotos[0], apiKey);
     document.getElementById('f_naam').value = s.naam || document.getElementById('f_naam').value;
     document.getElementById('f_categorie').value = s.categorie || '';
     document.getElementById('f_merkMaker').value = s.merkMaker || '';
@@ -711,21 +839,30 @@ async function handleAnalyze() {
 }
 
 fileInput.addEventListener('change', async (e) => {
-  const file = e.target.files && e.target.files[0];
-  if (!file) return;
+  const files = Array.from(e.target.files || []);
+  if (!files.length) return;
   clearError();
+  const room = MAX_PHOTOS - currentPhotos.length;
+  const toProcess = files.slice(0, room);
+  if (files.length > room) {
+    showError(`Je kunt maximaal ${MAX_PHOTOS} foto's per vondst toevoegen. De eerste ${room > 0 ? room : 0} van je selectie zijn toegevoegd.`);
+  }
   try {
-    currentPhoto = await resizeImageWithLimit(file);
+    for (const file of toProcess) {
+      const dataUrl = await resizeImageWithLimit(file, PHOTO_MAX_CHARS);
+      currentPhotos.push(dataUrl);
+    }
     renderPhotoArea();
   } catch (err) {
-    showError('De foto kon niet worden geladen. Probeer een andere foto.');
+    showError('Een van de foto\'s kon niet worden geladen. Probeer het opnieuw.');
+    renderPhotoArea();
   }
   e.target.value = '';
 });
 
 function openForm(item) {
   clearError();
-  currentPhoto = item ? item.photoData : null;
+  currentPhotos = item ? getItemPhotos(item).slice() : [];
   editingId = item ? item.id : null;
   modalTitle.textContent = item ? 'Vondst bewerken' : 'Nieuwe vondst';
   fieldIds.forEach((id) => {
@@ -739,8 +876,54 @@ function openForm(item) {
 function closeForm() {
   overlay.classList.remove('open');
   editingId = null;
-  currentPhoto = null;
+  currentPhotos = [];
   analyzing = false;
+}
+
+function detailField(label, value) {
+  if (value === null || value === undefined || value === '') return '';
+  return `<div><p class="detail-field-label">${escapeHtml(label)}</p><p class="detail-field-value">${escapeHtml(String(value))}</p></div>`;
+}
+
+function openDetail(item) {
+  const detailBody = document.getElementById('detailBody');
+  document.getElementById('detailTitle').textContent = item.naam || 'Vondst';
+  const photos = getItemPhotos(item);
+  const photoHtml = photos.length
+    ? `<div class="detail-photo-grid">${photos.map((src, i) => `<img src="${src}" alt="Foto ${i + 1}">`).join('')}</div>`
+    : `<p class="detail-field-value">Geen foto</p>`;
+  let waardeText = '';
+  if (item.waardeMin || item.waardeMax) {
+    waardeText = `€ ${item.waardeMin ?? '?'}${item.waardeMax ? ' – € ' + item.waardeMax : ''}`;
+  }
+  const datumText = item.datumToegevoegd ? new Date(item.datumToegevoegd).toLocaleDateString('nl-NL') : '';
+
+  detailBody.innerHTML = `
+    <span class="detail-stamp">${item.inventarisnummer || ''}</span>
+    ${photoHtml}
+    <div class="detail-grid">
+      ${detailField('Categorie', item.categorie)}
+      ${detailField('Merk / maker', item.merkMaker)}
+      ${detailField('Periode', item.periode)}
+      ${detailField('Materiaal', item.materiaal)}
+      ${detailField('Conditie', item.conditie)}
+      ${detailField('Geschatte waarde', waardeText)}
+      ${detailField('Aankoopprijs', item.aankoopprijs ? '€ ' + item.aankoopprijs : '')}
+      ${detailField('Locatie in huis', item.locatie)}
+      <div class="full">${detailField('Notities', item.notities)}</div>
+      <div class="full">${detailField('AI-toelichting', item.toelichting)}</div>
+      <div class="full">${detailField('Toegevoegd op', datumText)}</div>
+    </div>
+  `;
+  document.getElementById('detailEditBtn').onclick = () => {
+    closeDetail();
+    openForm(item);
+  };
+  detailOverlay.classList.add('open');
+}
+
+function closeDetail() {
+  detailOverlay.classList.remove('open');
 }
 
 async function loadItems() {
@@ -806,6 +989,7 @@ function render() {
   });
 
   document.getElementById('exportBtn').disabled = items.length === 0;
+  document.getElementById('exportPdfBtn').disabled = items.length === 0;
 
   if (filtered.length === 0) {
     grid.innerHTML = '';
@@ -822,19 +1006,22 @@ function render() {
   emptyState.style.display = 'none';
 
   grid.innerHTML = filtered.map((it) => {
-    const photoHtml = it.photoData
-      ? `<img src="${it.photoData}" alt="${escapeHtml(it.naam)}">`
+    const photos = getItemPhotos(it);
+    const photoHtml = photos.length
+      ? `<img src="${photos[0]}" alt="${escapeHtml(it.naam)}">`
       : `<div class="photo-placeholder">geen foto</div>`;
+    const countBadge = photos.length > 1 ? `<span class="photo-count-badge">📷 ${photos.length}</span>` : '';
     const valueHtml = (it.waardeMin || it.waardeMax)
       ? `<p class="value">€ ${it.waardeMin ?? '?'}${it.waardeMax ? ' – € ' + it.waardeMax : ''}</p>`
       : '';
     const locHtml = it.locatie ? `<p class="loc">${escapeHtml(it.locatie)}</p>` : '';
     const catHtml = it.categorie ? `<span class="tag">${escapeHtml(it.categorie)}</span>` : '';
     return `
-      <div class="card">
+      <div class="card" data-view="${it.id}">
         <div class="photo-wrap">
           ${photoHtml}
           <span class="stamp mono">${it.inventarisnummer}</span>
+          ${countBadge}
         </div>
         <div class="card-body">
           <h3 class="serif">${escapeHtml(it.naam)}</h3>
@@ -848,6 +1035,15 @@ function render() {
         </div>
       </div>`;
   }).join('');
+
+  grid.querySelectorAll('[data-view]').forEach((card) => {
+    card.style.cursor = 'pointer';
+    card.onclick = (e) => {
+      if (e.target.closest('[data-edit]') || e.target.closest('[data-delete]')) return;
+      const item = items.find((i) => i.id === card.dataset.view);
+      if (item) openDetail(item);
+    };
+  });
 
   grid.querySelectorAll('[data-edit]').forEach((btn) => {
     btn.onclick = () => {
@@ -875,7 +1071,7 @@ function escapeHtml(str) {
 
 async function handleSave() {
   clearError();
-  if (!currentPhoto) { showError('Voeg eerst een foto toe.'); return; }
+  if (!currentPhotos.length) { showError('Voeg eerst een foto toe.'); return; }
   const naam = document.getElementById('f_naam').value.trim();
   if (!naam) { showError('Geef het object een naam.'); return; }
 
@@ -887,7 +1083,7 @@ async function handleSave() {
     id,
     volgnummer,
     inventarisnummer: existing ? existing.inventarisnummer : formatInventoryNumber(volgnummer),
-    photoData: currentPhoto,
+    photos: currentPhotos.slice(),
     naam,
     categorie: document.getElementById('f_categorie').value.trim(),
     merkMaker: document.getElementById('f_merkMaker').value.trim(),
@@ -911,32 +1107,210 @@ async function handleSave() {
   }
 }
 
-function handleExport() {
-  const rows = items.map((it) => ({
-    'Inventarisnummer': it.inventarisnummer,
-    'Naam': it.naam,
-    'Categorie': it.categorie,
-    'Merk/Maker': it.merkMaker,
-    'Periode': it.periode,
-    'Materiaal': it.materiaal,
-    'Conditie': it.conditie,
-    'Geschatte waarde min (€)': it.waardeMin ?? '',
-    'Geschatte waarde max (€)': it.waardeMax ?? '',
-    'Aankoopprijs (€)': it.aankoopprijs ?? '',
-    'Locatie in huis': it.locatie,
-    'Notities': it.notities,
-    'AI-toelichting': it.toelichting,
-    'Datum toegevoegd': it.datumToegevoegd ? new Date(it.datumToegevoegd).toLocaleDateString('nl-NL') : '',
-  }));
-  const ws = XLSX.utils.json_to_sheet(rows);
-  ws['!cols'] = [
-    { wch: 14 }, { wch: 28 }, { wch: 16 }, { wch: 18 }, { wch: 12 },
-    { wch: 14 }, { wch: 16 }, { wch: 16 }, { wch: 16 }, { wch: 14 },
-    { wch: 18 }, { wch: 32 }, { wch: 32 }, { wch: 14 },
-  ];
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Vondstenboek');
-  XLSX.writeFile(wb, `vondstenboek-${new Date().toISOString().slice(0,10)}.xlsx`);
+function triggerDownload(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+async function handleExport() {
+  const exportBtnEl = document.getElementById('exportBtn');
+  exportBtnEl.disabled = true;
+  try {
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet('Vondstenboek');
+    sheet.columns = [
+      { header: 'Inventarisnummer', key: 'inventarisnummer', width: 14 },
+      { header: 'Foto', key: 'foto', width: 13 },
+      { header: 'Naam', key: 'naam', width: 26 },
+      { header: 'Categorie', key: 'categorie', width: 16 },
+      { header: 'Merk/Maker', key: 'merkMaker', width: 18 },
+      { header: 'Periode', key: 'periode', width: 12 },
+      { header: 'Materiaal', key: 'materiaal', width: 14 },
+      { header: 'Conditie', key: 'conditie', width: 16 },
+      { header: 'Geschatte waarde min (€)', key: 'waardeMin', width: 16 },
+      { header: 'Geschatte waarde max (€)', key: 'waardeMax', width: 16 },
+      { header: 'Aankoopprijs (€)', key: 'aankoopprijs', width: 14 },
+      { header: 'Locatie in huis', key: 'locatie', width: 18 },
+      { header: 'Notities', key: 'notities', width: 32 },
+      { header: 'AI-toelichting', key: 'toelichting', width: 32 },
+      { header: 'Datum toegevoegd', key: 'datum', width: 14 },
+    ];
+    sheet.getRow(1).font = { bold: true };
+
+    items.forEach((it, idx) => {
+      const rowNumber = idx + 2;
+      sheet.addRow({
+        inventarisnummer: it.inventarisnummer,
+        foto: '',
+        naam: it.naam,
+        categorie: it.categorie,
+        merkMaker: it.merkMaker,
+        periode: it.periode,
+        materiaal: it.materiaal,
+        conditie: it.conditie,
+        waardeMin: it.waardeMin ?? '',
+        waardeMax: it.waardeMax ?? '',
+        aankoopprijs: it.aankoopprijs ?? '',
+        locatie: it.locatie,
+        notities: it.notities,
+        toelichting: it.toelichting,
+        datum: it.datumToegevoegd ? new Date(it.datumToegevoegd).toLocaleDateString('nl-NL') : '',
+      });
+      sheet.getRow(rowNumber).height = 58;
+
+      const photos = getItemPhotos(it);
+      if (photos.length) {
+        try {
+          const imageId = workbook.addImage({ base64: photos[0], extension: 'jpeg' });
+          sheet.addImage(imageId, {
+            tl: { col: 1, row: rowNumber - 1 },
+            ext: { width: 66, height: 66 },
+          });
+        } catch (imgErr) { /* foto overslaan als embedden mislukt */ }
+      }
+    });
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    triggerDownload(blob, `vondstenboek-${new Date().toISOString().slice(0, 10)}.xlsx`);
+  } catch (err) {
+    showGlobalError('Exporteren naar Excel is niet gelukt: ' + (err && err.message ? err.message : String(err)));
+  } finally {
+    exportBtnEl.disabled = items.length === 0;
+  }
+}
+
+function getImageDims(dataUrl) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve({ w: img.naturalWidth || 1, h: img.naturalHeight || 1 });
+    img.onerror = () => resolve({ w: 1, h: 1 });
+    img.src = dataUrl;
+  });
+}
+
+async function handleExportPdf() {
+  if (!items.length) return;
+  const btn = document.getElementById('exportPdfBtn');
+  btn.disabled = true;
+  try {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+    const marginX = 18;
+    const pageW = doc.internal.pageSize.getWidth();
+    const pageH = doc.internal.pageSize.getHeight();
+    const contentW = pageW - marginX * 2;
+
+    for (let i = 0; i < items.length; i++) {
+      const it = items[i];
+      if (i > 0) doc.addPage();
+      let y = 20;
+
+      doc.setFont('courier', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(156, 59, 46);
+      doc.text(it.inventarisnummer || '', pageW - marginX, y, { align: 'right' });
+
+      doc.setFont('times', 'bold');
+      doc.setFontSize(20);
+      doc.setTextColor(27, 42, 30);
+      const nameLines = doc.splitTextToSize(it.naam || 'Zonder naam', contentW - 25);
+      doc.text(nameLines, marginX, y);
+      y += nameLines.length * 8 + 4;
+
+      doc.setDrawColor(184, 135, 59);
+      doc.setLineWidth(0.4);
+      doc.line(marginX, y, pageW - marginX, y);
+      y += 8;
+
+      const photos = getItemPhotos(it);
+      if (photos.length) {
+        const maxImgW = 80, maxImgH = 80;
+        const dims = await getImageDims(photos[0]);
+        let w = maxImgW, h = (dims.h / dims.w) * w;
+        if (h > maxImgH) { h = maxImgH; w = (dims.w / dims.h) * h; }
+        doc.addImage(photos[0], 'JPEG', marginX, y, w, h);
+
+        if (photos.length > 1) {
+          const thumbSize = 22;
+          let tx = marginX + w + 6;
+          let ty = y;
+          for (let p = 1; p < photos.length && p <= 4; p++) {
+            if (tx + thumbSize > pageW - marginX) break;
+            const tdims = await getImageDims(photos[p]);
+            let tw = thumbSize, th = (tdims.h / tdims.w) * tw;
+            if (th > thumbSize) { th = thumbSize; tw = (tdims.w / tdims.h) * th; }
+            doc.addImage(photos[p], 'JPEG', tx, ty, tw, th);
+            ty += thumbSize + 4;
+            if (ty + thumbSize > y + h) { ty = y; tx += thumbSize + 4; }
+          }
+        }
+        y += h + 10;
+      }
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.setTextColor(36, 31, 23);
+
+      const waardeText = (it.waardeMin || it.waardeMax) ? `€ ${it.waardeMin ?? '?'}${it.waardeMax ? ' – € ' + it.waardeMax : ''}` : '';
+      const fields = [
+        ['Categorie', it.categorie],
+        ['Merk / maker', it.merkMaker],
+        ['Periode', it.periode],
+        ['Materiaal', it.materiaal],
+        ['Conditie', it.conditie],
+        ['Geschatte waarde', waardeText],
+        ['Aankoopprijs', it.aankoopprijs ? `€ ${it.aankoopprijs}` : ''],
+        ['Locatie in huis', it.locatie],
+        ['Toegevoegd op', it.datumToegevoegd ? new Date(it.datumToegevoegd).toLocaleDateString('nl-NL') : ''],
+      ].filter(([, v]) => v);
+
+      fields.forEach(([label, value]) => {
+        if (y > pageH - 25) { doc.addPage(); y = 20; }
+        doc.setFont('helvetica', 'bold');
+        doc.text(label + ':', marginX, y);
+        doc.setFont('helvetica', 'normal');
+        const valueLines = doc.splitTextToSize(String(value), contentW - 55);
+        doc.text(valueLines, marginX + 50, y);
+        y += Math.max(6, valueLines.length * 5);
+      });
+
+      if (it.notities) {
+        y += 3;
+        if (y > pageH - 25) { doc.addPage(); y = 20; }
+        doc.setFont('helvetica', 'bold');
+        doc.text('Notities:', marginX, y);
+        y += 5;
+        doc.setFont('helvetica', 'normal');
+        const noteLines = doc.splitTextToSize(it.notities, contentW);
+        if (y + noteLines.length * 5 > pageH - 15) { doc.addPage(); y = 20; }
+        doc.text(noteLines, marginX, y);
+        y += noteLines.length * 5;
+      }
+
+      if (it.toelichting) {
+        y += 3;
+        if (y > pageH - 25) { doc.addPage(); y = 20; }
+        doc.setFont('helvetica', 'italic');
+        doc.setTextColor(143, 107, 44);
+        const aiLines = doc.splitTextToSize('AI: ' + it.toelichting, contentW);
+        if (y + aiLines.length * 5 > pageH - 15) { doc.addPage(); y = 20; }
+        doc.text(aiLines, marginX, y);
+      }
+    }
+
+    doc.save(`vondstenboek-${new Date().toISOString().slice(0, 10)}.pdf`);
+  } catch (err) {
+    showGlobalError('PDF maken is niet gelukt: ' + (err && err.message ? err.message : String(err)));
+  } finally {
+    btn.disabled = false;
+  }
 }
 
 // ---------- Events ----------
@@ -945,8 +1319,13 @@ document.getElementById('closeModal').onclick = closeForm;
 document.getElementById('cancelBtn').onclick = closeForm;
 document.getElementById('saveBtn').onclick = handleSave;
 document.getElementById('exportBtn').onclick = handleExport;
+document.getElementById('exportPdfBtn').onclick = handleExportPdf;
 searchInput.addEventListener('input', render);
 overlay.addEventListener('click', (e) => { if (e.target === overlay) closeForm(); });
+
+document.getElementById('closeDetail').onclick = closeDetail;
+document.getElementById('detailCloseBtn').onclick = closeDetail;
+detailOverlay.addEventListener('click', (e) => { if (e.target === detailOverlay) closeDetail(); });
 
 function updateGeminiStatus() {
   const geminiStatus = document.getElementById('geminiStatus');
