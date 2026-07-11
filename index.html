@@ -616,27 +616,44 @@ async function analyzeWithGemini(dataUrl, apiKey) {
   if (!match) throw new Error('Ongeldige afbeelding');
   const [, mimeType, base64] = match;
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`;
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{
-        parts: [
-          { text: IDENTIFY_PROMPT },
-          { inline_data: { mime_type: mimeType, data: base64 } },
-        ],
-      }],
-    }),
-  });
+  let response;
+  try {
+    response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{
+          parts: [
+            { text: IDENTIFY_PROMPT },
+            { inline_data: { mime_type: mimeType, data: base64 } },
+          ],
+        }],
+      }),
+    });
+  } catch (networkErr) {
+    throw new Error('Geen verbinding met Google kunnen maken. Controleer je internetverbinding.');
+  }
   if (!response.ok) {
-    if (response.status === 400 || response.status === 403) throw new Error('De API-key lijkt ongeldig. Controleer deze bij instellingen.');
-    throw new Error('AI-analyse mislukt');
+    let detail = '';
+    try {
+      const errBody = await response.json();
+      detail = errBody?.error?.message || '';
+    } catch (e) { /* geen JSON-body */ }
+    throw new Error(`AI-analyse mislukt (${response.status})${detail ? ': ' + detail : ''}`);
   }
   const data = await response.json();
-  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!text) throw new Error('Geen antwoord van de AI ontvangen');
+  const candidate = data?.candidates?.[0];
+  if (!candidate) {
+    throw new Error('Geen antwoord van de AI ontvangen. Mogelijk werd de foto geweigerd (' + (data?.promptFeedback?.blockReason || 'onbekende reden') + ').');
+  }
+  const text = candidate?.content?.parts?.[0]?.text;
+  if (!text) throw new Error('Geen tekstantwoord van de AI ontvangen (finishReason: ' + (candidate?.finishReason || 'onbekend') + ').');
   const clean = text.replace(/```json|```/g, '').trim();
-  return JSON.parse(clean);
+  try {
+    return JSON.parse(clean);
+  } catch (parseErr) {
+    throw new Error('Het antwoord van de AI kon niet worden gelezen: ' + clean.slice(0, 120));
+  }
 }
 
 function renderPhotoArea() {
@@ -686,7 +703,7 @@ async function handleAnalyze() {
     document.getElementById('f_waardeMax').value = s.waardeMax ?? '';
     document.getElementById('f_toelichting').value = s.toelichting || '';
   } catch (err) {
-    showError('De AI kon deze foto niet analyseren. Vul de gegevens eventueel handmatig aan, of probeer het opnieuw.');
+    showError(err && err.message ? err.message : 'De AI kon deze foto niet analyseren. Vul de gegevens eventueel handmatig aan, of probeer het opnieuw.');
   } finally {
     analyzing = false;
     renderAiArea();
