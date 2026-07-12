@@ -2,535 +2,188 @@
 <html lang="nl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Vondstenboek</title>
-<link rel="manifest" href="data:application/manifest+json,{%22name%22:%22Vondstenboek%22,%22short_name%22:%22Vondstenboek%22,%22display%22:%22standalone%22,%22start_url%22:%22.%22,%22background_color%22:%22%23EFE7D2%22,%22theme_color%22:%221B2A1E%22}">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Platen">
+<title>Platencollectie</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&family=Work+Sans:wght@400;500;600&display=swap');
-
-:root {
-  --ink: #1B2A1E;
-  --paper: #EFE7D2;
-  --cream: #F8F3E6;
-  --brass: #B8873B;
-  --brass-dark: #8F6B2C;
-  --rust: #9C3B2E;
-  --forest-mid: #3A5745;
-  --text-dark: #241F17;
-  --line: #D9CDAE;
-}
-* { box-sizing: border-box; }
-body {
-  margin: 0;
-  background: var(--paper);
-  color: var(--text-dark);
-  font-family: 'Work Sans', sans-serif;
-  padding-bottom: 60px;
-}
-.serif { font-family: 'Fraunces', serif; }
-.mono { font-family: 'IBM Plex Mono', monospace; }
-
-header {
-  padding: 24px 20px;
-  border-bottom: 1px solid var(--line);
-}
-.header-inner {
-  max-width: 1100px;
-  margin: 0 auto;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: flex-end;
-  gap: 16px;
-}
-.eyebrow {
-  font-size: 11px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--brass-dark);
-  margin: 0 0 4px;
-}
-h1 {
-  font-size: 32px;
-  font-weight: 600;
-  color: var(--ink);
-  margin: 0;
-}
-.btn-row { display: flex; gap: 8px; }
-button {
-  font-family: 'Work Sans', sans-serif;
-  border: none;
-  cursor: pointer;
-  border-radius: 3px;
-  padding: 10px 16px;
-  font-size: 14px;
-  font-weight: 500;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-.btn-primary { background: var(--ink); color: var(--cream); }
-.btn-primary:hover { background: var(--forest-mid); }
-.btn-brass { background: var(--brass); color: var(--ink); }
-.btn-brass:hover { background: var(--brass-dark); color: var(--cream); }
-.btn-outline { background: transparent; border: 1px solid var(--line); color: var(--ink); padding: 6px 10px; font-size: 12px; }
-.btn-outline.danger { color: var(--rust); }
-button:disabled { opacity: 0.4; cursor: default; }
-
-main { max-width: 1100px; margin: 0 auto; padding: 28px 20px; }
-
-.search-wrap { max-width: 380px; margin-bottom: 24px; position: relative; }
-.search-wrap input {
-  width: 100%;
-  padding: 10px 12px 10px 34px;
-  border: 1px solid var(--line);
-  background: var(--cream);
-  border-radius: 3px;
-  font-size: 14px;
-  font-family: 'Work Sans', sans-serif;
-}
-.search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--brass-dark); font-size: 14px; }
-
-.empty-state { text-align: center; padding: 80px 20px; }
-.empty-state p.title { font-size: 20px; margin-bottom: 6px; color: var(--forest-mid); }
-.empty-state p.hint { font-size: 13px; color: var(--brass-dark); }
-
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 24px;
-}
-.card {
-  background: var(--cream);
-  border: 1px solid var(--line);
-  border-radius: 3px;
-  overflow: hidden;
-  transition: transform .15s ease, box-shadow .15s ease;
-  display: flex;
-  flex-direction: column;
-}
-.card:hover { transform: translateY(-3px); box-shadow: 0 10px 24px -12px rgba(27,42,30,0.35); }
-.photo-wrap { position: relative; }
-.photo-wrap img, .photo-placeholder {
-  width: 100%;
-  height: 192px;
-  object-fit: cover;
-  display: block;
-  clip-path: polygon(0% 0%,100% 0%,100% 93%,95% 97%,90% 93%,85% 97%,80% 93%,75% 97%,70% 93%,65% 97%,60% 93%,55% 97%,50% 93%,45% 97%,40% 93%,35% 97%,30% 93%,25% 97%,20% 93%,15% 97%,10% 93%,5% 97%,0% 93%);
-}
-.photo-placeholder { background: var(--line); display: flex; align-items: center; justify-content: center; color: var(--brass-dark); font-size: 12px; }
-.stamp {
-  position: absolute;
-  top: 8px;
-  left: 8px;
-  border: 1.5px solid var(--rust);
-  color: var(--rust);
-  background: rgba(255,255,255,0.88);
-  font-size: 10px;
-  padding: 3px 8px;
-  border-radius: 2px;
-}
-.card-body { padding: 14px; flex: 1; display: flex; flex-direction: column; gap: 3px; }
-.card-body h3 { font-size: 17px; font-weight: 600; color: var(--ink); margin: 0; line-height: 1.2; }
-.tag { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--brass-dark); }
-.value { font-size: 14px; color: var(--rust); margin: 2px 0 0; }
-.loc { font-size: 12px; color: var(--forest-mid); margin: 2px 0 0; }
-.card-actions { margin-top: 10px; display: flex; gap: 6px; }
-
-/* Modal */
-.overlay {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(27,42,30,0.55);
-  z-index: 50;
-  align-items: flex-start;
-  justify-content: center;
-  overflow-y: auto;
-  padding: 16px;
-}
-.overlay.open { display: flex; }
-.modal {
-  background: var(--cream);
-  width: 100%;
-  max-width: 560px;
-  border-radius: 3px;
-  margin: 24px 0;
-}
-.modal-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px 20px;
-  border-bottom: 1px solid var(--line);
-}
-.modal-head h2 { font-size: 20px; font-weight: 600; color: var(--ink); margin: 0; }
-.modal-head button { background: none; padding: 4px; font-size: 18px; color: var(--ink); }
-.modal-body { padding: 16px 20px; display: flex; flex-direction: column; gap: 14px; }
-.error-box {
-  display: none;
-  align-items: flex-start;
-  gap: 8px;
-  font-size: 13px;
-  background: #F4E4DE;
-  color: var(--rust);
-  padding: 10px 12px;
-  border-radius: 3px;
-}
-.error-box.show { display: flex; }
-
-.photo-drop {
-  width: 100%;
-  height: 170px;
-  border: 2px dashed var(--line);
-  border-radius: 3px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  color: var(--brass-dark);
-  font-size: 14px;
-  cursor: pointer;
-  background: none;
-}
-.photo-preview-wrap { position: relative; }
-.photo-preview-wrap img { width: 100%; height: 208px; object-fit: cover; border-radius: 3px; display: block; }
-.photo-preview-wrap .change-btn {
-  position: absolute; bottom: 8px; right: 8px;
-  background: rgba(255,255,255,0.9); color: var(--ink);
-  font-size: 12px; padding: 5px 9px;
-}
-.photo-thumb-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
-  gap: 8px;
-}
-.photo-thumb {
-  position: relative;
-  height: 88px;
-  border-radius: 3px;
-  overflow: hidden;
-  border: 1px solid var(--line);
-}
-.photo-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.photo-thumb .cover-tag {
-  position: absolute; bottom: 3px; left: 3px;
-  font-size: 9px; background: rgba(255,255,255,0.9); color: var(--forest-mid);
-  padding: 1px 5px; border-radius: 2px; font-family: 'IBM Plex Mono', monospace;
-}
-.photo-thumb .remove-btn {
-  position: absolute; top: 3px; right: 3px;
-  width: 20px; height: 20px; border-radius: 50%;
-  background: rgba(0,0,0,0.55); color: #fff;
-  font-size: 13px; line-height: 1; padding: 0;
-  display: flex; align-items: center; justify-content: center;
-}
-.photo-thumb-add {
-  height: 88px;
-  border: 2px dashed var(--line);
-  border-radius: 3px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--brass-dark);
-  font-size: 22px;
-  background: none;
-}
-.photo-count-badge {
-  position: absolute;
-  bottom: 8px;
-  right: 8px;
-  font-size: 10px;
-  background: rgba(0,0,0,0.6);
-  color: #fff;
-  padding: 2px 7px;
-  border-radius: 10px;
-  font-family: 'IBM Plex Mono', monospace;
-}
-
-.field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.field { display: flex; flex-direction: column; gap: 4px; }
-.field.full { grid-column: 1 / -1; }
-.field label {
-  font-size: 10.5px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--brass-dark);
-  font-family: 'IBM Plex Mono', monospace;
-}
-.field input, .field textarea {
-  background: var(--cream);
-  border: 1px solid var(--line);
-  border-radius: 3px;
-  padding: 8px 10px;
-  font-size: 14px;
-  font-family: 'Work Sans', sans-serif;
-  color: var(--text-dark);
-}
-.field input:focus, .field textarea:focus { outline: 2px solid var(--brass); outline-offset: 1px; }
-
-.modal-foot {
-  padding: 14px 20px;
-  border-top: 1px solid var(--line);
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-}
-
-.btn-icon { background: transparent; border: 1px solid var(--line); color: var(--ink); padding: 10px 12px; font-size: 15px; }
-.btn-icon:hover { background: var(--cream); }
-.ai-btn { width: 100%; margin-top: 10px; justify-content: center; }
-.ai-hint { font-size: 12px; margin-top: 6px; color: var(--forest-mid); font-family: 'IBM Plex Mono', monospace; }
-.settings-modal .modal { max-width: 440px; }
-.detail-photo-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-  gap: 8px;
-}
-.detail-photo-grid img {
-  width: 100%;
-  height: 130px;
-  object-fit: cover;
-  border-radius: 3px;
-  border: 1px solid var(--line);
-}
-.detail-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px 16px;
-}
-.detail-grid .full { grid-column: 1 / -1; }
-.detail-field-label {
-  font-size: 10.5px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--brass-dark);
-  font-family: 'IBM Plex Mono', monospace;
-  margin: 0 0 2px;
-}
-.detail-field-value {
-  font-size: 14px;
-  color: var(--text-dark);
-  margin: 0;
-  white-space: pre-wrap;
-}
-.detail-stamp {
-  display: inline-block;
-  border: 1.5px solid var(--rust);
-  color: var(--rust);
-  font-size: 11px;
-  padding: 2px 8px;
-  border-radius: 2px;
-  font-family: 'IBM Plex Mono', monospace;
-}
-.settings-text { font-size: 13px; line-height: 1.5; color: var(--text-dark); }
-.batch-modal .modal { max-width: 640px; }
-.batch-drop {
-  width: 100%;
-  height: 140px;
-  border: 2px dashed var(--line);
-  border-radius: 3px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  color: var(--brass-dark);
-  font-size: 14px;
-  cursor: pointer;
-  background: none;
-}
-.batch-list { display: flex; flex-direction: column; gap: 10px; }
-.batch-card {
-  display: flex;
-  gap: 10px;
-  background: var(--paper);
-  border: 1px solid var(--line);
-  border-radius: 3px;
-  padding: 8px;
-}
-.batch-card img { width: 64px; height: 64px; object-fit: cover; border-radius: 3px; flex-shrink: 0; }
-.batch-card-fields { flex: 1; display: flex; flex-direction: column; gap: 4px; }
-.batch-card-row { display: flex; gap: 6px; }
-.batch-card input {
-  background: var(--cream);
-  border: 1px solid var(--line);
-  border-radius: 3px;
-  padding: 5px 7px;
-  font-size: 12.5px;
-  font-family: 'Work Sans', sans-serif;
-  color: var(--text-dark);
-  flex: 1;
-  min-width: 0;
-}
-.batch-card-remove {
-  background: none;
-  border: none;
-  color: var(--rust);
-  font-size: 16px;
-  padding: 0 4px;
-  flex-shrink: 0;
-  align-self: flex-start;
-}
-.batch-card-err { font-size: 11px; color: var(--rust); }
-.batch-card.analyzing { opacity: 0.6; }
-.batch-toolbar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
-.settings-text a { color: var(--brass-dark); }
-.spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(0,0,0,0.2); border-top-color: currentColor; border-radius: 50%; animation: spin .7s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
-
-@media (prefers-reduced-motion: reduce) { .card { transition: none; } .spinner { animation: none; } }
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#080808;color:#fff;min-height:100vh}
+header{background:#111;position:sticky;top:0;z-index:100;border-bottom:2px solid #c0392b;padding:12px 14px 0}
+.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.logo{display:flex;align-items:center;gap:10px;font-size:20px;font-weight:800}
+.logo span{color:#c0392b}
+.teller{font-size:12px;color:#d4ac0d;font-weight:700;background:rgba(212,172,13,.12);padding:5px 12px;border-radius:20px;border:1px solid rgba(212,172,13,.25)}
+.zoek{position:relative;margin-bottom:8px}
+.zoek input{width:100%;padding:11px 40px;background:#1a1a1f;border:1.5px solid #222;border-radius:14px;color:#fff;font-size:16px;outline:none}
+.zoek input:focus{border-color:#c0392b}
+.zoek input::placeholder{color:#444}
+.zoek .ico{position:absolute;left:13px;top:50%;transform:translateY(-50%);font-size:16px;pointer-events:none}
+.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{padding:5px 13px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;border:1.5px solid #222;background:transparent;color:#888}
+.chip.on{background:#c0392b;border-color:#c0392b;color:#fff}
+.tabs{display:flex}
+.tab{flex:1;padding:10px 4px;font-size:12px;font-weight:700;cursor:pointer;border:none;background:transparent;color:#555;border-bottom:2px solid transparent}
+.tab.on{color:#fff;border-bottom-color:#c0392b}
+main{padding:8px 12px 80px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
+.stat{background:#111;border:1px solid #222;border-radius:14px;padding:12px;text-align:center}
+.stat .n{font-size:22px;font-weight:800}
+.stat .l{font-size:10px;color:#888;font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+.groep{font-size:11px;font-weight:800;color:#444;letter-spacing:1.2px;text-transform:uppercase;padding:12px 2px 5px}
+.kaart{background:#111;border-radius:16px;margin-bottom:8px;border:1px solid #222;overflow:hidden;cursor:pointer}
+.kaart.open{border-color:#c0392b}
+.kaart-top{display:flex;align-items:center;padding:12px 14px;gap:12px}
+.thumb{width:52px;height:52px;border-radius:8px;overflow:hidden;background:#0d0d0d;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.thumb img{width:52px;height:52px;object-fit:cover}
+.info{flex:1;min-width:0}
+.titel{font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.artiest{font-size:12px;color:#d4ac0d;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+.badges{display:flex;gap:5px;margin-top:4px;flex-wrap:wrap}
+.badge{font-size:10px;padding:2px 7px;border-radius:8px;font-weight:700}
+.bj{background:#1e1e24;color:#777}
+.bf{background:rgba(192,57,43,.2);color:#e74c3c}
+.bla{background:#1e1e24;color:#666}
+.dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.detail{display:none;padding:0 14px 14px;border-top:1px solid #1e1e1e}
+.kaart.open .detail{display:block}
+.groot{margin:0 0 10px;border-radius:12px;overflow:hidden;max-height:200px;text-align:center;background:#0d0d0d}
+.groot img{max-width:100%;max-height:200px;object-fit:contain}
+.dgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.dblok{background:#1a1a1f;border-radius:10px;padding:10px 12px}
+.dlabel{font-size:10px;color:#888;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px}
+.dwaarde{font-size:13px;font-weight:600}
+.staat{display:inline-block;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:700}
+.opmerking{background:#1a1a1f;border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:13px;color:#aaa;font-style:italic}
+.delbtn{width:100%;padding:9px;background:rgba(231,76,60,.08);border:1px solid rgba(231,76,60,.3);border-radius:10px;color:#e74c3c;font-size:12px;font-weight:700;cursor:pointer}
+.leeg{text-align:center;padding:60px 20px;color:#555}
+.fveld{margin-bottom:12px}
+.flabel{display:block;font-size:11px;font-weight:700;color:#888;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px}
+.finput{width:100%;padding:12px 14px;background:#1a1a1f;border:1.5px solid #222;border-radius:12px;color:#fff;font-size:15px;outline:none;-webkit-appearance:none}
+.finput:focus{border-color:#c0392b}
+.frij{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.opslaan{width:100%;margin-top:8px;padding:15px;background:#c0392b;border:none;border-radius:14px;color:#fff;font-size:16px;font-weight:800;cursor:pointer}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:#222;color:#fff;padding:11px 22px;border-radius:24px;font-size:13px;font-weight:700;opacity:0;transition:all .3s;z-index:999;pointer-events:none;border:1px solid #333}
+.toast.aan{opacity:1;transform:translateX(-50%) translateY(0)}
+.iconbtn{background:transparent;border:1.5px solid #222;color:#888;width:34px;height:34px;border-radius:10px;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.expbtn{background:transparent;border:1.5px solid #222;color:#d4ac0d;padding:0 10px;height:34px;border-radius:10px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap}
+.expbtn:disabled{opacity:.35}
+.topbtns{display:flex;gap:6px;align-items:center}
+.fotobox{width:100%;border:1.5px dashed #222;border-radius:12px;padding:14px;text-align:center;color:#666;font-size:13px;cursor:pointer;margin-bottom:10px}
+.fotoprev{position:relative;margin-bottom:10px}
+.fotoprev img{width:100%;max-height:200px;object-fit:contain;border-radius:12px;background:#0d0d0d}
+.fotoprev button{position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.75);color:#fff;border:none;padding:6px 10px;border-radius:8px;font-size:11px}
+.aiknop{width:100%;padding:12px;background:#d4ac0d;border:none;border-radius:12px;color:#111;font-size:14px;font-weight:800;cursor:pointer;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:6px}
+.aiknop:disabled{opacity:.5}
+.aihint{font-size:11px;color:#666;margin:-4px 0 10px;text-align:center}
+.errbox{background:rgba(192,57,43,.12);border:1px solid rgba(192,57,43,.35);color:#e88;border-radius:10px;padding:10px 12px;font-size:12px;margin-bottom:10px}
+.ovl{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;align-items:flex-start;justify-content:center;overflow-y:auto;padding:16px}
+.ovl.open{display:flex}
+.modal{background:#111;border:1px solid #222;border-radius:16px;max-width:480px;width:100%;margin:20px 0}
+.mhead{display:flex;justify-content:space-between;align-items:center;padding:16px 18px;border-bottom:1px solid #1e1e1e}
+.mhead h2{font-size:16px;font-weight:800}
+.mhead button{background:none;border:none;color:#888;font-size:18px}
+.mbody{padding:16px 18px;font-size:13px;color:#aaa;line-height:1.5}
+.mbody a{color:#d4ac0d}
+.mbody .fveld{margin-bottom:12px}
+.mbody pre{background:#0d0d0d;border:1px solid #222;border-radius:8px;padding:8px 10px;font-size:10.5px;overflow-x:auto;white-space:pre-wrap;color:#888;margin:8px 0}
+.mfoot{padding:14px 18px;border-top:1px solid #1e1e1e;display:flex;justify-content:flex-end;gap:8px}
+.mfoot button{padding:10px 16px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer}
+.mbtn-outline{background:none;border:1.5px solid #222;color:#aaa}
+.mbtn-primary{background:#c0392b;border:none;color:#fff}
+.status-ok{color:#2ecc71}
+.status-warn{color:#d4ac0d}
+.syncbadge{font-size:10px;color:#2ecc71;font-weight:700;margin-top:2px}
 </style>
 </head>
 <body>
-
 <header>
-  <div class="header-inner">
-    <div>
-      <p class="eyebrow mono">Persoonlijke inventaris</p>
-      <h1 class="serif">Vondstenboek</h1>
-      <p class="mono" id="syncBadge" style="font-size:11px;color:var(--forest-mid);margin:4px 0 0;"></p>
+  <div class="top">
+    <div class="logo">
+      <svg width="34" height="34" viewBox="0 0 44 44"><circle cx="22" cy="22" r="21" fill="#0a0a0a" stroke="#333" stroke-width="1.5"/><circle cx="22" cy="22" r="14" fill="#141414"/><circle cx="22" cy="22" r="8" fill="#0a0a0a"/><circle cx="22" cy="22" r="4" fill="#c0392b"/><circle cx="22" cy="22" r="1.5" fill="#0a0a0a"/></svg>
+      Platen<span>collectie</span>
     </div>
-    <div class="btn-row">
-      <button class="btn-icon" id="settingsBtn" title="AI-instellingen" aria-label="AI-instellingen">⚙</button>
-      <button class="btn-brass" id="exportPdfBtn"><span>⬇</span> Naar PDF</button>
-      <button class="btn-brass" id="exportBtn"><span>⬇</span> Naar Excel</button>
-      <button class="btn-primary" id="addBtn"><span>+</span> Nieuwe vondst</button>
-      <button class="btn-outline" id="batchAddBtn" style="border:1px solid var(--line);color:var(--ink);padding:10px 16px;">+ Batch</button>
+    <div class="topbtns">
+      <span class="teller" id="teller">148 platen</span>
+      <button class="iconbtn" id="settingsBtn" title="AI- en syncinstellingen">&#9881;</button>
     </div>
+  </div>
+  <div class="topbtns" style="margin-bottom:8px">
+    <button class="expbtn" id="exportPdfBtn">&#8681; PDF</button>
+    <button class="expbtn" id="exportXlsBtn">&#8681; Excel</button>
+    <span class="syncbadge" id="syncBadge"></span>
+  </div>
+  <div class="zoek">
+    <span class="ico">&#128269;</span>
+    <input type="text" id="zoekInput" placeholder="Zoek artiest of titel..." autocomplete="off" autocorrect="off" spellcheck="false">
+  </div>
+  <div class="chips" id="chips"></div>
+  <div class="tabs">
+    <button class="tab on" onclick="toonTab('collectie',this)">&#127925; Collectie</button>
+    <button class="tab" onclick="toonTab('toevoegen',this)">+ Toevoegen</button>
   </div>
 </header>
 
 <main>
-  <div id="globalError" class="error-box" style="max-width:600px;margin-bottom:16px;"></div>
-
-  <div class="search-wrap">
-    <span class="search-icon">🔍</span>
-    <input id="searchInput" type="text" placeholder="Zoek op naam, categorie, merk, locatie…">
+  <div id="collectie">
+    <div class="stats" id="statsBar"></div>
+    <div id="lijst"></div>
   </div>
-
-  <div id="emptyState" class="empty-state" style="display:none;">
-    <p class="title serif" id="emptyTitle">De schappen zijn nog leeg.</p>
-    <p class="hint mono" id="emptyHint">Voeg je eerste vondst toe met een foto.</p>
+  <div id="toevoegen" style="display:none;padding-top:8px">
+    <div id="errArea"></div>
+    <div id="fotoArea"></div>
+    <input type="file" id="fotoInput" accept="image/*" style="display:none">
+    <div id="aiArea"></div>
+    <div class="frij">
+      <div class="fveld"><label class="flabel">Artiest *</label><input class="finput" id="fa" placeholder="Pink Floyd"></div>
+      <div class="fveld"><label class="flabel">Jaar</label><input class="finput" id="fj" type="number" placeholder="1979"></div>
+    </div>
+    <div class="fveld"><label class="flabel">Titel *</label><input class="finput" id="ft" placeholder="The Wall"></div>
+    <div class="frij">
+      <div class="fveld"><label class="flabel">Formaat</label>
+        <select class="finput" id="ff"><option>LP</option><option>2xLP</option><option>EP</option><option>Single (7")</option><option>12" Single</option><option>Maxi-Single</option><option>Box Set</option><option>Overig</option></select>
+      </div>
+      <div class="fveld"><label class="flabel">Genre</label><input class="finput" id="fg" placeholder="Rock"></div>
+    </div>
+    <div class="frij">
+      <div class="fveld"><label class="flabel">Staat Vinyl</label>
+        <select class="finput" id="fsv"><option>Mint (M)</option><option>Near Mint (NM)</option><option selected>Very Good Plus (VG+)</option><option>Very Good (VG)</option><option>Good Plus (G+)</option><option>Good (G)</option><option>Fair (F)</option><option>Poor (P)</option></select>
+      </div>
+      <div class="fveld"><label class="flabel">Staat Hoes</label>
+        <select class="finput" id="fsh"><option>Mint (M)</option><option>Near Mint (NM)</option><option selected>Very Good Plus (VG+)</option><option>Very Good (VG)</option><option>Good Plus (G+)</option><option>Good (G)</option><option>Fair (F)</option><option>Poor (P)</option></select>
+      </div>
+    </div>
+    <div class="frij">
+      <div class="fveld"><label class="flabel">Label / Nr.</label><input class="finput" id="fl" placeholder="EMI / EMC 3223"></div>
+      <div class="fveld"><label class="flabel">Land</label><input class="finput" id="fla" placeholder="UK"></div>
+    </div>
+    <div class="fveld">
+      <label class="flabel">Afbeelding URL</label>
+      <input class="finput" id="fafb" placeholder="https://i.discogs.com/...">
+      <div style="font-size:11px;color:#555;margin-top:4px">Ga naar discogs.com, zoek de plaat, kopieer de afbeeldingslink</div>
+    </div>
+    <div class="fveld"><label class="flabel">Opmerkingen</label><input class="finput" id="fo"></div>
+    <button class="opslaan" onclick="plaatOpslaan()">Toevoegen</button>
   </div>
-
-  <div id="grid" class="grid"></div>
 </main>
 
-<div class="overlay" id="overlay">
+<div class="toast" id="toast"></div>
+
+<div class="ovl" id="settingsOvl">
   <div class="modal">
-    <div class="modal-head">
-      <h2 class="serif" id="modalTitle">Nieuwe vondst</h2>
-      <button id="closeModal">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="error-box" id="errorBox"></div>
-
-      <div>
-        <label class="mono" style="font-size:10.5px;text-transform:uppercase;letter-spacing:0.06em;color:var(--brass-dark);display:block;margin-bottom:6px;">Foto's (max 5)</label>
-        <div id="photoArea"></div>
-        <input type="file" id="fileInput" accept="image/*" multiple style="display:none;">
-        <div id="aiArea"></div>
+    <div class="mhead"><h2>AI &amp; synchronisatie</h2><button id="closeSettings">&#10005;</button></div>
+    <div class="mbody">
+      <div class="fveld">
+        <label class="flabel">Gemini API-key</label>
+        <input class="finput" id="apiKeyInput" type="password" autocapitalize="off" autocorrect="off" spellcheck="false" autocomplete="off" placeholder="AIzaSy&hellip;">
       </div>
-
-      <div class="field-grid">
-        <div class="field full"><label>Naam</label><input id="f_naam"></div>
-        <div class="field"><label>Categorie</label><input id="f_categorie"></div>
-        <div class="field"><label>Merk / maker</label><input id="f_merkMaker"></div>
-        <div class="field"><label>Periode</label><input id="f_periode"></div>
-        <div class="field"><label>Materiaal</label><input id="f_materiaal"></div>
-        <div class="field"><label>Conditie</label><input id="f_conditie"></div>
-        <div class="field"><label>Waarde vanaf (€)</label><input id="f_waardeMin" type="number"></div>
-        <div class="field"><label>Waarde tot (€)</label><input id="f_waardeMax" type="number"></div>
-        <div class="field"><label>Aankoopprijs (€)</label><input id="f_aankoopprijs" type="number"></div>
-        <div class="field"><label>Locatie in huis</label><input id="f_locatie"></div>
-        <div class="field full"><label>Notities</label><textarea id="f_notities" rows="2"></textarea></div>
-        <div class="field full"><label>AI-toelichting</label><textarea id="f_toelichting" rows="2"></textarea></div>
-      </div>
-    </div>
-    <div class="modal-foot">
-      <button class="btn-outline" id="cancelBtn">Annuleren</button>
-      <button class="btn-primary" id="saveBtn">Bewaar in vondstenboek</button>
-    </div>
-  </div>
-</div>
-
-<div class="overlay" id="detailOverlay">
-  <div class="modal">
-    <div class="modal-head">
-      <h2 class="serif" id="detailTitle">Vondst</h2>
-      <button id="closeDetail">✕</button>
-    </div>
-    <div class="modal-body" id="detailBody"></div>
-    <div class="modal-foot">
-      <button class="btn-outline" id="detailCloseBtn">Sluiten</button>
-      <button class="btn-primary" id="detailEditBtn">Bewerken</button>
-    </div>
-  </div>
-</div>
-
-<div class="overlay batch-modal" id="batchOverlay">
-  <div class="modal">
-    <div class="modal-head">
-      <h2 class="serif">Batch toevoegen</h2>
-      <button id="closeBatch">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="error-box" id="batchErrorBox"></div>
-      <p class="settings-text" style="margin-bottom:10px;">Elke geselecteerde foto wordt een <strong>aparte vondst</strong>. Handig als je in één keer meerdere spullen hebt gefotografeerd. Vul per item minimaal een naam in, of laat de AI dat voor je doen.</p>
-      <div id="batchDropArea"></div>
-      <input type="file" id="batchFileInput" accept="image/*" multiple style="display:none">
-      <div class="batch-toolbar" id="batchToolbar" style="display:none;">
-        <button class="btn-brass" id="batchAnalyzeAllBtn" style="border-radius:3px;padding:8px 14px;font-size:13px;">✨ Analyseer alles met AI</button>
-        <button class="btn-outline" id="batchAddMoreBtn" style="border:1px solid var(--line);color:var(--ink);padding:8px 14px;">+ Meer foto's</button>
-      </div>
-      <div class="batch-list" id="batchList"></div>
-    </div>
-    <div class="modal-foot">
-      <button class="btn-outline" id="cancelBatchBtn">Annuleren</button>
-      <button class="btn-primary" id="saveBatchBtn">Bewaar alles</button>
-    </div>
-  </div>
-</div>
-
-<div class="overlay settings-modal" id="settingsOverlay">
-  <div class="modal">
-    <div class="modal-head">
-      <h2 class="serif">AI-herkenning</h2>
-      <button id="closeSettings">✕</button>
-    </div>
-    <div class="modal-body">
-      <p class="settings-text">
-        Vul hier je gratis Google Gemini API-key in om foto's automatisch te laten herkennen.
-        Je haalt een key op via <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a>
-        — inloggen met een Google-account, geen creditcard nodig.
-      </p>
-      <div class="field full">
-        <label>Gemini API-key</label>
-        <input id="apiKeyInput" type="password" autocapitalize="off" autocorrect="off" spellcheck="false" autocomplete="off" placeholder="AIzaSy…">
-      </div>
-      <p class="settings-text" id="geminiStatus"></p>
-      <p class="settings-text" style="color:var(--brass-dark);">
-        De key wordt alleen lokaal in je browser bewaard (localStorage) en nergens anders naartoe gestuurd dan rechtstreeks naar Google.
-      </p>
-
-      <hr style="border:none;border-top:1px solid var(--line);margin:4px 0;">
-
-      <div>
-        <h2 class="serif" style="font-size:17px;margin:0 0 6px;">Synchroniseren tussen apparaten</h2>
-        <p class="settings-text">
-          Wil je dezelfde collectie zien op iPad én iPhone? Maak eenmalig een gratis Firestore-database aan via
-          <a href="https://console.firebase.google.com" target="_blank" rel="noopener">console.firebase.google.com</a>:
-        </p>
-        <ol class="settings-text" style="padding-left:18px;margin:6px 0;">
-          <li>Nieuw project aanmaken (naam maakt niet uit)</li>
-          <li>Linksmenu → Databases & Storage → Firestore → "Create database" → kies een regio dichtbij (bv. europe-west) → start in testmodus</li>
-          <li>Tabblad "Rules" → vervang de inhoud door de open regels hieronder → Publiceren</li>
-          <li>⚙ Project settings → onderaan "Your apps" → webapp toevoegen (`</>`-icoon) → kopieer het hele <span class="mono">firebaseConfig</span>-object</li>
-          <li>Plak dat object hieronder en bewaar. Doe dit op elk apparaat met dezelfde config.</li>
-        </ol>
-        <pre class="mono" style="background:var(--paper);border:1px solid var(--line);border-radius:3px;padding:8px 10px;font-size:11px;overflow-x:auto;white-space:pre-wrap;">rules_version = '2';
+      <p id="geminiStatus" class="status-warn"></p>
+      <p>Gratis op te halen via <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a>, geen creditcard nodig. Blijft alleen lokaal op dit apparaat bewaard.</p>
+      <hr style="border:none;border-top:1px solid #1e1e1e;margin:14px 0">
+      <h2 style="font-size:14px;margin-bottom:6px">Synchroniseren tussen apparaten</h2>
+      <p>Gebruik dezelfde Firebase-configuratie als je Vondstenboek (of maak een nieuw project aan via <a href="https://console.firebase.google.com" target="_blank" rel="noopener">console.firebase.google.com</a> &rarr; Databases &amp; Storage &rarr; Firestore &rarr; Create database &rarr; testmodus &rarr; Rules aanpassen naar onderstaande &rarr; webapp toevoegen voor de config).</p>
+      <pre>rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     match /{document=**} {
@@ -538,1111 +191,523 @@ service cloud.firestore {
     }
   }
 }</pre>
-        <p class="settings-text" style="color:var(--rust);">
-          Let op: deze regels maken de database open voor iedereen die de configuratie kent. Voor een privéverzameling is dat een aanvaardbaar risico zolang je de config niet deelt, maar het is geen echte beveiliging.
-        </p>
-        <div class="field full">
-          <label>Firebase-configuratie</label>
-          <textarea id="firebaseConfigInput" rows="6" autocapitalize="off" autocorrect="off" spellcheck="false" autocomplete="off" placeholder='{"apiKey": "...", "authDomain": "...", "projectId": "...", ...}'></textarea>
-        </div>
-        <button class="btn-outline" id="importLocalBtn" type="button" style="margin-top:4px;">Importeer lokale vondsten naar synchronisatie</button>
-        <p class="settings-text" id="syncStatus"></p>
+      <div class="fveld">
+        <label class="flabel">Firebase-configuratie</label>
+        <textarea class="finput" id="firebaseConfigInput" rows="6" autocapitalize="off" autocorrect="off" spellcheck="false" autocomplete="off" placeholder='{"apiKey":"...", ...}' style="resize:vertical"></textarea>
       </div>
+      <button class="mbtn-outline" id="importLocalBtn" style="width:100%;margin-bottom:10px">Importeer lokale platen naar synchronisatie</button>
+      <p id="syncStatus"></p>
     </div>
-    <div class="modal-foot">
-      <button class="btn-outline" id="cancelSettings">Annuleren</button>
-      <button class="btn-primary" id="saveSettings">Bewaar instellingen</button>
+    <div class="mfoot">
+      <button class="mbtn-outline" id="cancelSettings">Annuleren</button>
+      <button class="mbtn-primary" id="saveSettings">Bewaar instellingen</button>
     </div>
   </div>
 </div>
 
+<script id="data-json" type="application/json">[{"artiest": "Supertramp", "titel": "Crime of the Century", "jaar": 1974, "label": "A&M / AMLH 63647", "barcode": "5060454940878", "staat_vinyl": "Very Good Plus (VG+)", "staat_hoes": "Very Good Plus (VG+)", "formaat": "LP", "genre": "Rock", "land": "NL", "opmerkingen": "NL pressing, vlooienmarkt", "afbeelding": "https://i.discogs.com/LvwkFd1dBJ1SgD-WsgYLKlJI6ZdgJSWRPhq_GnQdAyY/rs:fit/g:sm/q:90/h:600/w:590/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTMxNDA4/MzU4LTE3MjI4NzA0/NDQtMjM4Ny5qcGVn.jpeg"}, {"artiest": "Pink Floyd", "titel": "The Wall", "jaar": 1979, "label": "Harvest / SHDW 411", "barcode": "", "staat_vinyl": "Near Mint (NM)", "staat_hoes": "Very Good (VG)", "formaat": "2xLP", "genre": "Rock", "land": "UK", "opmerkingen": "Originele 1979 persing", "afbeelding": "https://i.discogs.com/gvMsVECicK2YRlJ7S9wlbeLS2L_o39owUyYlv6JTc3w/rs:fit/g:sm/q:90/h:600/w:588/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI3Mzcx/ODU2LTE2ODY2NjQx/NzUtOTY5NC5qcGVn.jpeg"}, {"artiest": "Kate Bush", "titel": "The Kick Inside", "jaar": 1978, "label": "EMI / EMC 3223", "barcode": "", "staat_vinyl": "Very Good Plus (VG+)", "staat_hoes": "Very Good Plus (VG+)", "formaat": "LP", "genre": "Art Rock", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/XZvjzv1I0S-rfdcoeKE6LIXxOI8-wEzff0fRGweFrr0/rs:fit/g:sm/q:90/h:598/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTQxNDM3/NC0xNDExNDA3MjA5/LTc1ODcuanBlZw.jpeg"}, {"artiest": "Marillion", "titel": "Fugazi", "jaar": 1984, "label": "EMI / EMC 3507", "barcode": "", "staat_vinyl": "Very Good Plus (VG+)", "staat_hoes": "Very Good (VG)", "formaat": "LP", "genre": "Prog Rock", "land": "UK", "opmerkingen": "Fish era", "afbeelding": "https://i.discogs.com/tBNX_XFhDozXD1IQWbqeaU-CkSDxTjfg5jhlGFgRYjo/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTg2MTQ1/My0xMTY2NDYxODA1/LmpwZWc.jpeg"}, {"artiest": "Supertramp", "titel": "Brother where you bound", "jaar": 1985, "label": "A&M / AMLH 63647", "barcode": "8283950141", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Rock", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/C-eNTdg32229XD9fLGudO6G_KKg3jyILTNCcJoEPsJ8/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTczNjg5/OS0xMzgzMDk5NTIx/LTIzNDYuanBlZw.jpeg"}, {"artiest": "Supertramp", "titel": "Breakfast in America", "jaar": 1979, "label": "A&M / AMLH 63647", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Rock", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/dAnSPILkX9pc1_zH0iWdoPIfT7fo16z21f-Q7qRMrGw/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTYxNzQ4/Ni0xNDU5MDM1Mjc2/LTg5MTUuanBlZw.jpeg"}, {"artiest": "Supertramp", "titel": "Famous last words", "jaar": 1982, "label": "a&M / AMLH 63732", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Rock", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/okcliqNG6eTzu0NKnsErpRB60PPG19hqZtmGxdglABQ/rs:fit/g:sm/q:90/h:599/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM3MjI3/NS0xNjUwMzgxODA0/LTUzOTAuanBlZw.jpeg"}, {"artiest": "Supertramp", "titel": "Paris", "jaar": 1980, "label": "A&M / AMLH 66702", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Rock", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/TfQt0lMVskUcxbtbXKT6yBTLEmejk7Xx8biymYkU7oU/rs:fit/g:sm/q:90/h:600/w:597/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTQ0ODMw/Mi0xNjQ5MDcxMDYx/LTM4MzMuanBlZw.jpeg"}, {"artiest": "ELO", "titel": "Discovery", "jaar": 1979, "label": "Jet records", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Rock", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/RNW8qpLHhVMIcBbAM7s7v9FoysMwedjhvvtO4LHgWUM/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE2MjA4/ODItMTMwNjgzMzQ4/Ni5qcGVn.jpeg"}, {"artiest": "Deep purple", "titel": "24 Carat", "jaar": 1975, "label": "EMI / LC2546", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Hardrock", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/ok4xQ_kzekVRTSO8G-Nl5dwZVW9PNNaTURlNdY5VRB0/rs:fit/g:sm/q:90/h:590/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTEzNDUw/ODUtMTM2Nzc0NTM1/Ni02MjI0LmpwZWc.jpeg"}, {"artiest": "Deep Purple", "titel": "In concert", "jaar": 1980, "label": "EMI", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Hardrock", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/YrFzglkRKaeqbGDfAsPRcOIF9QIE2rVP6A8RQAHwY_A/rs:fit/g:sm/q:90/h:588/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTcxNjQ4/NDEtMTQ2NjU4MjMy/Ny05MjUyLmpwZWc.jpeg"}, {"artiest": "Robert Long", "titel": "Vroeger of later", "jaar": 1974, "label": "BOVEMA", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Nedderlandstalig", "land": "NL", "opmerkingen": "", "afbeelding": "https://i.discogs.com/y9yLpfnYD0_IqNe1qNhhQcW0ep1v8RdNYmXBjF03-qE/rs:fit/g:sm/q:90/h:600/w:595/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTc5MjEw/OS0xMjkwOTM3MTQ0/LmpwZWc.jpeg"}, {"artiest": "AC/DC", "titel": "If you want blood", "jaar": 1978, "label": "Atlantic", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Hardrock", "land": "AUS", "opmerkingen": "", "afbeelding": "https://i.discogs.com/XegGK0NQl5Xl4Pvl9WvuHdeLNS-uXh2ZSBEttbnCfY0/rs:fit/g:sm/q:90/h:598/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTQwMDU3/OS0xNzIwNjMxMDI5/LTQwNzQuanBlZw.jpeg"}, {"artiest": "Andreas Vollenweider", "titel": "Behind the gardens, behind the waal, under the tree", "jaar": 1981, "label": "CBS", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Instrumentaal", "land": "SUI", "opmerkingen": "", "afbeelding": "https://i.discogs.com/g4WiOLFILFYwzayYD4yk4ELuHy3uREXRkdUY10kTzdI/rs:fit/g:sm/q:90/h:598/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTY3NjIy/OC0xNjI3NjQ0NDk0/LTE3NDEuanBlZw.jpeg"}, {"artiest": "van Kooten en de Bie", "titel": "Op hun Pik getrapt", "jaar": 1980, "label": "STEMRA / SIMPELPEE", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Nederlandstalig", "land": "NL", "opmerkingen": "", "afbeelding": "https://i.discogs.com/vFpk8npuv2MMeVojHeebsrRxYguvYmpkklexO1HSp48/rs:fit/g:sm/q:90/h:600/w:581/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTYwMTM1/Ni0xMzAzMjQzNjAy/LmpwZWc.jpeg"}, {"artiest": "Iron Maiden", "titel": "Live in New York", "jaar": 2022, "label": "YELLOWIN RECORDS", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Hardrock", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/Xl2gVIVcqxbHddyknS_0t0uZc1Tl9tEhPHmTXeI3ehs/rs:fit/g:sm/q:90/h:593/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTMwNDI1/MzYwLTE3MTYxMDky/NDgtNzExMy5qcGVn.jpeg"}, {"artiest": "Roger Waters", "titel": "The pros and cons of hitch hiking", "jaar": 1984, "label": "EMI", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Rock", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/YUTNKokfEFODdqSy59Tcr8BV2i_S6vDe8EmPsuMsL9s/rs:fit/g:sm/q:90/h:600/w:596/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE2OTc0/MzItMTcwNzQyMzEw/Ni00MDUwLmpwZWc.jpeg"}, {"artiest": "Fisher Z", "titel": "Word Salad", "jaar": 1979, "label": "EMI", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "SKA", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/D69r--OroK5U4NoDI4iQWIPoBHsiFX0_3uQQLt1QrII/rs:fit/g:sm/q:90/h:597/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI1OTM0/MS0xNDQ5MjM4NzMx/LTc3ODMuanBlZw.jpeg"}, {"artiest": "The Alan Parsons Project", "titel": "Tales of mystery and Imagination by Edgar Allan Poe", "jaar": 1976, "label": "20th CENTURY RECORDS", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Symfonic rock", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/qE_WDKsQIq6PBbjAU3kA9FhkBWCTbUgWS_1zs5rN70w/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTIyNjI3/NDAwLTE2NDgxMzM4/NjktOTg4NC5qcGVn.jpeg"}, {"artiest": "Fisher Z", "titel": "Red skies over paradise", "jaar": 1981, "label": "Liberty records", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "SKA", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/q8UyZxpk4qgIYg5AWkp1Q_ONAvCrpMtuPVoOBqoIMTU/rs:fit/g:sm/q:90/h:300/w:300/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM3MjQz/Ni0xMjY1NTY3MjMy/LmpwZWc.jpeg"}, {"artiest": "Marillion", "titel": "Grendel", "jaar": 1982, "label": "EMI", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "12\"", "genre": "Symfonic rock", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/zl66OOdLhFVTKQko5LSK8Ukdad9yREn-2wO12Lj5HhU/rs:fit/g:sm/q:90/h:600/w:591/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTEwMTg5/OTEtMTI4NDI3ODk0/OC5qcGVn.jpeg"}, {"artiest": "Marillion", "titel": "Script for a Jesters tear", "jaar": 1983, "label": "EMI", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Symfonic rock", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/_gw8EmTb7cqrZ1tWHUpIyGO1dQQAER5Is0ohYoQ5Ncw/rs:fit/g:sm/q:90/h:600/w:598/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE0NTE4/OTQtMTU5NTM1Nzc0/MC0yNzQzLmpwZWc.jpeg"}, {"artiest": "Marillion", "titel": "Fugazi", "jaar": 1984, "label": "EMI", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Symfonic rock", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/tBNX_XFhDozXD1IQWbqeaU-CkSDxTjfg5jhlGFgRYjo/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTg2MTQ1/My0xMTY2NDYxODA1/LmpwZWc.jpeg"}, {"artiest": "Marillion", "titel": "Real to reel", "jaar": 1984, "label": "EMI", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Symfonic rock", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/Px2yFt7ULkfAhQjuWq2mBRS9eDwbbKXGzMQWq6ZLs4I/rs:fit/g:sm/q:90/h:349/w:348/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTU1MDQ3/MS0xMTg4Mzg4Mjk0/LmpwZWc.jpeg"}, {"artiest": "Marillion", "titel": "Kayleigh", "jaar": 1985, "label": "EMI", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "12\"", "genre": "Symfonic rock", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/OrVD08okxLUP902ZZfzoJkNrDfd71akTJMJK7nbcpuE/rs:fit/g:sm/q:90/h:591/w:599/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTUyMTk2/OC0xMjQxNDk3MzU1/LmpwZWc.jpeg"}, {"artiest": "Marillion", "titel": "Lavender", "jaar": 1985, "label": "EMI", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "12\"", "genre": "Symfonic rock", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/ODYHloAktWoDuFE3Kd3o7cz-6o40XfHZ2jADHpRcNxc/rs:fit/g:sm/q:90/h:593/w:599/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTEzMTkw/MjgtMTIzNDI5NDE4/MC5qcGVn.jpeg"}, {"artiest": "Iron Maiden", "titel": "The number of the beast", "jaar": 1982, "label": "EMI", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "12\"", "genre": "Hardrock", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/-wHpEmzsOPDHv755TdLKf4a4rS0i-zCmrdu8492KxOk/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE0NjYy/OTktMTY0NTU0MTQx/NC0yNDk0LmpwZWc.jpeg"}, {"artiest": "Iron Maiden", "titel": "Senjutsu", "jaar": 2021, "label": "EMI", "barcode": "", "staat_vinyl": "Very Good Plus (VG+)", "staat_hoes": "Very Good Plus (VG+)", "formaat": "LP", "genre": "Hardrock", "land": "UK", "opmerkingen": "180 grams", "afbeelding": "https://i.discogs.com/LCxnkJroWS724bDgWOJyiy5cDv4BPeQ4OnslPQ2TF2M/rs:fit/g:sm/q:90/h:526/w:591/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTIwMDg3/NjUzLTE3NzQ3MzM5/NzUtNzk4Ni5qcGVn.jpeg"}, {"artiest": "Jeff Wayne", "titel": "War of the worlds", "jaar": 1978, "label": "CBS", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Symfonic rock", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/JmdrF4Sn22MYhb5GFbc4imFuKtHgx17wdHwsgH1hIrM/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTY1MzA3/MC0xMjU0MTEwMjUx/LmpwZWc.jpeg"}, {"artiest": "The Alan Parsons Project", "titel": "Ammonia Avenue", "jaar": 1984, "label": "Arista", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Symfonic rock", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/HxauQsK0PU73not3YM5Eb_Whx-x3mh7qYN3FnfPgj4M/rs:fit/g:sm/q:90/h:590/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM3NTA4/MS0xMTcxNjcxNDI3/LmpwZWc.jpeg"}, {"artiest": "The Alan Parsons Project", "titel": "Eve", "jaar": 1979, "label": "Arista", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Symfonic rock", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/WSOItaRgUg-SeQSuk7_PtD31l0CAlHBPTWXP7nOhrZU/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTQxOTA4/MzMtMTQ5ODQ3MjA4/NC04MDUwLmpwZWc.jpeg"}, {"artiest": "The Alan Parsons Project", "titel": "Pyramid", "jaar": 1978, "label": "Arista", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Symfonic rock", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/8Ukr4WLJZaccXPMXcZljCoFLEpZ66Se7r8dbDvhk3Us/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTgyMTIy/MC0xNTcyMDkzMDc1/LTc4MzYuanBlZw.jpeg"}, {"artiest": "The Alan Parsons Project", "titel": "Eye in the sky", "jaar": 1982, "label": "Arista", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Symfonic rock", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/NLRTLMZM9Td3T8ROO0QCiZImRNss5NOhfnvAGU8AZhE/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE3MDA4/ODktMTM5NjgxMTQw/NS03OTI2LmpwZWc.jpeg"}, {"artiest": "The Alan Parsons Project", "titel": "The turn of a friendly vard", "jaar": 1980, "label": "Arista", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Symfonic rock", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/tEQmGftG3OhG3R6kOmTebmzKdxSpIwwRvREmNBJrudc/rs:fit/g:sm/q:90/h:600/w:595/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTEzMDY3/MTktMTMzODg5NDg4/OC0yMzc5LmpwZWc.jpeg"}, {"artiest": "Pink Floyd", "titel": "Atom heart mother", "jaar": 2016, "label": "Pink Floyd records", "barcode": "", "staat_vinyl": "Very Good Plus (VG+)", "staat_hoes": "Very Good Plus (VG+)", "formaat": "LP", "genre": "Symfonic rock", "land": "UK", "opmerkingen": "180 grams", "afbeelding": "https://i.discogs.com/1NngGhotJfUHlUBUL3obLWG5CxUGF60qbongKJqOQM4/rs:fit/g:sm/q:90/h:588/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI2NDQ2/MTctMTI5NDcwMDMy/Ni5qcGVn.jpeg"}, {"artiest": "Pink Floyd", "titel": "Obscured by clouds", "jaar": 1972, "label": "EMI", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Symfonic rock", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/_Mw3isYuh16K9FI_GxIvzgOi7L08KiJHYfmhmRyQruA/rs:fit/g:sm/q:90/h:600/w:594/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTMwOTI0/MTItMTc1Mzk4NDg4/OC02OTUyLmpwZWc.jpeg"}, {"artiest": "Pink Floyd", "titel": "Ummagumma", "jaar": 1969, "label": "EMI", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Symfonic rock", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/6mrJBNg8OziBXdHCOvQsMwvDAQk6JjDOvg9i6oK2lEU/rs:fit/g:sm/q:90/h:600/w:587/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE2NDU4/MDItMTMwMzQxMTU5/OS5qcGVn.jpeg"}, {"artiest": "The Police", "titel": "Synchronicity", "jaar": 1983, "label": "A&M", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "New Wave", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/q6GPXiH-pLBsrs7pLQDKFgFB43t85ZAlZN0XSdFiQtM/rs:fit/g:sm/q:90/h:586/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM2Nzc1/MC0xNDQzMjIwNjMz/LTExNDcuanBlZw.jpeg"}, {"artiest": "The Police", "titel": "Outlandos d'amour", "jaar": 1978, "label": "A&M", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "New Wave", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/48tIE-vs3yKs-YGIgeF1CKIYDrGwCEgGTGfMEIL32d4/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTc5MzU5/My0xMjAxMTI4NDMw/LmpwZWc.jpeg"}, {"artiest": "van Kooten en de Bie", "titel": "Willen niet dood", "jaar": 1985, "label": "STEMRA / SIMPELPEE", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Nederlandstalig", "land": "NL", "opmerkingen": "", "afbeelding": "https://i.discogs.com/Q8g-RrpHxJ67IjQjpqwtb0bF_giLKO8Wf6A9Jq_a78c/rs:fit/g:sm/q:90/h:600/w:560/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTEyNDcy/MTQtMTQzODM2MzYx/NC00OTc1LmpwZWc.jpeg"}, {"artiest": "Jon and Vangelis", "titel": "Short stories", "jaar": 1979, "label": "Polydor stemra", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Symfonic rock", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/OFxvFrtf3Hg-BNpp9jVhLMTuXrLrilCbSiThQrGTKCI/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE2MTMw/MC0xMjc1NjMwNzUw/LmpwZWc.jpeg"}, {"artiest": "ELO", "titel": "Eldorado", "jaar": 1974, "label": "Jet records", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Symfonic rock", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/pRdeyzu_G647L3AKuYusqdo5gr_XHy6_EReHGYMOT-Y/rs:fit/g:sm/q:90/h:600/w:595/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTIyNTMx/MTgxLTE2NDc0Mzg4/MjgtNjYyNS5qcGVn.jpeg"}, {"artiest": "Queen", "titel": "A day at the races", "jaar": 1976, "label": "Emi", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Rock", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/s3ytjPYoaqTuNBQWofjilywNFCFGCbLJWyj7SbFDzTU/rs:fit/g:sm/q:90/h:594/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTQ3NTU5/Ni0xNDU0NzA3NDM5/LTYzMzcuanBlZw.jpeg"}, {"artiest": "Supertramp", "titel": "Even in the quietest moments", "jaar": 1977, "label": "A&M", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Rock", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/Wv8znYji4uCE1uCCbKMfwb9OyHz_DoGiMpRU-R1uT-k/rs:fit/g:sm/q:90/h:516/w:514/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTQ3Mjc2/MjUtMTM3MzU5MTA1/OC05MTcyLmpwZWc.jpeg"}, {"artiest": "Camel", "titel": "Nude", "jaar": 1981, "label": "Decca", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Symfonic rock", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/7ZZq_4nvrwuKXSQvGrpJI97PObaS53CqjHPvDE9Hq7k/rs:fit/g:sm/q:90/h:497/w:500/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE2NjEw/MzQtMTQzMjQ4MzE2/Ny01NzA3LmpwZWc.jpeg"}, {"artiest": "The Moody Blues", "titel": "This is the Moody Blues", "jaar": 1974, "label": "Stemra / Threshold", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Symfonic rock", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/fBRZPvSVqGjvYDKDSLBx3ySYLfi3X214z_fqG0vn1Ys/rs:fit/g:sm/q:90/h:600/w:599/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTU2NDc0/Ni0xNjUxMjE4ODk2/LTM1NTAuanBlZw.jpeg"}, {"artiest": "Queen", "titel": "News of the World", "jaar": 1977, "label": "EMI", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Rock", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/34oi9xR_4oYYlyw1bqxOd_j-3m5yLm9x037dBXzWlFQ/rs:fit/g:sm/q:90/h:600/w:593/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTQ3NTU5/OS0xNDU0NzE1MjY1/LTc4NDIuanBlZw.jpeg"}, {"artiest": "Fleetwood Mac", "titel": "Rumours", "jaar": 1977, "label": "Warner Bros", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Rock", "land": "US", "opmerkingen": "", "afbeelding": "https://i.discogs.com/X2kgbJ7rhk0HNH39Nep8tTD_Fly6pmHk2KR_Lptjk88/rs:fit/g:sm/q:90/h:599/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTUyNjM1/MS0xMjkyMjkzNjg1/LmpwZWc.jpeg"}, {"artiest": "The Eagles", "titel": "Hotel California", "jaar": 1976, "label": "Asylum", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Rock", "land": "US", "opmerkingen": "", "afbeelding": "https://i.discogs.com/PZz0RZth-jDXq_vEwv640MTGizMZe5KEc6KTzM6ZKzY/rs:fit/g:sm/q:90/h:600/w:596/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTEzNTQ4/MTYtMTM4MzkwOTE3/MC0xNzEyLmpwZWc.jpeg"}, {"artiest": "ELO", "titel": "Discovery", "jaar": 1979, "label": "Jet records", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Symfonic rock", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/RNW8qpLHhVMIcBbAM7s7v9FoysMwedjhvvtO4LHgWUM/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE2MjA4/ODItMTMwNjgzMzQ4/Ni5qcGVn.jpeg"}, {"artiest": "Status Quo", "titel": "Whatever you want", "jaar": 1979, "label": "Phonogram", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Hardrock", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/t1WPo0XMUe8vzdAQVMuJjAU_dcDdCBBwKJ17HVPOr50/rs:fit/g:sm/q:90/h:600/w:598/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTYyNzc4/Mi0xNTEyMDYxMDgz/LTYyNzIuanBlZw.jpeg"}, {"artiest": "Earth and Fire", "titel": "Reality fills Fantasy", "jaar": 1979, "label": "Vertigo", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Pop", "land": "NL", "opmerkingen": "", "afbeelding": "https://i.discogs.com/efiPphxN-C8aytuX1kc9RVTbnKamrn6MOpjEWzaVyEQ/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTQyNzY3/Mi0xNjI5NjIzNDQ2/LTE1ODEuanBlZw.jpeg"}, {"artiest": "Earth and Fire", "titel": "Greatest hits", "jaar": 1979, "label": "Phonogram", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Pop", "land": "NL", "opmerkingen": "", "afbeelding": "https://i.discogs.com/_qcZ1LJbMMSW6KxY78uy4RHv-9oSfhKqLyjakKJ7hj0/rs:fit/g:sm/q:90/h:488/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTE1MzM1/Mi0xNDg2MzI0MDgz/LTM2NzcuanBlZw.jpeg"}, {"artiest": "Pink Floyd", "titel": "Animals", "jaar": 1977, "label": "EMI", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Symfonic rock", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/_hYJ-UiHBq0KtuIlz26o-4Ar82o9589HIFIE5XOXuVU/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM5MTMy/Mi0xNjkxNTYzMjc4/LTYwODAuanBlZw.jpeg"}, {"artiest": "Pink Floyd", "titel": "Dark side of the Moon", "jaar": 1973, "label": "EMI", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Symfonic rock", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/1fwskTLM6cfxbdNmBDJ8expl6wab0tEgxvuloLIqKh8/rs:fit/g:sm/q:90/h:596/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTkyODc4/MDktMTQ3OTc1MzIz/Ni05NjE3LmpwZWc.jpeg"}, {"artiest": "Pink Floyd", "titel": "Wish you were Here", "jaar": 1975, "label": "EMI", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Symfonic rock", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/_1djgr_cmgajmivwJDVN5Y7Zv4HA8wtUAn51vmbujs4/rs:fit/g:sm/q:90/h:596/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTQ2MzU5/Ny0xNjc1ODg2OTE1/LTIxMTQuanBlZw.jpeg"}, {"artiest": "Pink Floyd", "titel": "Medlle", "jaar": 1971, "label": "EMI", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Symfonic rock", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/nlcHURJ-xZgDIezGAne4lRoiOZJYbb-qHxf7NMfwTQw/rs:fit/g:sm/q:90/h:592/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTQxMzc0/OTMtMTUzNzIxNjkz/NS05NzUzLmpwZWc.jpeg"}, {"artiest": "Pink Floyd", "titel": "The Wall", "jaar": 1979, "label": "EMI", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Symfonic rock", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/gvMsVECicK2YRlJ7S9wlbeLS2L_o39owUyYlv6JTc3w/rs:fit/g:sm/q:90/h:600/w:588/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI3Mzcx/ODU2LTE2ODY2NjQx/NzUtOTY5NC5qcGVn.jpeg"}, {"artiest": "Pink Floyd", "titel": "The Final Cut", "jaar": 1983, "label": "EMI", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Symfonic rock", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/nQ9TyddcSe2CL0rjRlvQIW8ShAeO7eBAEjE6BRpH5Hg/rs:fit/g:sm/q:90/h:600/w:566/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTEyMDYx/MzQtMTMxODA5MDc3/Ni5qcGVn.jpeg"}, {"artiest": "Queensryche", "titel": "The Warning", "jaar": 1984, "label": "EMI", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Hardrock", "land": "US", "opmerkingen": "", "afbeelding": "https://i.discogs.com/90A7MWOMGgQ9jzz52-nOo_0aLn_9X0c9YufvBkHxKfk/rs:fit/g:sm/q:90/h:594/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE0MjYy/NDYtMTUxNjc0NzA2/Ni02MTI5LnBuZw.jpeg"}, {"artiest": "Camel", "titel": "Moonmadness", "jaar": 1976, "label": "Passport Records", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Symfonic rock", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/knnDnGPpURw_MZm_QaVjbPT-mu8rqy-FpwwUAO_9SV0/rs:fit/g:sm/q:90/h:593/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE4ODU1/MzktMTU4OTA2MTY2/MS02MTc3LmpwZWc.jpeg"}, {"artiest": "Camel", "titel": "The Single Factor", "jaar": 1982, "label": "Passport Records", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Symfonic rock", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/Nhz6w4Y-dBOC09EAtCnhRYBZYbvFmkdNCBeGHHkQFao/rs:fit/g:sm/q:90/h:600/w:598/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE4ODU1/OTQtMTYxNzYwNDQ1/NC05Mzg2LmpwZWc.jpeg"}, {"artiest": "Camel", "titel": "Pressure Points", "jaar": 1984, "label": "Polydor stemra", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Symfonic rock", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/aJaac1sqEnqdRddP30jPjBf5LPvbvP5rHh4K9rfLTT0/rs:fit/g:sm/q:90/h:599/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI0NTI4/MjEtMTM5Mjk3MDA2/Mi03MzMwLmpwZWc.jpeg"}, {"artiest": "Marillion", "titel": "Clutching at Straws", "jaar": 1987, "label": "EMI", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Symfonic rock", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/yARDuXA0-kkEBBOCge0lCeAGVVCODsZ1dxzjQcrOWG0/rs:fit/g:sm/q:90/h:596/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTExNTE3/NjctMTIzNjg3ODQ2/OC5qcGVn.jpeg"}, {"artiest": "Simon and Garfunkel", "titel": "Live in Central Park", "jaar": 1981, "label": "Geffen Records", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Pop", "land": "US", "opmerkingen": "", "afbeelding": "https://i.discogs.com/GPL2oA0ndqWEZwHfzJZztsTu5FtRJp8EJ-zCJEQv-M0/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTEyNzQ1/OTItMTM1MjAzNjEz/OS01OTI0LmpwZWc.jpeg"}, {"artiest": "Laury Anderson", "titel": "Big Science", "jaar": 1982, "label": "Warner Bros", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Pop", "land": "US", "opmerkingen": "", "afbeelding": "https://i.discogs.com/zkVZQybwv5FFFPS3uJzA942obNunWymrrHeKOo59ll8/rs:fit/g:sm/q:90/h:599/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTQ4OTYz/OC0xMTk5NjM4ODIy/LmpwZWc.jpeg"}, {"artiest": "Magna Carta", "titel": "Lord of the Ages", "jaar": 1973, "label": "Vertigo", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Symfonic rock", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/_XOf4M8_zrIMm9qyVCGgaNB9EXRMPdYxwQgz_1fw5Gw/rs:fit/g:sm/q:90/h:597/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTEyMjM0/MjQtMTY1MzQ4MDA3/NC0zMDYzLmpwZWc.jpeg"}, {"artiest": "Ilse deLange", "titel": "Gravel & Dust", "jaar": 2019, "label": "Universal", "barcode": "", "staat_vinyl": "Very Good Plus (VG+)", "staat_hoes": "Very Good Plus (VG+)", "formaat": "LP", "genre": "Pop", "land": "NL", "opmerkingen": "", "afbeelding": "https://i.discogs.com/yXBPxRjVGqgNteYMXsyqwwC16Oj9ceCO4f6dGekzVt0/rs:fit/g:sm/q:90/h:541/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE0MTAy/NDE2LTE1Njc4ODMz/NjAtMTMxMS5qcGVn.jpeg"}, {"artiest": "Mike Oldfield", "titel": "Tubular Bells", "jaar": 1973, "label": "Virgin", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Symfonic rock", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/tP99MtjQlhYit6RpVvEB4LnqrvJwD78WCPoluYiZDew/rs:fit/g:sm/q:90/h:588/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTEyNTU2/MTA1LTE1Mzc2MTI2/NjItOTcwNy5qcGVn.jpeg"}, {"artiest": "Kiss", "titel": "Dynasty", "jaar": 1979, "label": "Casablanca", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Hardrock", "land": "US", "opmerkingen": "", "afbeelding": "https://i.discogs.com/nKGACQ3jAUZoFYwPMCbM39JkqX2k3Iw-LQtuYKme3n8/rs:fit/g:sm/q:90/h:585/w:585/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTQzMjA3/ODEtMTQ5MjI2MzE0/OS00NjA2LmpwZWc.jpeg"}, {"artiest": "Joe Cocker", "titel": "Civilised man", "jaar": 1984, "label": "Capitol", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Pop", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/c45prHV5TSVot2pCSuLaa7ISW6Yd4dx6Xu6K2EdHqXQ/rs:fit/g:sm/q:90/h:600/w:597/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTEyMzU1/MzUyLTE1MzM1Nzcy/MTEtNzg3NC5qcGVn.jpeg"}, {"artiest": "Frankie Goes to Hollywood", "titel": "Two Tribes", "jaar": 1984, "label": "Ariola", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "12\"", "genre": "Pop", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/9OvkHg5lc-lCqjsRcFxfkE1pTwyPzBfWd1Tskk80LSw/rs:fit/g:sm/q:90/h:600/w:586/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTc3ODc5/LTExNzE2NzIwMzAu/anBlZw.jpeg"}, {"artiest": "Golden Earring", "titel": "Something heavy going down", "jaar": 1984, "label": "21 records", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Rock", "land": "NL", "opmerkingen": "", "afbeelding": "https://i.discogs.com/YKSZK-8BpkT0qbU6ACQjsiPzXx3zKyAU1LtO0vJN89g/rs:fit/g:sm/q:90/h:595/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM1MjM2/MTQtMTU4NzE0NTk5/Mi00OTQ5LmpwZWc.jpeg"}, {"artiest": "Talk Talk", "titel": "It's my life", "jaar": 1984, "label": "EMI", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Pop", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/2rbn2pt-fwygf6qloEgZCy3BwCvBMZm_2ClBp5DWqKw/rs:fit/g:sm/q:90/h:550/w:550/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE1MTc4/OS0xMzkwMDQ2MjE3/LTU5ODMuanBlZw.jpeg"}, {"artiest": "The Cure", "titel": "seventeen seconds", "jaar": 1980, "label": "Polydor stemra", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "New Wave", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/oHb5XU05SNGsU2grL5pSEOpfURq6QXw5jJVxRzOTpYU/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTIzNDgw/OC0xNDAxMzA2Mzky/LTU5NzIuanBlZw.jpeg"}, {"artiest": "Ilse deLange", "titel": "Ilse deLange", "jaar": 2018, "label": "Universal", "barcode": "", "staat_vinyl": "Very Good Plus (VG+)", "staat_hoes": "Very Good Plus (VG+)", "formaat": "LP", "genre": "Pop", "land": "NL", "opmerkingen": "", "afbeelding": "https://i.discogs.com/s8mZxUEDLQsUruOWJqMKkE-oCeZM-pMezs3YKDebAZQ/rs:fit/g:sm/q:90/h:531/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTEyNDYy/MDA5LTE1MzU3NTQ5/MjMtNTEzOS5qcGVn.jpeg"}, {"artiest": "Kiss", "titel": "Love Gun", "jaar": 1977, "label": "Casablanca", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Hardrock", "land": "US", "opmerkingen": "", "afbeelding": "https://i.discogs.com/r6C3HQJZdSiRmc5Xzxt0n4toyKLz1u9H6vRNm4Bp63E/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTkwNjQ4/NDktMTQ3NDE1MDE1/MC0yNjg3LmpwZWc.jpeg"}, {"artiest": "Fleetwood Mac", "titel": "Tusk", "jaar": 1979, "label": "Warner Bros", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Rock", "land": "US", "opmerkingen": "", "afbeelding": "https://i.discogs.com/7cCaeBXFp63DNW_J-Hr7-8ocMdKEaZMafoCbdNXEUmo/rs:fit/g:sm/q:90/h:570/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTEwMjMz/NTI4LTE2NDQxNDk5/MDctNjY1Ny5wbmc.jpeg"}, {"artiest": "Fleetwood Mac", "titel": "Mirage", "jaar": 1982, "label": "Warner Bros", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Rock", "land": "US", "opmerkingen": "", "afbeelding": "https://i.discogs.com/kGjx8HQZtrtr3yxe7OgsKgMDQ31eoh9Kw9g0S0XA4GY/rs:fit/g:sm/q:90/h:597/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTg3MzQz/OS0xNDQxNzc4NDkz/LTgwNjUuanBlZw.jpeg"}, {"artiest": "Jon and Vangelis", "titel": "The Friends of mr. Cairo", "jaar": 1981, "label": "Polydor stemra", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Symfonic rock", "land": "US", "opmerkingen": "", "afbeelding": "https://i.discogs.com/fA_zuuvfCYrt7AVeF9LStCcq9hKmLXl6kRAoW83JQpI/rs:fit/g:sm/q:90/h:600/w:599/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM2MTAw/NC0xNTIwMTM3NzY1/LTU5MzguanBlZw.jpeg"}, {"artiest": "Supertramp", "titel": "Famous last Words", "jaar": 1982, "label": "A&M", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Rock", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/okcliqNG6eTzu0NKnsErpRB60PPG19hqZtmGxdglABQ/rs:fit/g:sm/q:90/h:599/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM3MjI3/NS0xNjUwMzgxODA0/LTUzOTAuanBlZw.jpeg"}, {"artiest": "ELO", "titel": "Out of the Blue", "jaar": 1977, "label": "Jet records", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Symfonic rock", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/-7CmAlL8SnTF1gw7KyliW7t5nrGQyzBF6oBtZNU3OvE/rs:fit/g:sm/q:90/h:588/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTYwMTIx/OC0xMzI0MjIzOTY3/LmpwZWc.jpeg"}, {"artiest": "ELO", "titel": "Xanadu", "jaar": 1980, "label": "Jet records", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Symfonic rock", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/BUxgjyysdS0tTw5Lr1HjRGFvUWeikAZNhFRLSzVvmBQ/rs:fit/g:sm/q:90/h:600/w:590/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTExMTE1/NjctMTMwMjYwNDI3/NC5qcGVn.jpeg"}, {"artiest": "Fisher Z", "titel": "Going deaf for a living", "jaar": 1980, "label": "Universal", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "SKA", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/B_ba4803DeWAIvILhyaWeBDXL1-cSrxmTRMhIPOOrGA/rs:fit/g:sm/q:90/h:600/w:595/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTIzODkw/NTQtMTQ4NDMyNzI5/Mi04OTk5LmpwZWc.jpeg"}, {"artiest": "Japan", "titel": "Nightporter", "jaar": 1982, "label": "Virgin", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "12\"", "genre": "Pop", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/Ws2H5vRWvn71WPfdvkrEtqhBabiZpeq9EWKsCdHaH2Q/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTIwNDE5/NC0xNDA5MzM4NjY1/LTU2MDAuanBlZw.jpeg"}, {"artiest": "The Animals", "titel": "House of the rising Sun", "jaar": null, "label": "EMI", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Poor", "formaat": "LP", "genre": "Rock", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/4XBR2JB2tIfIwmCB2kmq7XDMpMqEs0YoJSMK3393XKQ/rs:fit/g:sm/q:90/h:600/w:595/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTQ2Nzg2/Mi0xNzcxNzY1NjEz/LTMxMDEuanBlZw.jpeg"}, {"artiest": "Associates", "titel": "Those first Impressions", "jaar": 1984, "label": "Warner Bros", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "New Wave", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/L1YTR_ogy8ozr9PQ6_vhJNSRmAb5MoVjbnL7u-U5O4o/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTcyOTI5/Ny0xNDU1MzYzODkw/LTM3NjMuanBlZw.jpeg"}, {"artiest": "Dire Straits", "titel": "Communique", "jaar": 1979, "label": "Warner Bros", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Rock", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/AigSbxxGRc7LEGyq_so8WrxGSySI2Zr_ze9rJbYGOJk/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTQ5MTY5/MzMtMTM3OTQwMzIw/MC00ODI2LmpwZWc.jpeg"}, {"artiest": "Dire Straits", "titel": "Dire Straits", "jaar": 1978, "label": "Vertigo", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Rock", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/yTL8L_2eUPqArDt_Y6rAOaIdDfI8knGmVjgU8I4mvx0/rs:fit/g:sm/q:90/h:597/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTEzMDgw/MDEtMTY1NzQ0MTIy/Ny00NjI4LmpwZWc.jpeg"}, {"artiest": "Nina Hagen Band", "titel": "Nina Hagen Band", "jaar": 1978, "label": "CBS", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Punk", "land": "D", "opmerkingen": "", "afbeelding": "https://i.discogs.com/MC7QynNqiMijSuf-cKLggjSaV2CL8snyIv4wwBLIfwg/rs:fit/g:sm/q:90/h:585/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTU1NTI2/MjgtMTcxOTU5MjQ1/MS0zNDk5LmpwZWc.jpeg"}, {"artiest": "Kate Bush", "titel": "The Kick Inside", "jaar": 1978, "label": "Emi", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Pop", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/XZvjzv1I0S-rfdcoeKE6LIXxOI8-wEzff0fRGweFrr0/rs:fit/g:sm/q:90/h:598/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTQxNDM3/NC0xNDExNDA3MjA5/LTc1ODcuanBlZw.jpeg"}, {"artiest": "Kate Bush", "titel": "Lionheart", "jaar": 1978, "label": "Emi", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Pop", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/_4uA7gylQyW3xvn_kATi3HzYCyHrIxD__umqWfxveLI/rs:fit/g:sm/q:90/h:596/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTQyNjEw/OC0xNjExMTc0NDIx/LTQyOTYuanBlZw.jpeg"}, {"artiest": "Kate Bush", "titel": "Never for Ever", "jaar": 1980, "label": "Emi", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Pop", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/cUKdS2QrI0KT38x-9Ordjky8uXMo6KRAjXyGaasEb6E/rs:fit/g:sm/q:90/h:600/w:599/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTUwODI0/OC0xNDc0NzQxNzkw/LTM1MDUuanBlZw.jpeg"}, {"artiest": "Kate Bush", "titel": "The Dreaming", "jaar": 1982, "label": "EMI", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Pop", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/oNhp84zFyX9MYMhTeCbI4uOSh5vhy-B-oUQCgwVxbbI/rs:fit/g:sm/q:90/h:600/w:598/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTQ2MTM4/NC0xNjYxNjc2MjIw/LTE4OTguanBlZw.jpeg"}, {"artiest": "Bronski Beat", "titel": "Why", "jaar": 1984, "label": "London Records", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "12\"", "genre": "Pop", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/m0k9NiriJPWV1QChRqWclkX19BLvxdthNO_PmPoze9w/rs:fit/g:sm/q:90/h:600/w:582/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE2ODMx/Ni0xNTA3NjIxMDg4/LTkxNDEuanBlZw.jpeg"}, {"artiest": "Bronski Beat", "titel": "The age of Consent", "jaar": 1984, "label": "London Records", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Pop", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/R-JiVdtvUMMh5OIpnOZoowKNyz7rgLoWXdAzpkaaGZk/rs:fit/g:sm/q:90/h:600/w:597/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE2MzIx/My0xMTcxMDcwMTUx/LmpwZWc.jpeg"}, {"artiest": "Bronski Beat", "titel": "Smalltown Boy", "jaar": 1984, "label": "London Records", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "12\"", "genre": "Pop", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/bzNipnC3qr19hbiRz5tZqNyvwUOcsVEsRmUq5OqsQI8/rs:fit/g:sm/q:90/h:600/w:599/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTIyNDA1/MS0xMzYxMjIwMzM1/LTU0MTkuanBlZw.jpeg"}, {"artiest": "Bots", "titel": "1975-1980", "jaar": 1980, "label": "Fontana", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Nederlandstalig", "land": "NL", "opmerkingen": "", "afbeelding": "https://i.discogs.com/FfdBlLC8CpwQHhJuVBoSs6c5xDgMqh3V0n-LE9cUIxI/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTQwOTI1/MDYtMTYwMzEyNjQ1/My00NTgyLmpwZWc.jpeg"}, {"artiest": "Foreigner", "titel": "Agent Provocateur", "jaar": 1984, "label": "Atlantic", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Rock", "land": "US", "opmerkingen": "", "afbeelding": "https://i.discogs.com/jBJz2FeHUKTaxetxj6s9XMnhB3RU6Z1FG_9kNxbxCXY/rs:fit/g:sm/q:90/h:596/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM4NTIy/OS0xNzI3NjIzMDc5/LTg4MjcuanBlZw.jpeg"}, {"artiest": "Supertramp", "titel": "Live in Paris '79", "jaar": 2024, "label": "Universal", "barcode": "", "staat_vinyl": "Very Good Plus (VG+)", "staat_hoes": "Very Good Plus (VG+)", "formaat": "LP", "genre": "Rock", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/TfQt0lMVskUcxbtbXKT6yBTLEmejk7Xx8biymYkU7oU/rs:fit/g:sm/q:90/h:600/w:597/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTQ0ODMw/Mi0xNjQ5MDcxMDYx/LTM4MzMuanBlZw.jpeg"}, {"artiest": "Thomas Dolby", "titel": "The Flat earth", "jaar": 1984, "label": "EMI", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "New Wave", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/KUPXZsKaTd4aNBKyKpLCIpApN19o0V5xVbKG5zLH6qY/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTMxNjE2/LTE0MTI3MTUyOTct/NTA4MS5qcGVn.jpeg"}, {"artiest": "Supertramp", "titel": "Crisis? What crisis", "jaar": 1975, "label": "A&M", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Rock", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/dO5G4TjaF_p5TtZSmov0Ri08dyz_I5x1iVBEtviZ5BY/rs:fit/g:sm/q:90/h:600/w:593/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE0MTQw/MDItMTQ2MTQzNTQw/MC0zNTU4LmpwZWc.jpeg"}, {"artiest": "Muse", "titel": "Will of the People", "jaar": 2022, "label": "Warner Bros", "barcode": "", "staat_vinyl": "Very Good Plus (VG+)", "staat_hoes": "Very Good Plus (VG+)", "formaat": "LP", "genre": "Rock", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/8aH1ulWc_LK6cMtBykdjktIT-H7hVJGdCghV8mayeqg/rs:fit/g:sm/q:90/h:600/w:598/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI0MjQ2/MjYwLTE2NjE4NTg5/OTctNTUzNy5qcGVn.jpeg"}, {"artiest": "The Alan Parsons Project", "titel": "Eve", "jaar": 1979, "label": "Arista", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Symfonic rock", "land": "UK", "opmerkingen": "", "afbeelding": ""}, {"artiest": "Roy Orbison", "titel": "The very best of", "jaar": 1974, "label": "CBS", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Pop", "land": "US", "opmerkingen": "", "afbeelding": "https://i.discogs.com/R5fox9IPNvgtmEpmgw5hzAD1bMsjeMJbui6rSDvvbTM/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE0NDU4/MjctMTM3MzgwODEy/OC0zMjQyLmpwZWc.jpeg"}, {"artiest": "The Eagles", "titel": "The long run", "jaar": 1979, "label": "Asylum", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Rock", "land": "US", "opmerkingen": "", "afbeelding": "https://i.discogs.com/kGKEltRESMIXZNKbz_lTz1CjzCJz5BgH3JyVNZmv8PI/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTg5MjA3/MTMtMTQ3MTY4OTM5/Ni0yNjYxLmpwZWc.jpeg"}, {"artiest": "Iron Maiden", "titel": "Live after death", "jaar": 1985, "label": "EMI", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Hardrock", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/HS6FcR_b1noExDPaKWYhnf4zPQGBpE1nR1K1tPNQfQ4/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTEyOTg4/MjEtMTYyNDgwMzQx/Mi05MzM3LmpwZWc.jpeg"}, {"artiest": "The Moody blues", "titel": "Octave", "jaar": 1978, "label": "Decca", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Rock", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/QgoXnulMXzABKE3wevqp35JBuZO2FA57jzt9RBBeh0w/rs:fit/g:sm/q:90/h:595/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE2NjAw/MjEtMTQ4NzY3NTc1/Mi0xNTQ2LmpwZWc.jpeg"}, {"artiest": "Ian Dury and the blockheads", "titel": "Stiff little fingers", "jaar": 1978, "label": "Stiff records", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "New Wave", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/5SIf74t2YPAvrTPrxAZXGrEvnpYsAbEALVdbbyRpKpc/rs:fit/g:sm/q:90/h:600/w:597/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE3OTE2/NDItMTUxMzgwMzM5/My0yMDc3LmpwZWc.jpeg"}, {"artiest": "Bowwowwow", "titel": "See Jungle", "jaar": 1981, "label": "RCA", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "New Wave", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/pEJh_i5jXzTdlmMNkjcE-7KsX6d12P-KlTPNhpD5gpY/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTYzMTI4/NC0xMTY2NjI2OTM0/LmpwZWc.jpeg"}, {"artiest": "Urban Heroes", "titel": "Who said", "jaar": 1980, "label": "Ariola", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "New Wave", "land": "NL", "opmerkingen": "", "afbeelding": "https://i.discogs.com/BkExvnf7tmmM42dkTQ2UUon8w40ErPdu6gr4uCNuXZw/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE2NDYw/NzMtMTU2OTg1ODQ2/NS02NTA0LmpwZWc.jpeg"}, {"artiest": "Joh Lennon", "titel": "Shaved Fish", "jaar": 1975, "label": "Apple records", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Pop", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/8Py1wDAAaGjplb7q6C5Q7KVuvMOa12y26KLnEeNLVQY/rs:fit/g:sm/q:90/h:592/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTQzODMy/NTktMTY4MzQ3Njk3/NC0zNjE4LmpwZWc.jpeg"}, {"artiest": "Vandenberg", "titel": "Vandenberg", "jaar": 1982, "label": "Atco", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Hardrock", "land": "NL", "opmerkingen": "", "afbeelding": "https://i.discogs.com/Dt7IbWq5Ydm-xaHbRjQR8XAnHO3ztwYY-GdikgYMIMM/rs:fit/g:sm/q:90/h:242/w:276/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9BLTI1NDQx/MS0xMjg5MzE0OTYw/LnBuZw.jpeg"}, {"artiest": "van Kooten en de Bie", "titel": "Hengstenbal", "jaar": 1977, "label": "Simpelpee", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Nederlandstalig", "land": "NL", "opmerkingen": "", "afbeelding": "https://i.discogs.com/YNFGjfc8cTnU5_s8baykLceTYD13qWj5IEai8itKUkc/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTYwMTM0/Ny0xNTMzNDY2MTk3/LTcwNzAuanBlZw.jpeg"}, {"artiest": "The Waterboys", "titel": "This is the sea", "jaar": 1985, "label": "Island", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Pop", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/XBTM-BG6BFX27i4n6O420jed8zHtGB5I7rP7s2AfDbI/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE1MjQz/NjctMTQ1MTM5NTcw/NS0xNjkxLmpwZWc.jpeg"}, {"artiest": "Jim Croce", "titel": "Zijn grootste successen", "jaar": 1981, "label": "Roadrunner", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Pop", "land": "US", "opmerkingen": "", "afbeelding": "https://i.discogs.com/XagRX9Q7SIe-iLLwhaJ__2p6fSQqRBYQOYMRveQ4FIA/rs:fit/g:sm/q:90/h:597/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTUxODM5/Ny0xNDA3MTMwMjA0/LTcyNDMuanBlZw.jpeg"}, {"artiest": "Sade", "titel": "Diamond Life", "jaar": 1984, "label": "CBS", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Pop", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/-lQEjzCDqCQ_jNOEFpBZeSoQY-JFf03oNq17M1gpYcU/rs:fit/g:sm/q:90/h:580/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM0NjA5/NTctMTMzMTI2NzI4/NS5qcGVn.jpeg"}, {"artiest": "van Kooten en de Bie", "titel": "Gouden doden", "jaar": 1981, "label": "Simpelpee", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "12\"", "genre": "Nederlandstalig", "land": "NL", "opmerkingen": "", "afbeelding": "https://i.discogs.com/8SQd3zYHcMHnoiYTj2yOJn-DaipKDTxdIalMKfJVTxc/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTg3NjEy/My0xNTMzOTM4MjYx/LTkwOTMuanBlZw.jpeg"}, {"artiest": "Al Stewart", "titel": "Year of the Cat", "jaar": 1977, "label": "RCA", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Pop", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/YmxCsvFv54Ka2SAm8T2C2n0YxQ9cC4y8alSPDv-4LDE/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTg3NDcx/ODEtMTcwOTIxNTEy/Ni0xNDY4LmpwZWc.jpeg"}, {"artiest": "Gary Moore Phil Lynott", "titel": "Out in the Fields", "jaar": 1985, "label": "10 records", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "12\"", "genre": "Hardrock", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/K_vjbqgb_Kd5x7qLXD9yYizPqGbOrP61OfqMYQlVKlQ/rs:fit/g:sm/q:90/h:598/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTY5OTEx/Ny0xMTg1Mjg0MDEx/LmpwZWc.jpeg"}, {"artiest": "Saga", "titel": "Images of Twilight", "jaar": 1979, "label": "Polydor stemra", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Hardrock", "land": "CAN", "opmerkingen": "", "afbeelding": "https://i.discogs.com/bkqtqCUFrfaO4dGb5LQzJPRkUI7xm0w9ORAwNHB9PZE/rs:fit/g:sm/q:90/h:592/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTc4MzM5/NS0xMTk1MDQyNzk0/LmpwZWc.jpeg"}, {"artiest": "The Eagles", "titel": "Hotel California", "jaar": 1976, "label": "Asylum", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Rock", "land": "US", "opmerkingen": "", "afbeelding": "https://i.discogs.com/PZz0RZth-jDXq_vEwv640MTGizMZe5KEc6KTzM6ZKzY/rs:fit/g:sm/q:90/h:600/w:596/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTEzNTQ4/MTYtMTM4MzkwOTE3/MC0xNzEyLmpwZWc.jpeg"}, {"artiest": "Van Halen", "titel": "Van Halen", "jaar": 1977, "label": "Warner Bros", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Hardrock", "land": "US", "opmerkingen": "", "afbeelding": "https://i.discogs.com/roczw_NtkkygG6ynC3N_8BtJbPisLXnMk5uawMhE58M/rs:fit/g:sm/q:90/h:600/w:598/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM4OTI1/NDktMTM4NzkyNzYw/Ny00MjU3LmpwZWc.jpeg"}, {"artiest": "Ennio Morricone", "titel": "Het gebeeurde in het westen", "jaar": 1983, "label": "RCA", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Film", "land": "IT", "opmerkingen": "", "afbeelding": "https://i.discogs.com/tpT9SbGAOiv9W9Z8JED-wI0ZlMZkb1GzusQt1AWSf8U/rs:fit/g:sm/q:90/h:541/w:544/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTU5ODU1/NC0xMzg1NTc0MDcx/LTYyNzIuanBlZw.jpeg"}, {"artiest": "Creedence clearwater Revival", "titel": "Creedence Gold", "jaar": null, "label": "Bellaphon", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Rock", "land": "US", "opmerkingen": "", "afbeelding": "https://i.discogs.com/q4cWgogkbZ1JLkN50Cxj1fPtzTK0t9fYmW0DY2yrNI8/rs:fit/g:sm/q:90/h:592/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTQxMzc0/My0xNDUzNDgxNjUy/LTM2MzEuanBlZw.jpeg"}, {"artiest": "Madness", "titel": "Absolutely", "jaar": 1980, "label": "Stiff records", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "SKA", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/oOBv8qiTAokQNNhKYq0zDa8aJr1VnTVa0R-CntsXik4/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM4MTMz/MS0xNDg3MTg4Njk1/LTc2NTUuanBlZw.jpeg"}, {"artiest": "Bob Dylan", "titel": "Desire", "jaar": 1975, "label": "CBS", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Prog", "land": "US", "opmerkingen": "", "afbeelding": "https://i.discogs.com/3TzGmoNmsTOjpeMIqQTmEStNJ3RLGMtlVxbvusAOGds/rs:fit/g:sm/q:90/h:600/w:598/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTMwODAz/MDkxLTE3MTY5ODk4/MDgtMTUyNS5qcGVn.jpeg"}, {"artiest": "Van Halen", "titel": "Women and Children first", "jaar": 1980, "label": "Warner Bros", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Hardrock", "land": "US", "opmerkingen": "", "afbeelding": "https://i.discogs.com/A98FZ70t-RXXoxZCIJumiaMoiE3npxriCx4XfDP1qPg/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTExNjIz/ODAtMTMyNzY0ODgy/NS5qcGVn.jpeg"}, {"artiest": "Robert Long", "titel": "Levenslang", "jaar": 1977, "label": "EMI", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Nederlandstalig", "land": "NL", "opmerkingen": "", "afbeelding": "https://i.discogs.com/nSHWFyWKhq5NGEP1wIfrZsXGCYLIsw4YWNkLKMME9LA/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTk5MDc3/MS0xNDU4NTYwNzk4/LTMyNDEuanBlZw.jpeg"}, {"artiest": "Men at Work", "titel": "Cargo", "jaar": 1982, "label": "CBS", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Pop", "land": "AUS", "opmerkingen": "", "afbeelding": "https://i.discogs.com/qaivQb6ueEGxlrVSfiXi3mWt-8ZDfowhfshXAES461k/rs:fit/g:sm/q:90/h:591/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTExODI4/NTAtMTM1Mzk2NDgy/OC05NjUzLmpwZWc.jpeg"}, {"artiest": "Stars", "titel": "Hear'n AID", "jaar": 1985, "label": "A&M", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "12\"", "genre": "Hardrock", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/RT0EL-sgjyEvgBfGQeUSTY40TP0gRXSXE_gx57Fx28A/rs:fit/g:sm/q:90/h:600/w:595/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI0MDc3/NzEtMTQ0MTQ5MjI2/Ny0zODc5LmpwZWc.jpeg"}, {"artiest": "Cheap Trick", "titel": "Live at Budokan", "jaar": 1978, "label": "Epic", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Hardrock", "land": "AUS", "opmerkingen": "", "afbeelding": "https://i.discogs.com/gdnlljdZzGVssLDINekF3hhhdMdJWoeEKYvEzWLDwd0/rs:fit/g:sm/q:90/h:291/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTgzOTQ2/MzAtMTQ2MDg1MDgy/Ny0zNjE4LmpwZWc.jpeg"}, {"artiest": "Ian Dury and the blockheads", "titel": "Laughter", "jaar": 1980, "label": "Stiff records", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "New Wave", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/MchIgYFC2xEgSyNSPgpGYT3FhhOszgs-ZvUL1DMd-Hc/rs:fit/g:sm/q:90/h:367/w:350/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTY3MDk4/Ni0xMTQ1ODIwOTgz/LmpwZWc.jpeg"}, {"artiest": "Yazoo", "titel": "Don't Go", "jaar": 1982, "label": "Vogue", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "12\"", "genre": "New Wave", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/6NKhTMYCdStjDt2_VOgS47YZ-dw27IIJlpz6YgEYYLs/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTYzMjc5/LTEzMDUyMTQ5ODcu/anBlZw.jpeg"}, {"artiest": "Yes", "titel": "Leave it", "jaar": 1983, "label": "Atlantic", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "12\"", "genre": "Rock", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/QfUuMQ9vOsNLVP4s1X-jRuHlX_mfoM2nl7OK__f1HmY/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTEyMDg0/MTItMTUxODA1OTY4/MS01OTQ1LmpwZWc.jpeg"}, {"artiest": "Mothe Bass", "titel": "Mother Bass", "jaar": 2018, "label": "Freya records", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Hardrock", "land": "UK", "opmerkingen": "", "afbeelding": ""}, {"artiest": "JJ Cale", "titel": "The very best of", "jaar": 1988, "label": "Arcade", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Rock", "land": "US", "opmerkingen": "", "afbeelding": "https://i.discogs.com/V7AC12uwpbvC4aJg66G3Yyshdmyfsv81MSJs7cm7tUg/rs:fit/g:sm/q:90/h:588/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI4Mjgw/NDk3LTE2OTQ4ODEx/ODktMzM0NC5qcGVn.jpeg"}, {"artiest": "Het Goede Doel", "titel": "Tempo Doeloe", "jaar": 1983, "label": "CNR", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Nederlandstalig", "land": "NL", "opmerkingen": "", "afbeelding": "https://i.discogs.com/63m1XFE2MFkqUWw6I8AZLI0rsLOSfZB1s8my1WwFvHA/rs:fit/g:sm/q:90/h:600/w:599/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTg4MTk1/My0xNjMxNTI2MDI1/LTQwMDIuanBlZw.jpeg"}, {"artiest": "Madness", "titel": "One Step beyond", "jaar": 1979, "label": "Stiff records", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "SKA", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/aI9SzjYCiRN2CqelV1osOvvwnPDCSGUvLz87twXUijk/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM5NTMy/OS0xNDM4OTgzMDY2/LTIzODIuanBlZw.jpeg"}, {"artiest": "Simon and Garfunkel", "titel": "Greatest Hits", "jaar": 1972, "label": "CBS", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Poor", "formaat": "LP", "genre": "Pop", "land": "US", "opmerkingen": "", "afbeelding": "https://i.discogs.com/YJ5L1sB1AagcMcFG22X8y3MzagaUw8-28coMDP3_v2s/rs:fit/g:sm/q:90/h:600/w:588/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE4NzAz/MDYtMTQyMTIyNTY4/Ny0zMDIyLmpwZWc.jpeg"}, {"artiest": "Robert Long", "titel": "Dag kleine jongen", "jaar": 1983, "label": "Emi", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Nederlandstalig", "land": "NL", "opmerkingen": "", "afbeelding": "https://i.discogs.com/xe-Vatf51abyWPNrFxpElc41ZPLlCkXDgchm5bRJMTQ/rs:fit/g:sm/q:90/h:600/w:598/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTEyNjYz/ODItMTI5ODU4NTQz/OS5qcGVn.jpeg"}, {"artiest": "Robert Long", "titel": "Achter de Horizon", "jaar": 1986, "label": "Emi", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Nederlandstalig", "land": "NL", "opmerkingen": "", "afbeelding": "https://i.discogs.com/0v4-MBoaAOSOMK4UvENZAT6IlFrKmGCNZfESjUszMXQ/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTkxMjkx/Ni0xNDQ1NjA1MTA3/LTczMjQuanBlZw.jpeg"}, {"artiest": "Easy Rider", "titel": "Born on the Road", "jaar": null, "label": "Europa", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Film", "land": "US", "opmerkingen": "", "afbeelding": "https://i.discogs.com/TAWIcGm2AF-jmKbqcEZM4RI2TWkkNgqkXVUse5ZW86c/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE0OTYz/MjAzLTE1ODQ4MDY0/MzMtNTg5OC5qcGVn.jpeg"}, {"artiest": "van Kooten en de Bie", "titel": "Draaikonten", "jaar": null, "label": "Simpelpee", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Nederlandstalig", "land": "NL", "opmerkingen": "", "afbeelding": "https://i.discogs.com/PBUgCOkIoZZER6bJySN4bXmNPhgen_Zlfdm7I6ybyxo/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTg3NjE0/OC0xNTczOTkzMzky/LTIwNTkuanBlZw.jpeg"}, {"artiest": "The Beatles", "titel": "Sergeant Peppers Lonely heartsclub Band", "jaar": 1969, "label": "Horzu / EMI", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Pop", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/JNbAKGFjLM_LrPZVRlNtWlYTgpUwXTZcqbC5okuCP-M/rs:fit/g:sm/q:90/h:590/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTQ5OTQ5/Ny0xNDU2MDQ3Mzgz/LTk0ODkuanBlZw.jpeg"}, {"artiest": "Bram Tchaikovski", "titel": "Sarah Smiles", "jaar": 1978, "label": "Criminal Records", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "12\"", "genre": "New Wave", "land": "UK", "opmerkingen": "", "afbeelding": "https://i.discogs.com/dIa-4CJQosBEVvvYb7J_d_74l1zIpwJkF6UkG0BjCNg/rs:fit/g:sm/q:90/h:500/w:500/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTg2MzI5/NS0xMjI1NzExNTQ1/LmpwZWc.jpeg"}, {"artiest": "Don McLean", "titel": "American Pie", "jaar": 1971, "label": "United Artist Records", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Pop", "land": "US", "opmerkingen": "", "afbeelding": "https://i.discogs.com/tO1NmlMLlX7T0E6i9jxBnWXeXRhivcb84H5Wx1g84bg/rs:fit/g:sm/q:90/h:595/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTU5NDQ0/NzQtMTQwNjk5ODA4/Mi0zNzAzLmpwZWc.jpeg"}, {"artiest": "Simon and Garfunkel", "titel": "Bridge over Troubled Water", "jaar": 1970, "label": "CBS", "barcode": "", "staat_vinyl": "Good", "staat_hoes": "Good", "formaat": "LP", "genre": "Pop", "land": "US", "opmerkingen": "", "afbeelding": "https://i.discogs.com/61Q3XhLDIxrT9iP9hFkEew-X32b9rLThkRbNOOKApGk/rs:fit/g:sm/q:90/h:592/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTYwNTMy/OC0xNDM3NTUwNzI4/LTI0NDAuanBlZw.jpeg"}]</script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
-// ---------- IndexedDB helpers ----------
-const DB_NAME = 'vondstenboek';
-const STORE = 'items';
-let dbPromise = null;
+var INIT = JSON.parse(document.getElementById('data-json').textContent);
+var SKEY = 'platen_v10';
+var col = [], zoek = '', filter = '', openId = null;
+var syncMode = false, firestoreDb = null, unsubscribeSnapshot = null;
+var GEMINI_KEY_STORAGE = 'platen_gemini_key';
+var FIREBASE_CONFIG_STORAGE = 'platen_firebase_config';
+var fotoData = null, analyzing = false;
 
-function getDB() {
-  if (dbPromise) return dbPromise;
-  dbPromise = new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, 1);
-    req.onupgradeneeded = () => {
-      const db = req.result;
-      if (!db.objectStoreNames.contains(STORE)) {
-        db.createObjectStore(STORE, { keyPath: 'id' });
+function hashStr(s){var h=0;for(var i=0;i<s.length;i++){h=((h<<5)-h+s.charCodeAt(i))|0;}return Math.abs(h).toString(36);}
+function ensureIds(){col.forEach(function(p,idx){if(!p.id)p.id='legacy_'+idx+'_'+hashStr((p.artiest||'')+'|'+(p.titel||'')+'|'+(p.jaar||'')+'|'+(p.label||''));});}
+function getImg(p){return p.foto || p.afbeelding || '';}
+
+var ST = {
+  'Mint (M)':{k:'#2ecc71',bg:'rgba(46,204,113,.12)'},
+  'Near Mint (NM)':{k:'#27ae60',bg:'rgba(39,174,96,.12)'},
+  'Very Good Plus (VG+)':{k:'#3498db',bg:'rgba(52,152,219,.12)'},
+  'Very Good (VG)':{k:'#e67e22',bg:'rgba(230,126,34,.12)'},
+  'Good Plus (G+)':{k:'#e74c3c',bg:'rgba(231,76,60,.12)'},
+  'Good (G)':{k:'#c0392b',bg:'rgba(192,57,43,.12)'},
+  'Fair (F)':{k:'#922b21',bg:'rgba(146,43,33,.12)'},
+  'Poor (P)':{k:'#641e16',bg:'rgba(100,30,22,.12)'}
+};
+function si(s){return ST[s]||{k:'#555',bg:'rgba(85,85,85,.12)'};}
+
+function laad(){
+  try{var d=localStorage.getItem(SKEY);col=d?JSON.parse(d):INIT.map(function(i){return Object.assign({},i);});}
+  catch(e){col=INIT.map(function(i){return Object.assign({},i);});}
+  ensureIds();
+  sla();
+}
+function sla(){try{localStorage.setItem(SKEY,JSON.stringify(col));}catch(e){}}
+
+function persistNew(item){
+  if(syncMode){return firestoreDb.collection('platen').doc(item.id).set(item);}
+  col.push(item);sla();return Promise.resolve();
+}
+function persistDelete(id){
+  if(syncMode){return firestoreDb.collection('platen').doc(id).delete();}
+  col=col.filter(function(p){return p.id!==id;});sla();return Promise.resolve();
+}
+
+function render(){
+  var q=zoek.toLowerCase();
+  var gef=col.filter(function(p){
+    return(!q||p.artiest.toLowerCase().indexOf(q)>-1||p.titel.toLowerCase().indexOf(q)>-1||(p.genre||'').toLowerCase().indexOf(q)>-1)&&(!filter||p.artiest===filter);
+  });
+  document.getElementById('teller').textContent=(zoek||filter)?gef.length+'/'+col.length+' platen':col.length+' platen';
+  var nm=col.filter(function(p){return p.staat_vinyl==='Near Mint (NM)'||p.staat_vinyl==='Mint (M)';}).length;
+  var vgp=col.filter(function(p){return p.staat_vinyl==='Very Good Plus (VG+)';}).length;
+  document.getElementById('statsBar').innerHTML=
+    '<div class="stat"><div class="n">'+col.length+'</div><div class="l">Platen</div></div>'+
+    '<div class="stat"><div class="n" style="color:#27ae60">'+nm+'</div><div class="l">NM of beter</div></div>'+
+    '<div class="stat"><div class="n" style="color:#3498db">'+vgp+'</div><div class="l">VG+</div></div>';
+  var tels={};col.forEach(function(p){tels[p.artiest]=(tels[p.artiest]||0)+1;});
+  var tops=Object.keys(tels).filter(function(a){return tels[a]>1;}).sort(function(a,b){return a.localeCompare(b);});
+  var ch='<button class="chip'+(filter?'':' on')+'" onclick="setF(null)">Alle</button>';
+  tops.forEach(function(a){ch+='<button class="chip'+(filter===a?' on':'')+'" data-v="'+encodeURIComponent(a)+'" onclick="setF2(this)">'+a.split(' ')[0]+' '+tels[a]+'</button>';});
+  document.getElementById('chips').innerHTML=ch;
+  if(!gef.length){document.getElementById('lijst').innerHTML='<div class="leeg"><div style="font-size:48px;margin-bottom:12px">&#127925;</div><p>Geen platen gevonden</p></div>';return;}
+  var gr={};gef.forEach(function(p){if(!gr[p.artiest])gr[p.artiest]=[];gr[p.artiest].push(p);});
+  var arr=Object.keys(gr).sort(function(a,b){return a.localeCompare(b);});
+  var h='';
+  arr.forEach(function(art){
+    h+='<div class="groep">'+art+' <span style="color:#333">'+gr[art].length+'</span></div>';
+    gr[art].forEach(function(p){
+      var idx=col.indexOf(p);var id='k'+idx;var isOp=(openId===id);var info=si(p.staat_vinyl);
+      var vinyl='<svg viewBox="0 0 52 52" width="52" height="52"><circle cx="26" cy="26" r="25" fill="#0d0d0d" stroke="#2a2a2a" stroke-width="1"/><circle cx="26" cy="26" r="19" fill="#141414"/><circle cx="26" cy="26" r="13" fill="#0d0d0d"/><circle cx="26" cy="26" r="7" fill="#161616"/><circle cx="26" cy="26" r="4" fill="'+info.k+'" opacity=".9"/><circle cx="26" cy="26" r="1.8" fill="#0d0d0d"/></svg>';
+      h+='<div class="kaart'+(isOp?' open':'')+'" id="'+id+'" data-id="'+id+'" onclick="tog(this.dataset.id)">';
+      h+='<div class="kaart-top">';
+      h+='<div class="thumb">'+(getImg(p)?'<img src="'+getImg(p)+'" onerror="this.parentElement.innerHTML=String.fromCodePoint(127925)">':vinyl)+'</div>';
+      h+='<div class="info"><div class="titel">'+p.titel+'</div><div class="artiest">'+p.artiest+'</div>';
+      h+='<div class="badges">'+(p.jaar?'<span class="badge bj">'+p.jaar+'</span>':'')+'<span class="badge bf">'+(p.formaat||'LP')+'</span>'+(p.land?'<span class="badge bla">'+p.land+'</span>':'')+'</div></div>';
+      h+='<div class="dot" style="background:'+info.k+'"></div></div>';
+      if(isOp){
+        h+='<div class="detail">';
+        if(getImg(p))h+='<div class="groot"><img src="'+getImg(p)+'" onerror="this.parentElement.style.display=String.fromCharCode(110,111,110,101)"></div>';
+        h+='<div class="dgrid">';
+        if(p.staat_vinyl)h+='<div class="dblok"><div class="dlabel">Staat Vinyl</div><span class="staat" style="color:'+si(p.staat_vinyl).k+';background:'+si(p.staat_vinyl).bg+'">'+p.staat_vinyl+'</span></div>';
+        if(p.staat_hoes)h+='<div class="dblok"><div class="dlabel">Staat Hoes</div><span class="staat" style="color:'+si(p.staat_hoes).k+';background:'+si(p.staat_hoes).bg+'">'+p.staat_hoes+'</span></div>';
+        if(p.label)h+='<div class="dblok"><div class="dlabel">Label / Nr.</div><div class="dwaarde" style="font-size:12px">'+p.label+'</div></div>';
+        if(p.genre)h+='<div class="dblok"><div class="dlabel">Genre</div><div class="dwaarde">'+p.genre+'</div></div>';
+        if(p.barcode)h+='<div class="dblok"><div class="dlabel">Barcode</div><div class="dwaarde" style="font-size:11px;font-family:monospace">'+p.barcode+'</div></div>';
+        if(p.land)h+='<div class="dblok"><div class="dlabel">Land</div><div class="dwaarde">'+p.land+'</div></div>';
+        h+='</div>';
+        if(p.opmerkingen)h+='<div class="opmerking">'+p.opmerkingen+'</div>';
+        h+='<button class="delbtn" onclick="event.stopPropagation();del(\''+p.id+'\')">Verwijderen</button>';
+        h+='</div>';
       }
-    };
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
+      h+='</div>';
+    });
   });
-  return dbPromise;
+  document.getElementById('lijst').innerHTML=h;
 }
 
-async function dbGetAll() {
-  const db = await getDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE, 'readonly');
-    const req = tx.objectStore(STORE).getAll();
-    req.onsuccess = () => resolve(req.result || []);
-    req.onerror = () => reject(req.error);
-  });
+function tog(id){
+  if(openId&&openId!==id){var p=document.getElementById(openId);if(p)p.classList.remove('open');}
+  var el=document.getElementById(id);if(!el)return;
+  el.classList.toggle('open');openId=el.classList.contains('open')?id:null;render();
+  if(openId)setTimeout(function(){el.scrollIntoView({behavior:'smooth',block:'nearest'});},100);
 }
-
-async function dbPut(item) {
-  const db = await getDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE, 'readwrite');
-    tx.objectStore(STORE).put(item);
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
-  });
+function setF(a){filter=a||'';render();}
+function setF2(btn){filter=decodeURIComponent(btn.getAttribute('data-v'));render();}
+document.getElementById('zoekInput').addEventListener('input',function(){zoek=this.value;filter='';render();});
+function toonTab(id,btn){
+  document.querySelectorAll('main > div').forEach(function(d){d.style.display='none';});
+  document.getElementById(id).style.display='block';
+  document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('on');});
+  btn.classList.add('on');if(id==='collectie')render();
 }
+function showErr(msg){document.getElementById('errArea').innerHTML='<div class="errbox">'+msg+'</div>';}
+function clearErr(){document.getElementById('errArea').innerHTML='';}
 
-async function dbDelete(id) {
-  const db = await getDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE, 'readwrite');
-    tx.objectStore(STORE).delete(id);
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
-  });
+async function plaatOpslaan(){
+  clearErr();
+  var a=document.getElementById('fa').value.trim();var t=document.getElementById('ft').value.trim();
+  if(!a||!t){showErr('Artiest en titel zijn verplicht');return;}
+  var item={
+    id:'r'+Date.now()+'_'+Math.random().toString(36).slice(2,8),
+    artiest:a,titel:t,jaar:parseInt(document.getElementById('fj').value)||null,
+    label:document.getElementById('fl').value.trim(),barcode:'',
+    staat_vinyl:document.getElementById('fsv').value,staat_hoes:document.getElementById('fsh').value,
+    formaat:document.getElementById('ff').value,genre:document.getElementById('fg').value.trim(),
+    land:document.getElementById('fla').value.trim(),opmerkingen:document.getElementById('fo').value.trim(),
+    afbeelding:document.getElementById('fafb').value.trim(),
+    foto: fotoData || ''
+  };
+  try{
+    await persistNew(item);
+    showToast('Toegevoegd: '+a+' - '+t);
+    ['fa','ft','fj','fl','fg','fla','fo','fafb'].forEach(function(id){document.getElementById(id).value='';});
+    fotoData=null; renderFotoArea();
+    if(!syncMode) render();
+    document.querySelector('.tab[onclick*="collectie"]').click();
+  }catch(err){
+    showErr('Opslaan is niet gelukt. Mogelijk is de synchronisatie niet goed ingesteld.');
+  }
 }
-
-// ---------- State ----------
-let items = [];
-let editingId = null;
-let currentPhotos = [];
-const MAX_PHOTOS = 5;
-const PHOTO_MAX_CHARS = 180000;
-
-const grid = document.getElementById('grid');
-const emptyState = document.getElementById('emptyState');
-const emptyTitle = document.getElementById('emptyTitle');
-const emptyHint = document.getElementById('emptyHint');
-const searchInput = document.getElementById('searchInput');
-const overlay = document.getElementById('overlay');
-const modalTitle = document.getElementById('modalTitle');
-const errorBox = document.getElementById('errorBox');
-const photoArea = document.getElementById('photoArea');
-const fileInput = document.getElementById('fileInput');
-const aiArea = document.getElementById('aiArea');
-const settingsOverlay = document.getElementById('settingsOverlay');
-const apiKeyInput = document.getElementById('apiKeyInput');
-const detailOverlay = document.getElementById('detailOverlay');
-const firebaseConfigInput = document.getElementById('firebaseConfigInput');
-const syncStatus = document.getElementById('syncStatus');
-const syncBadge = document.getElementById('syncBadge');
-
-const fieldIds = ['naam','categorie','merkMaker','periode','materiaal','conditie','waardeMin','waardeMax','aankoopprijs','locatie','notities','toelichting'];
-const GEMINI_KEY_STORAGE = 'vondstenboek_gemini_key';
-const FIREBASE_CONFIG_STORAGE = 'vondstenboek_firebase_config';
-let analyzing = false;
-let syncMode = false;
-let firestoreDb = null;
-let unsubscribeSnapshot = null;
-let persistenceAttempted = false;
-
-const IDENTIFY_PROMPT = `Je bent een expert in antiek, vintage verzamelobjecten, keramiek, speelgoed, hifi-apparatuur, glaswerk en vlooienmarktvondsten. Bekijk de foto goed en geef ALLEEN een JSON-object terug, zonder andere tekst, markdown-opmaak of uitleg eromheen, in exact dit formaat:
-{"naam": "korte titel van het object", "categorie": "vrije omschrijving, bv. keramiek, speelgoed, meubels, audio, glaswerk, religieus object", "merkMaker": "merk of maker indien herkenbaar, anders lege string", "periode": "geschatte periode of decennium indien herkenbaar, anders lege string", "materiaal": "materiaal indien duidelijk zichtbaar, anders lege string", "conditie": "korte inschatting van de staat in enkele woorden", "waardeMin": geheel getal in euro of null, "waardeMax": geheel getal in euro of null, "toelichting": "1 tot 2 zinnen met de redenering achter de inschatting"}
-Wees realistisch en voorzichtig met waardeschattingen; het zijn indicaties, geen taxaties.`;
-
-function fmtNum(id) { return 'f_' + id; }
-
-function getItemPhotos(item) {
-  if (item && Array.isArray(item.photos) && item.photos.length) return item.photos;
-  if (item && item.photoData) return [item.photoData];
-  return [];
+function del(id){
+  if(!confirm('Verwijder?'))return;
+  openId=null;
+  persistDelete(id).then(function(){
+    showToast('Verwijderd');
+    if(!syncMode) render();
+  }).catch(function(){showErr('Verwijderen is niet gelukt.');});
 }
+var tt;
+function showToast(t){var el=document.getElementById('toast');el.textContent=t;el.classList.add('aan');clearTimeout(tt);tt=setTimeout(function(){el.classList.remove('aan');},2800);}
 
-function formatInventoryNumber(n) {
-  return 'VB-' + String(n).padStart(4, '0');
-}
-
-function resizeImage(file, maxWidth = 1000, quality = 0.78) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = new Image();
-      img.onload = () => {
-        let { width, height } = img;
-        if (width > maxWidth) {
-          height = Math.round((height * maxWidth) / width);
-          width = maxWidth;
-        }
-        const canvas = document.createElement('canvas');
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, width, height);
-        resolve(canvas.toDataURL('image/jpeg', quality));
+// ---------- Foto & AI-herkenning ----------
+async function resizeImage(file,maxWidth,quality){
+  return new Promise(function(resolve,reject){
+    var reader=new FileReader();
+    reader.onload=function(e){
+      var img=new Image();
+      img.onload=function(){
+        var w=img.naturalWidth,h=img.naturalHeight;
+        if(w>maxWidth){h=Math.round(h*maxWidth/w);w=maxWidth;}
+        var canvas=document.createElement('canvas');
+        canvas.width=w;canvas.height=h;
+        canvas.getContext('2d').drawImage(img,0,0,w,h);
+        resolve(canvas.toDataURL('image/jpeg',quality));
       };
-      img.onerror = () => reject(new Error('Kan afbeelding niet lezen'));
-      img.src = e.target.result;
+      img.onerror=function(){reject(new Error('Kan afbeelding niet lezen'));};
+      img.src=e.target.result;
     };
-    reader.onerror = () => reject(new Error('Kan bestand niet lezen'));
+    reader.onerror=function(){reject(new Error('Kan bestand niet lezen'));};
     reader.readAsDataURL(file);
   });
 }
-
-// Foto's blijven ruim onder de 1MB-documentlimiet van Firestore, ook als synchronisatie uitstaat.
-async function resizeImageWithLimit(file, maxChars = 700000) {
-  let width = 1000;
-  let quality = 0.78;
-  let dataUrl = await resizeImage(file, width, quality);
-  let attempts = 0;
-  while (dataUrl.length > maxChars && attempts < 6) {
-    width = Math.round(width * 0.8);
-    quality = Math.max(0.4, quality - 0.1);
-    dataUrl = await resizeImage(file, width, quality);
-    attempts++;
+async function resizeImageWithLimit(file,maxChars){
+  maxChars=maxChars||260000;
+  var width=1000,quality=0.8,dataUrl=await resizeImage(file,width,quality),attempts=0;
+  while(dataUrl.length>maxChars&&attempts<6){
+    width=Math.round(width*0.8);quality=Math.max(0.4,quality-0.1);
+    dataUrl=await resizeImage(file,width,quality);attempts++;
   }
   return dataUrl;
 }
+function renderFotoArea(){
+  var el=document.getElementById('fotoArea');
+  if(fotoData){
+    el.innerHTML='<div class="fotoprev"><img src="'+fotoData+'"><button type="button" id="fotoChangeBtn">Andere foto</button></div>';
+    document.getElementById('fotoChangeBtn').onclick=function(){document.getElementById('fotoInput').click();};
+  }else{
+    el.innerHTML='<button type="button" class="fotobox" id="fotoAddBtn">&#128247; Foto van hoes toevoegen (optioneel, voor AI-herkenning)</button>';
+    document.getElementById('fotoAddBtn').onclick=function(){document.getElementById('fotoInput').click();};
+  }
+  renderAiArea();
+}
+function renderAiArea(){
+  var el=document.getElementById('aiArea');
+  if(!fotoData){el.innerHTML='';return;}
+  var hasKey=!!getApiKey();
+  if(analyzing){el.innerHTML='<button class="aiknop" disabled>AI bekijkt de hoes&hellip;</button>';return;}
+  el.innerHTML='<button type="button" class="aiknop" id="analyzeBtn">&#10024; Laat AI dit herkennen</button>'+(hasKey?'':'<p class="aihint">Nog geen API-key ingesteld &mdash; klik op &#9881; rechtsboven.</p>');
+  document.getElementById('analyzeBtn').onclick=handleAnalyze;
+}
+document.getElementById('fotoInput').addEventListener('change', async function(e){
+  var file=e.target.files&&e.target.files[0];
+  if(!file)return;
+  clearErr();
+  try{fotoData=await resizeImageWithLimit(file);renderFotoArea();}
+  catch(err){showErr('De foto kon niet worden geladen.');}
+  e.target.value='';
+});
 
-function parseFirebaseConfig(raw) {
-  let trimmed = raw.trim();
-  if (!trimmed) return null;
-  // Verwijder eventuele meegeplakte // commentaarregels (bv. uit de Firebase-codevoorbeelden)
-  trimmed = trimmed.replace(/^\s*\/\/.*$/gm, '');
-  // Herstel "slimme aanhalingstekens" die iOS/iPadOS soms automatisch invoegt
-  trimmed = trimmed
-    .replace(/[\u201C\u201D\u201E\u201F]/g, '"')
-    .replace(/[\u2018\u2019\u201A\u201B]/g, "'");
-  const start = trimmed.indexOf('{');
-  const end = trimmed.lastIndexOf('}');
-  if (start === -1 || end === -1) throw new Error('Geen geldig configuratie-object gevonden');
-  const objectText = trimmed.slice(start, end + 1);
-  // eslint-disable-next-line no-new-func
-  const parsed = new Function('return (' + objectText + ');')();
-  if (!parsed || !parsed.apiKey || !parsed.projectId) throw new Error('Configuratie mist verplichte velden');
+var IDENTIFY_PROMPT="Je bent een expert in vinyl platen en discografie. Bekijk de platenhoes op de foto en geef ALLEEN een JSON-object terug, zonder andere tekst of markdown, in exact dit formaat: {\"artiest\": \"naam van de artiest of band\", \"titel\": \"titel van het album\", \"jaar\": geheel getal met het vermoedelijke jaar van deze persing of null, \"label\": \"platenlabel en eventueel catalogusnummer indien zichtbaar\", \"formaat\": \"kies uit: LP, 2xLP, EP, Single (7\\\"), 12\\\" Single, Maxi-Single, Box Set, Overig\", \"genre\": \"muziekgenre\", \"land\": \"land van persing indien herkenbaar aan de hoes, anders lege string\", \"opmerkingen\": \"1 korte zin met bijzonderheden over deze persing indien zichtbaar\"} Wees voorzichtig en realistisch; als iets niet zeker af te lezen is, geef een lege string of null.";
+
+async function analyzeWithGemini(dataUrl,apiKey){
+  var match=dataUrl.match(/^data:(.+);base64,(.*)$/);
+  if(!match)throw new Error('Ongeldige afbeelding');
+  var mimeType=match[1],base64=match[2];
+  var url='https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key='+encodeURIComponent(apiKey);
+  var response;
+  try{
+    response=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:IDENTIFY_PROMPT},{inline_data:{mime_type:mimeType,data:base64}}]}]})});
+  }catch(networkErr){throw new Error('Geen verbinding met Google kunnen maken.');}
+  if(!response.ok){
+    var detail='';
+    try{var errBody=await response.json();detail=errBody&&errBody.error&&errBody.error.message?errBody.error.message:'';}catch(e){}
+    throw new Error('AI-analyse mislukt ('+response.status+')'+(detail?': '+detail:''));
+  }
+  var data=await response.json();
+  var candidate=data&&data.candidates&&data.candidates[0];
+  if(!candidate)throw new Error('Geen antwoord van de AI ontvangen.');
+  var text=candidate.content&&candidate.content.parts&&candidate.content.parts[0]&&candidate.content.parts[0].text;
+  if(!text)throw new Error('Geen tekstantwoord ontvangen.');
+  var clean=text.replace(/```json|```/g,'').trim();
+  try{return JSON.parse(clean);}catch(e){throw new Error('Kon het AI-antwoord niet lezen.');}
+}
+async function handleAnalyze(){
+  var apiKey=getApiKey();
+  if(!apiKey){showErr('Stel eerst een gratis Gemini API-key in via &#9881; rechtsboven.');return;}
+  clearErr();analyzing=true;renderAiArea();
+  try{
+    var s=await analyzeWithGemini(fotoData,apiKey);
+    if(s.artiest)document.getElementById('fa').value=s.artiest;
+    if(s.titel)document.getElementById('ft').value=s.titel;
+    if(s.jaar)document.getElementById('fj').value=s.jaar;
+    if(s.label)document.getElementById('fl').value=s.label;
+    if(s.genre)document.getElementById('fg').value=s.genre;
+    if(s.land)document.getElementById('fla').value=s.land;
+    if(s.opmerkingen)document.getElementById('fo').value=s.opmerkingen;
+    if(s.formaat){
+      var sel=document.getElementById('ff');
+      for(var i=0;i<sel.options.length;i++){if(sel.options[i].value===s.formaat){sel.selectedIndex=i;break;}}
+    }
+  }catch(err){
+    showErr(err&&err.message?err.message:'De AI kon deze foto niet analyseren.');
+  }finally{
+    analyzing=false;renderAiArea();
+  }
+}
+
+// ---------- Synchronisatie ----------
+function getApiKey(){return localStorage.getItem(GEMINI_KEY_STORAGE)||'';}
+function getFirebaseConfig(){var raw=localStorage.getItem(FIREBASE_CONFIG_STORAGE);if(!raw)return null;try{return JSON.parse(raw);}catch(e){return null;}}
+function parseFirebaseConfig(raw){
+  var trimmed=raw.trim();
+  if(!trimmed)return null;
+  trimmed=trimmed.replace(/^\s*\/\/.*$/gm,'');
+  trimmed=trimmed.replace(/[\u201C\u201D\u201E\u201F]/g,'"').replace(/[\u2018\u2019\u201A\u201B]/g,"'");
+  var start=trimmed.indexOf('{'),end=trimmed.lastIndexOf('}');
+  if(start===-1||end===-1)throw new Error('Geen geldig configuratie-object gevonden');
+  var objectText=trimmed.slice(start,end+1);
+  var parsed=new Function('return ('+objectText+');')();
+  if(!parsed||!parsed.apiKey||!parsed.projectId)throw new Error('Configuratie mist verplichte velden');
   return parsed;
 }
-
-function getFirebaseConfig() {
-  const raw = localStorage.getItem(FIREBASE_CONFIG_STORAGE);
-  if (!raw) return null;
-  try { return JSON.parse(raw); } catch { return null; }
-}
-
-function showGlobalError(msg) {
-  const el = document.getElementById('globalError');
-  el.textContent = msg;
-  el.classList.add('show');
-}
-function clearGlobalError() {
-  const el = document.getElementById('globalError');
-  el.textContent = '';
-  el.classList.remove('show');
-}
-
-function updateSyncBadge() {
-  syncBadge.textContent = syncMode ? '● gesynchroniseerd' : '';
-}
-
-function initSync() {
-  const config = getFirebaseConfig();
-  if (unsubscribeSnapshot) { unsubscribeSnapshot(); unsubscribeSnapshot = null; }
-  if (!config) { syncMode = false; updateSyncBadge(); loadItems(); return; }
-  if (typeof firebase === 'undefined') {
-    syncMode = false;
-    updateSyncBadge();
-    showGlobalError('De Firebase-bibliotheek kon niet geladen worden. Controleer je internetverbinding en herlaad de pagina.');
-    loadItems();
-    return;
+function updateSyncBadge(){document.getElementById('syncBadge').textContent=syncMode?'\u25CF gesynchroniseerd':'';}
+function initSync(){
+  var config=getFirebaseConfig();
+  if(unsubscribeSnapshot){unsubscribeSnapshot();unsubscribeSnapshot=null;}
+  if(!config){syncMode=false;updateSyncBadge();laad();render();return;}
+  if(typeof firebase==='undefined'){
+    syncMode=false;updateSyncBadge();
+    showErr('De Firebase-bibliotheek kon niet geladen worden. Controleer je internetverbinding.');
+    laad();render();return;
   }
-  try {
-    if (!firebase.apps.length) {
-      firebase.initializeApp(config);
-    } else {
-      firebase.app().delete().catch(() => {});
-      firebase.initializeApp(config);
-    }
-    firestoreDb = firebase.firestore();
-    if (!persistenceAttempted) {
-      persistenceAttempted = true;
-      try {
-        firestoreDb.enablePersistence({ synchronizeTabs: true }).catch(() => {
-          // Persistentie niet beschikbaar (bv. meerdere open tabbladen of oudere browser) — app werkt dan alleen online.
-        });
-      } catch (persistErr) {
-        // Kan al gestart zijn in dit tabblad — geen probleem, gewoon doorgaan zonder offline-cache.
-      }
-    }
-    syncMode = true;
-    updateSyncBadge();
-    clearGlobalError();
-    unsubscribeSnapshot = firestoreDb.collection('vondsten').onSnapshot(
-      (snapshot) => {
-        clearGlobalError();
-        items = snapshot.docs.map((d) => d.data());
-        items.sort((a, b) => (b.volgnummer || 0) - (a.volgnummer || 0));
-        render();
-      },
-      (err) => {
-        showGlobalError('Synchroniseren lukt niet (' + (err && err.code ? err.code : 'onbekende fout') + '). Controleer de databaseregels bij instellingen.');
-      }
-    );
-  } catch (e) {
-    syncMode = false;
-    updateSyncBadge();
-    showGlobalError('Verbinden met Firebase mislukt: ' + (e && e.message ? e.message : String(e)));
-    loadItems();
-  }
-}
-
-function showError(msg) {
-  errorBox.textContent = msg;
-  errorBox.classList.add('show');
-}
-function clearError() {
-  errorBox.textContent = '';
-  errorBox.classList.remove('show');
-}
-
-function getApiKey() {
-  return localStorage.getItem(GEMINI_KEY_STORAGE) || '';
-}
-
-async function analyzeWithGemini(dataUrl, apiKey) {
-  const match = dataUrl.match(/^data:(.+);base64,(.*)$/);
-  if (!match) throw new Error('Ongeldige afbeelding');
-  const [, mimeType, base64] = match;
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${encodeURIComponent(apiKey)}`;
-  let response;
-  try {
-    response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{
-          parts: [
-            { text: IDENTIFY_PROMPT },
-            { inline_data: { mime_type: mimeType, data: base64 } },
-          ],
-        }],
-      }),
+  try{
+    if(!firebase.apps.length){firebase.initializeApp(config);}
+    else{firebase.app().delete().catch(function(){});firebase.initializeApp(config);}
+    firestoreDb=firebase.firestore();
+    firestoreDb.enablePersistence({synchronizeTabs:true}).catch(function(){});
+    syncMode=true;updateSyncBadge();clearErr();
+    unsubscribeSnapshot=firestoreDb.collection('platen').onSnapshot(function(snapshot){
+      col=snapshot.docs.map(function(d){return d.data();});
+      render();
+    },function(){
+      showErr('Synchroniseren lukt niet. Controleer je Firebase-configuratie en de databaseregels bij instellingen.');
     });
-  } catch (networkErr) {
-    throw new Error('Geen verbinding met Google kunnen maken. Controleer je internetverbinding.');
-  }
-  if (!response.ok) {
-    let detail = '';
-    try {
-      const errBody = await response.json();
-      detail = errBody?.error?.message || '';
-    } catch (e) { /* geen JSON-body */ }
-    throw new Error(`AI-analyse mislukt (${response.status})${detail ? ': ' + detail : ''}`);
-  }
-  const data = await response.json();
-  const candidate = data?.candidates?.[0];
-  if (!candidate) {
-    throw new Error('Geen antwoord van de AI ontvangen. Mogelijk werd de foto geweigerd (' + (data?.promptFeedback?.blockReason || 'onbekende reden') + ').');
-  }
-  const text = candidate?.content?.parts?.[0]?.text;
-  if (!text) throw new Error('Geen tekstantwoord van de AI ontvangen (finishReason: ' + (candidate?.finishReason || 'onbekend') + ').');
-  const clean = text.replace(/```json|```/g, '').trim();
-  try {
-    return JSON.parse(clean);
-  } catch (parseErr) {
-    throw new Error('Het antwoord van de AI kon niet worden gelezen: ' + clean.slice(0, 120));
+  }catch(e){
+    syncMode=false;updateSyncBadge();
+    showErr('Verbinden met Firebase mislukt: '+(e&&e.message?e.message:String(e)));
+    laad();render();
   }
 }
-
-function renderPhotoArea() {
-  const thumbs = currentPhotos.map((src, idx) => `
-    <div class="photo-thumb">
-      <img src="${src}" alt="Foto ${idx + 1}">
-      ${idx === 0 ? '<span class="cover-tag">omslag</span>' : ''}
-      <button class="remove-btn" type="button" data-remove-photo="${idx}" aria-label="Verwijder foto">✕</button>
-    </div>`).join('');
-  const addTile = currentPhotos.length < MAX_PHOTOS
-    ? `<button class="photo-thumb-add" id="photoAddBtn" type="button" aria-label="Foto toevoegen">+</button>`
-    : '';
-  photoArea.innerHTML = currentPhotos.length
-    ? `<div class="photo-thumb-grid">${thumbs}${addTile}</div>`
-    : `<button class="photo-drop" id="photoDropBtn" type="button">📷 Foto('s) toevoegen</button>`;
-
-  const addBtn = document.getElementById('photoAddBtn') || document.getElementById('photoDropBtn');
-  if (addBtn) addBtn.onclick = () => fileInput.click();
-
-  photoArea.querySelectorAll('[data-remove-photo]').forEach((btn) => {
-    btn.onclick = () => {
-      currentPhotos.splice(Number(btn.dataset.removePhoto), 1);
-      renderPhotoArea();
-    };
-  });
-  renderAiArea();
+function updateGeminiStatus(){
+  var el=document.getElementById('geminiStatus');
+  if(getApiKey()){el.className='status-ok';el.textContent='\u2713 Gemini-key is ingesteld.';}
+  else{el.className='status-warn';el.textContent='Nog geen Gemini-key ingesteld.';}
 }
-
-function renderAiArea() {
-  if (!currentPhotos.length) { aiArea.innerHTML = ''; return; }
-  const hasKey = !!getApiKey();
-  if (analyzing) {
-    aiArea.innerHTML = `<button class="btn-brass ai-btn" disabled><span class="spinner"></span> AI bekijkt de foto…</button>`;
-    return;
-  }
-  aiArea.innerHTML = `<button class="btn-brass ai-btn" id="analyzeBtn" type="button">✨ Laat AI dit herkennen</button>`;
-  document.getElementById('analyzeBtn').onclick = handleAnalyze;
-  if (!hasKey) {
-    aiArea.innerHTML += `<p class="ai-hint">Nog geen API-key ingesteld — klik op ⚙ rechtsboven om er een toe te voegen.</p>`;
-  } else if (currentPhotos.length > 1) {
-    aiArea.innerHTML += `<p class="ai-hint">De AI bekijkt alleen de omslagfoto (de eerste).</p>`;
-  }
-}
-
-async function handleAnalyze() {
-  const apiKey = getApiKey();
-  if (!apiKey) { showError('Stel eerst een gratis Gemini API-key in via het ⚙-icoon rechtsboven.'); return; }
-  if (!currentPhotos.length) return;
-  clearError();
-  analyzing = true;
-  renderAiArea();
-  try {
-    const s = await analyzeWithGemini(currentPhotos[0], apiKey);
-    document.getElementById('f_naam').value = s.naam || document.getElementById('f_naam').value;
-    document.getElementById('f_categorie').value = s.categorie || '';
-    document.getElementById('f_merkMaker').value = s.merkMaker || '';
-    document.getElementById('f_periode').value = s.periode || '';
-    document.getElementById('f_materiaal').value = s.materiaal || '';
-    document.getElementById('f_conditie').value = s.conditie || '';
-    document.getElementById('f_waardeMin').value = s.waardeMin ?? '';
-    document.getElementById('f_waardeMax').value = s.waardeMax ?? '';
-    document.getElementById('f_toelichting').value = s.toelichting || '';
-  } catch (err) {
-    showError(err && err.message ? err.message : 'De AI kon deze foto niet analyseren. Vul de gegevens eventueel handmatig aan, of probeer het opnieuw.');
-  } finally {
-    analyzing = false;
-    renderAiArea();
-  }
-}
-
-fileInput.addEventListener('change', async (e) => {
-  const files = Array.from(e.target.files || []);
-  if (!files.length) return;
-  clearError();
-  const room = MAX_PHOTOS - currentPhotos.length;
-  const toProcess = files.slice(0, room);
-  if (files.length > room) {
-    showError(`Je kunt maximaal ${MAX_PHOTOS} foto's per vondst toevoegen. De eerste ${room > 0 ? room : 0} van je selectie zijn toegevoegd.`);
-  }
-  try {
-    for (const file of toProcess) {
-      const dataUrl = await resizeImageWithLimit(file, PHOTO_MAX_CHARS);
-      currentPhotos.push(dataUrl);
-    }
-    renderPhotoArea();
-  } catch (err) {
-    showError('Een van de foto\'s kon niet worden geladen. Probeer het opnieuw.');
-    renderPhotoArea();
-  }
-  e.target.value = '';
-});
-
-function openForm(item) {
-  clearError();
-  currentPhotos = item ? getItemPhotos(item).slice() : [];
-  editingId = item ? item.id : null;
-  modalTitle.textContent = item ? 'Vondst bewerken' : 'Nieuwe vondst';
-  fieldIds.forEach((id) => {
-    const el = document.getElementById(fmtNum(id));
-    el.value = item ? (item[id] ?? '') : '';
-  });
-  renderPhotoArea();
-  overlay.classList.add('open');
-}
-
-function closeForm() {
-  overlay.classList.remove('open');
-  editingId = null;
-  currentPhotos = [];
-  analyzing = false;
-}
-
-function detailField(label, value) {
-  if (value === null || value === undefined || value === '') return '';
-  return `<div><p class="detail-field-label">${escapeHtml(label)}</p><p class="detail-field-value">${escapeHtml(String(value))}</p></div>`;
-}
-
-function openDetail(item) {
-  const detailBody = document.getElementById('detailBody');
-  document.getElementById('detailTitle').textContent = item.naam || 'Vondst';
-  const photos = getItemPhotos(item);
-  const photoHtml = photos.length
-    ? `<div class="detail-photo-grid">${photos.map((src, i) => `<img src="${src}" alt="Foto ${i + 1}">`).join('')}</div>`
-    : `<p class="detail-field-value">Geen foto</p>`;
-  let waardeText = '';
-  if (item.waardeMin || item.waardeMax) {
-    waardeText = `€ ${item.waardeMin ?? '?'}${item.waardeMax ? ' – € ' + item.waardeMax : ''}`;
-  }
-  const datumText = item.datumToegevoegd ? new Date(item.datumToegevoegd).toLocaleDateString('nl-NL') : '';
-
-  detailBody.innerHTML = `
-    <span class="detail-stamp">${item.inventarisnummer || ''}</span>
-    ${photoHtml}
-    <div class="detail-grid">
-      ${detailField('Categorie', item.categorie)}
-      ${detailField('Merk / maker', item.merkMaker)}
-      ${detailField('Periode', item.periode)}
-      ${detailField('Materiaal', item.materiaal)}
-      ${detailField('Conditie', item.conditie)}
-      ${detailField('Geschatte waarde', waardeText)}
-      ${detailField('Aankoopprijs', item.aankoopprijs ? '€ ' + item.aankoopprijs : '')}
-      ${detailField('Locatie in huis', item.locatie)}
-      <div class="full">${detailField('Notities', item.notities)}</div>
-      <div class="full">${detailField('AI-toelichting', item.toelichting)}</div>
-      <div class="full">${detailField('Toegevoegd op', datumText)}</div>
-    </div>
-  `;
-  document.getElementById('detailEditBtn').onclick = () => {
-    closeDetail();
-    openForm(item);
-  };
-  detailOverlay.classList.add('open');
-}
-
-function closeDetail() {
-  detailOverlay.classList.remove('open');
-}
-
-async function loadItems() {
-  if (syncMode) return; // items komen binnen via de onSnapshot-listener
-  items = await dbGetAll();
-  items.sort((a, b) => (b.volgnummer || 0) - (a.volgnummer || 0));
-  render();
-}
-
-async function saveItem(item) {
-  if (syncMode) {
-    await firestoreDb.collection('vondsten').doc(item.id).set(item);
-  } else {
-    await dbPut(item);
-    await loadItems();
-  }
-}
-
-async function deleteItem(id) {
-  if (syncMode) {
-    await firestoreDb.collection('vondsten').doc(id).delete();
-  } else {
-    await dbDelete(id);
-    await loadItems();
-  }
-}
-
-async function importLocalItems() {
-  if (!syncMode) {
-    syncStatus.style.color = 'var(--rust)';
-    syncStatus.textContent = 'Stel eerst synchronisatie in en bewaar de instellingen voordat je importeert.';
-    return;
-  }
-  syncStatus.style.color = 'var(--forest-mid)';
-  syncStatus.textContent = 'Lokale vondsten worden geïmporteerd…';
-  document.getElementById('importLocalBtn').disabled = true;
-  try {
-    const localItems = await dbGetAll();
-    if (localItems.length === 0) {
-      syncStatus.textContent = 'Geen lokale vondsten gevonden op dit apparaat om te importeren.';
-      return;
-    }
-    let count = 0;
-    for (const item of localItems) {
-      await firestoreDb.collection('vondsten').doc(item.id).set(item, { merge: true });
-      count++;
-    }
-    syncStatus.textContent = `${count} lokale vondst${count === 1 ? '' : 'en'} geïmporteerd naar de synchronisatie.`;
-  } catch (err) {
-    syncStatus.style.color = 'var(--rust)';
-    syncStatus.textContent = 'Importeren is niet gelukt. Probeer het opnieuw.';
-  } finally {
-    document.getElementById('importLocalBtn').disabled = false;
-  }
-}
-
-function render() {
-  const q = searchInput.value.trim().toLowerCase();
-  const filtered = items.filter((it) => {
-    if (!q) return true;
-    return [it.naam, it.categorie, it.merkMaker, it.periode, it.locatie]
-      .filter(Boolean).some((v) => v.toLowerCase().includes(q));
-  });
-
-  document.getElementById('exportBtn').disabled = items.length === 0;
-  document.getElementById('exportPdfBtn').disabled = items.length === 0;
-
-  if (filtered.length === 0) {
-    grid.innerHTML = '';
-    emptyState.style.display = 'block';
-    if (items.length === 0) {
-      emptyTitle.textContent = 'De schappen zijn nog leeg.';
-      emptyHint.textContent = 'Voeg je eerste vondst toe met een foto.';
-    } else {
-      emptyTitle.textContent = 'Niets gevonden.';
-      emptyHint.textContent = 'Probeer een andere zoekterm.';
-    }
-    return;
-  }
-  emptyState.style.display = 'none';
-
-  grid.innerHTML = filtered.map((it) => {
-    const photos = getItemPhotos(it);
-    const photoHtml = photos.length
-      ? `<img src="${photos[0]}" alt="${escapeHtml(it.naam)}">`
-      : `<div class="photo-placeholder">geen foto</div>`;
-    const countBadge = photos.length > 1 ? `<span class="photo-count-badge">📷 ${photos.length}</span>` : '';
-    const valueHtml = (it.waardeMin || it.waardeMax)
-      ? `<p class="value">€ ${it.waardeMin ?? '?'}${it.waardeMax ? ' – € ' + it.waardeMax : ''}</p>`
-      : '';
-    const locHtml = it.locatie ? `<p class="loc">${escapeHtml(it.locatie)}</p>` : '';
-    const catHtml = it.categorie ? `<span class="tag">${escapeHtml(it.categorie)}</span>` : '';
-    return `
-      <div class="card" data-view="${it.id}">
-        <div class="photo-wrap">
-          ${photoHtml}
-          <span class="stamp mono">${it.inventarisnummer}</span>
-          ${countBadge}
-        </div>
-        <div class="card-body">
-          <h3 class="serif">${escapeHtml(it.naam)}</h3>
-          ${catHtml}
-          ${valueHtml}
-          ${locHtml}
-          <div class="card-actions">
-            <button class="btn-outline" data-edit="${it.id}">Bewerken</button>
-            <button class="btn-outline danger" data-delete="${it.id}">Verwijder</button>
-          </div>
-        </div>
-      </div>`;
-  }).join('');
-
-  grid.querySelectorAll('[data-view]').forEach((card) => {
-    card.style.cursor = 'pointer';
-    card.onclick = (e) => {
-      if (e.target.closest('[data-edit]') || e.target.closest('[data-delete]')) return;
-      const item = items.find((i) => i.id === card.dataset.view);
-      if (item) openDetail(item);
-    };
-  });
-
-  grid.querySelectorAll('[data-edit]').forEach((btn) => {
-    btn.onclick = () => {
-      const item = items.find((i) => i.id === btn.dataset.edit);
-      if (item) openForm(item);
-    };
-  });
-  grid.querySelectorAll('[data-delete]').forEach((btn) => {
-    btn.onclick = async () => {
-      if (!confirm('Deze vondst definitief verwijderen?')) return;
-      try {
-        await deleteItem(btn.dataset.delete);
-      } catch (err) {
-        showGlobalError('Verwijderen is niet gelukt.');
-      }
-    };
-  });
-}
-
-function escapeHtml(str) {
-  const div = document.createElement('div');
-  div.textContent = str || '';
-  return div.innerHTML;
-}
-
-async function handleSave() {
-  clearError();
-  if (!currentPhotos.length) { showError('Voeg eerst een foto toe.'); return; }
-  const naam = document.getElementById('f_naam').value.trim();
-  if (!naam) { showError('Geef het object een naam.'); return; }
-
-  const id = editingId || String(Date.now());
-  const existing = editingId ? items.find((i) => i.id === editingId) : null;
-  const volgnummer = existing ? existing.volgnummer : (Math.max(0, ...items.map((i) => i.volgnummer || 0)) + 1);
-
-  const item = {
-    id,
-    volgnummer,
-    inventarisnummer: existing ? existing.inventarisnummer : formatInventoryNumber(volgnummer),
-    photos: currentPhotos.slice(),
-    naam,
-    categorie: document.getElementById('f_categorie').value.trim(),
-    merkMaker: document.getElementById('f_merkMaker').value.trim(),
-    periode: document.getElementById('f_periode').value.trim(),
-    materiaal: document.getElementById('f_materiaal').value.trim(),
-    conditie: document.getElementById('f_conditie').value.trim(),
-    waardeMin: document.getElementById('f_waardeMin').value === '' ? null : Number(document.getElementById('f_waardeMin').value),
-    waardeMax: document.getElementById('f_waardeMax').value === '' ? null : Number(document.getElementById('f_waardeMax').value),
-    aankoopprijs: document.getElementById('f_aankoopprijs').value === '' ? null : Number(document.getElementById('f_aankoopprijs').value),
-    locatie: document.getElementById('f_locatie').value.trim(),
-    notities: document.getElementById('f_notities').value.trim(),
-    toelichting: document.getElementById('f_toelichting').value.trim(),
-    datumToegevoegd: existing ? existing.datumToegevoegd : new Date().toISOString(),
-  };
-
-  try {
-    await saveItem(item);
-    closeForm();
-  } catch (err) {
-    showError('Opslaan is niet gelukt. Mogelijk is de opslagruimte vol of is de synchronisatie niet goed ingesteld.');
-  }
-}
-
-function triggerDownload(blob, filename) {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}
-
-async function handleExport() {
-  const exportBtnEl = document.getElementById('exportBtn');
-  exportBtnEl.disabled = true;
-  try {
-    const workbook = new ExcelJS.Workbook();
-    const sheet = workbook.addWorksheet('Vondstenboek');
-    sheet.columns = [
-      { header: 'Inventarisnummer', key: 'inventarisnummer', width: 14 },
-      { header: 'Foto', key: 'foto', width: 13 },
-      { header: 'Naam', key: 'naam', width: 26 },
-      { header: 'Categorie', key: 'categorie', width: 16 },
-      { header: 'Merk/Maker', key: 'merkMaker', width: 18 },
-      { header: 'Periode', key: 'periode', width: 12 },
-      { header: 'Materiaal', key: 'materiaal', width: 14 },
-      { header: 'Conditie', key: 'conditie', width: 16 },
-      { header: 'Geschatte waarde min (€)', key: 'waardeMin', width: 16 },
-      { header: 'Geschatte waarde max (€)', key: 'waardeMax', width: 16 },
-      { header: 'Aankoopprijs (€)', key: 'aankoopprijs', width: 14 },
-      { header: 'Locatie in huis', key: 'locatie', width: 18 },
-      { header: 'Notities', key: 'notities', width: 32 },
-      { header: 'AI-toelichting', key: 'toelichting', width: 32 },
-      { header: 'Datum toegevoegd', key: 'datum', width: 14 },
-    ];
-    sheet.getRow(1).font = { bold: true };
-
-    items.forEach((it, idx) => {
-      const rowNumber = idx + 2;
-      sheet.addRow({
-        inventarisnummer: it.inventarisnummer,
-        foto: '',
-        naam: it.naam,
-        categorie: it.categorie,
-        merkMaker: it.merkMaker,
-        periode: it.periode,
-        materiaal: it.materiaal,
-        conditie: it.conditie,
-        waardeMin: it.waardeMin ?? '',
-        waardeMax: it.waardeMax ?? '',
-        aankoopprijs: it.aankoopprijs ?? '',
-        locatie: it.locatie,
-        notities: it.notities,
-        toelichting: it.toelichting,
-        datum: it.datumToegevoegd ? new Date(it.datumToegevoegd).toLocaleDateString('nl-NL') : '',
-      });
-      sheet.getRow(rowNumber).height = 58;
-
-      const photos = getItemPhotos(it);
-      if (photos.length) {
-        try {
-          const imageId = workbook.addImage({ base64: photos[0], extension: 'jpeg' });
-          sheet.addImage(imageId, {
-            tl: { col: 1, row: rowNumber - 1 },
-            ext: { width: 66, height: 66 },
-          });
-        } catch (imgErr) { /* foto overslaan als embedden mislukt */ }
-      }
-    });
-
-    const buffer = await workbook.xlsx.writeBuffer();
-    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    triggerDownload(blob, `vondstenboek-${new Date().toISOString().slice(0, 10)}.xlsx`);
-  } catch (err) {
-    showGlobalError('Exporteren naar Excel is niet gelukt: ' + (err && err.message ? err.message : String(err)));
-  } finally {
-    exportBtnEl.disabled = items.length === 0;
-  }
-}
-
-function getImageDims(dataUrl) {
-  return new Promise((resolve) => {
-    const img = new Image();
-    img.onload = () => resolve({ w: img.naturalWidth || 1, h: img.naturalHeight || 1 });
-    img.onerror = () => resolve({ w: 1, h: 1 });
-    img.src = dataUrl;
-  });
-}
-
-async function handleExportPdf() {
-  if (!items.length) return;
-  const btn = document.getElementById('exportPdfBtn');
-  btn.disabled = true;
-  try {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
-    const marginX = 18;
-    const pageW = doc.internal.pageSize.getWidth();
-    const pageH = doc.internal.pageSize.getHeight();
-    const contentW = pageW - marginX * 2;
-
-    for (let i = 0; i < items.length; i++) {
-      const it = items[i];
-      if (i > 0) doc.addPage();
-      let y = 20;
-
-      doc.setFont('courier', 'normal');
-      doc.setFontSize(9);
-      doc.setTextColor(156, 59, 46);
-      doc.text(it.inventarisnummer || '', pageW - marginX, y, { align: 'right' });
-
-      doc.setFont('times', 'bold');
-      doc.setFontSize(20);
-      doc.setTextColor(27, 42, 30);
-      const nameLines = doc.splitTextToSize(it.naam || 'Zonder naam', contentW - 25);
-      doc.text(nameLines, marginX, y);
-      y += nameLines.length * 8 + 4;
-
-      doc.setDrawColor(184, 135, 59);
-      doc.setLineWidth(0.4);
-      doc.line(marginX, y, pageW - marginX, y);
-      y += 8;
-
-      const photos = getItemPhotos(it);
-      if (photos.length) {
-        const maxImgW = 80, maxImgH = 80;
-        const dims = await getImageDims(photos[0]);
-        let w = maxImgW, h = (dims.h / dims.w) * w;
-        if (h > maxImgH) { h = maxImgH; w = (dims.w / dims.h) * h; }
-        doc.addImage(photos[0], 'JPEG', marginX, y, w, h);
-
-        if (photos.length > 1) {
-          const thumbSize = 22;
-          let tx = marginX + w + 6;
-          let ty = y;
-          for (let p = 1; p < photos.length && p <= 4; p++) {
-            if (tx + thumbSize > pageW - marginX) break;
-            const tdims = await getImageDims(photos[p]);
-            let tw = thumbSize, th = (tdims.h / tdims.w) * tw;
-            if (th > thumbSize) { th = thumbSize; tw = (tdims.w / tdims.h) * th; }
-            doc.addImage(photos[p], 'JPEG', tx, ty, tw, th);
-            ty += thumbSize + 4;
-            if (ty + thumbSize > y + h) { ty = y; tx += thumbSize + 4; }
-          }
-        }
-        y += h + 10;
-      }
-
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(10);
-      doc.setTextColor(36, 31, 23);
-
-      const waardeText = (it.waardeMin || it.waardeMax) ? `€ ${it.waardeMin ?? '?'}${it.waardeMax ? ' – € ' + it.waardeMax : ''}` : '';
-      const fields = [
-        ['Categorie', it.categorie],
-        ['Merk / maker', it.merkMaker],
-        ['Periode', it.periode],
-        ['Materiaal', it.materiaal],
-        ['Conditie', it.conditie],
-        ['Geschatte waarde', waardeText],
-        ['Aankoopprijs', it.aankoopprijs ? `€ ${it.aankoopprijs}` : ''],
-        ['Locatie in huis', it.locatie],
-        ['Toegevoegd op', it.datumToegevoegd ? new Date(it.datumToegevoegd).toLocaleDateString('nl-NL') : ''],
-      ].filter(([, v]) => v);
-
-      fields.forEach(([label, value]) => {
-        if (y > pageH - 25) { doc.addPage(); y = 20; }
-        doc.setFont('helvetica', 'bold');
-        doc.text(label + ':', marginX, y);
-        doc.setFont('helvetica', 'normal');
-        const valueLines = doc.splitTextToSize(String(value), contentW - 55);
-        doc.text(valueLines, marginX + 50, y);
-        y += Math.max(6, valueLines.length * 5);
-      });
-
-      if (it.notities) {
-        y += 3;
-        if (y > pageH - 25) { doc.addPage(); y = 20; }
-        doc.setFont('helvetica', 'bold');
-        doc.text('Notities:', marginX, y);
-        y += 5;
-        doc.setFont('helvetica', 'normal');
-        const noteLines = doc.splitTextToSize(it.notities, contentW);
-        if (y + noteLines.length * 5 > pageH - 15) { doc.addPage(); y = 20; }
-        doc.text(noteLines, marginX, y);
-        y += noteLines.length * 5;
-      }
-
-      if (it.toelichting) {
-        y += 3;
-        if (y > pageH - 25) { doc.addPage(); y = 20; }
-        doc.setFont('helvetica', 'italic');
-        doc.setTextColor(143, 107, 44);
-        const aiLines = doc.splitTextToSize('AI: ' + it.toelichting, contentW);
-        if (y + aiLines.length * 5 > pageH - 15) { doc.addPage(); y = 20; }
-        doc.text(aiLines, marginX, y);
-      }
-    }
-
-    doc.save(`vondstenboek-${new Date().toISOString().slice(0, 10)}.pdf`);
-  } catch (err) {
-    showGlobalError('PDF maken is niet gelukt: ' + (err && err.message ? err.message : String(err)));
-  } finally {
-    btn.disabled = false;
-  }
-}
-
-// ---------- Events ----------
-document.getElementById('addBtn').onclick = () => openForm(null);
-document.getElementById('closeModal').onclick = closeForm;
-document.getElementById('cancelBtn').onclick = closeForm;
-document.getElementById('saveBtn').onclick = handleSave;
-document.getElementById('exportBtn').onclick = handleExport;
-document.getElementById('exportPdfBtn').onclick = handleExportPdf;
-searchInput.addEventListener('input', render);
-overlay.addEventListener('click', (e) => { if (e.target === overlay) closeForm(); });
-
-document.getElementById('closeDetail').onclick = closeDetail;
-document.getElementById('detailCloseBtn').onclick = closeDetail;
-detailOverlay.addEventListener('click', (e) => { if (e.target === detailOverlay) closeDetail(); });
-
-// ---------- Batch toevoegen ----------
-const MAX_BATCH = 20;
-let batchItems = [];
-const batchOverlay = document.getElementById('batchOverlay');
-const batchDropArea = document.getElementById('batchDropArea');
-const batchFileInput = document.getElementById('batchFileInput');
-const batchList = document.getElementById('batchList');
-const batchToolbar = document.getElementById('batchToolbar');
-const batchErrorBox = document.getElementById('batchErrorBox');
-
-function showBatchError(msg) {
-  batchErrorBox.textContent = msg;
-  batchErrorBox.classList.add('show');
-}
-function clearBatchError() {
-  batchErrorBox.textContent = '';
-  batchErrorBox.classList.remove('show');
-}
-
-function openBatch() {
-  batchItems = [];
-  clearBatchError();
-  renderBatchDropArea();
-  renderBatchList();
-  batchOverlay.classList.add('open');
-}
-function closeBatch() {
-  batchOverlay.classList.remove('open');
-  batchItems = [];
-}
-
-function renderBatchDropArea() {
-  batchDropArea.innerHTML = `<button class="batch-drop" type="button" id="batchDropBtn">📷 Selecteer foto's — elke foto wordt een aparte vondst</button>`;
-  document.getElementById('batchDropBtn').onclick = () => batchFileInput.click();
-}
-
-function renderBatchList() {
-  batchToolbar.style.display = batchItems.length ? 'flex' : 'none';
-  if (!batchItems.length) { batchList.innerHTML = ''; return; }
-  batchList.innerHTML = batchItems.map((b, idx) => `
-    <div class="batch-card${b.analyzing ? ' analyzing' : ''}">
-      <img src="${b.photoData}" alt="Vondst ${idx + 1}">
-      <div class="batch-card-fields">
-        <div class="batch-card-row">
-          <input type="text" placeholder="Naam *" value="${b.naam.replace(/"/g, '&quot;')}" data-batch-field="naam" data-batch-idx="${idx}">
-          <input type="text" placeholder="Categorie" value="${b.categorie.replace(/"/g, '&quot;')}" data-batch-field="categorie" data-batch-idx="${idx}">
-        </div>
-        <div class="batch-card-row">
-          <input type="text" placeholder="Merk / maker" value="${b.merkMaker.replace(/"/g, '&quot;')}" data-batch-field="merkMaker" data-batch-idx="${idx}">
-          <input type="number" placeholder="Waarde vanaf (€)" value="${b.waardeMin}" data-batch-field="waardeMin" data-batch-idx="${idx}">
-          <input type="number" placeholder="Waarde tot (€)" value="${b.waardeMax}" data-batch-field="waardeMax" data-batch-idx="${idx}">
-        </div>
-        ${b.error ? `<p class="batch-card-err">${b.error}</p>` : ''}
-      </div>
-      <button class="batch-card-remove" type="button" data-batch-remove="${idx}" aria-label="Verwijder">✕</button>
-    </div>
-  `).join('');
-
-  batchList.querySelectorAll('[data-batch-field]').forEach((inp) => {
-    inp.oninput = () => {
-      const idx = Number(inp.dataset.batchIdx);
-      const field = inp.dataset.batchField;
-      batchItems[idx][field] = inp.value;
-    };
-  });
-  batchList.querySelectorAll('[data-batch-remove]').forEach((btn) => {
-    btn.onclick = () => {
-      batchItems.splice(Number(btn.dataset.batchRemove), 1);
-      renderBatchList();
-    };
-  });
-}
-
-batchFileInput.addEventListener('change', async (e) => {
-  const files = Array.from(e.target.files || []);
-  if (!files.length) return;
-  clearBatchError();
-  const room = MAX_BATCH - batchItems.length;
-  const toProcess = files.slice(0, room);
-  if (files.length > room) {
-    showBatchError(`Je kunt maximaal ${MAX_BATCH} vondsten in één batch verwerken. De eerste ${room > 0 ? room : 0} van je selectie zijn toegevoegd.`);
-  }
-  try {
-    for (const file of toProcess) {
-      const dataUrl = await resizeImageWithLimit(file, PHOTO_MAX_CHARS);
-      batchItems.push({ photoData: dataUrl, naam: '', categorie: '', merkMaker: '', waardeMin: '', waardeMax: '', analyzing: false, error: '' });
-    }
-    renderBatchList();
-  } catch (err) {
-    showBatchError('Een van de foto\'s kon niet worden geladen.');
-  }
-  e.target.value = '';
-});
-
-async function analyzeAllBatch() {
-  const apiKey = getApiKey();
-  if (!apiKey) { showBatchError('Stel eerst een gratis Gemini API-key in via het ⚙-icoon rechtsboven.'); return; }
-  clearBatchError();
-  const analyzeBtn = document.getElementById('batchAnalyzeAllBtn');
-  analyzeBtn.disabled = true;
-  for (let i = 0; i < batchItems.length; i++) {
-    const b = batchItems[i];
-    if (b.naam) continue; // al ingevuld, niet overschrijven
-    b.analyzing = true;
-    b.error = '';
-    renderBatchList();
-    analyzeBtn.textContent = `✨ Bezig… (${i + 1}/${batchItems.length})`;
-    try {
-      const s = await analyzeWithGemini(b.photoData, apiKey);
-      b.naam = s.naam || '';
-      b.categorie = s.categorie || '';
-      b.merkMaker = s.merkMaker || '';
-      b.waardeMin = s.waardeMin ?? '';
-      b.waardeMax = s.waardeMax ?? '';
-    } catch (err) {
-      b.error = err && err.message ? err.message : 'AI-herkenning mislukt voor deze foto.';
-    } finally {
-      b.analyzing = false;
-    }
-  }
-  analyzeBtn.textContent = '✨ Analyseer alles met AI';
-  analyzeBtn.disabled = false;
-  renderBatchList();
-}
-
-async function saveBatchAll() {
-  clearBatchError();
-  const toSave = batchItems.filter((b) => b.naam.trim());
-  const skipped = batchItems.length - toSave.length;
-  if (!toSave.length) { showBatchError('Geef minimaal één vondst een naam voordat je opslaat.'); return; }
-  const saveBtn = document.getElementById('saveBatchBtn');
-  saveBtn.disabled = true;
-  let volgnummer = Math.max(0, ...items.map((i) => i.volgnummer || 0));
-  try {
-    for (const b of toSave) {
-      volgnummer += 1;
-      const id = `${Date.now()}_${volgnummer}`;
-      const item = {
-        id,
-        volgnummer,
-        inventarisnummer: formatInventoryNumber(volgnummer),
-        photos: [b.photoData],
-        naam: b.naam.trim(),
-        categorie: b.categorie.trim(),
-        merkMaker: b.merkMaker.trim(),
-        periode: '',
-        materiaal: '',
-        conditie: '',
-        waardeMin: b.waardeMin === '' ? null : Number(b.waardeMin),
-        waardeMax: b.waardeMax === '' ? null : Number(b.waardeMax),
-        aankoopprijs: null,
-        locatie: '',
-        notities: '',
-        toelichting: '',
-        datumToegevoegd: new Date().toISOString(),
-      };
-      await saveItem(item);
-    }
-    if (!syncMode) await loadItems();
-    closeBatch();
-  } catch (err) {
-    showBatchError('Opslaan is niet gelukt. Probeer het opnieuw.');
-  } finally {
-    saveBtn.disabled = false;
-  }
-}
-
-document.getElementById('batchAddBtn').onclick = openBatch;
-document.getElementById('closeBatch').onclick = closeBatch;
-document.getElementById('cancelBatchBtn').onclick = closeBatch;
-document.getElementById('batchAddMoreBtn').onclick = () => batchFileInput.click();
-document.getElementById('batchAnalyzeAllBtn').onclick = analyzeAllBatch;
-document.getElementById('saveBatchBtn').onclick = saveBatchAll;
-batchOverlay.addEventListener('click', (e) => { if (e.target === batchOverlay) closeBatch(); });
-
-function updateGeminiStatus() {
-  const geminiStatus = document.getElementById('geminiStatus');
-  if (getApiKey()) {
-    geminiStatus.style.color = 'var(--forest-mid)';
-    geminiStatus.textContent = '✓ Gemini-key is ingesteld.';
-  } else {
-    geminiStatus.style.color = 'var(--brass-dark)';
-    geminiStatus.textContent = 'Nog geen Gemini-key ingesteld — AI-herkenning werkt pas als je er een toevoegt.';
-  }
-}
-
-function openSettings() {
-  apiKeyInput.value = getApiKey();
-  const config = getFirebaseConfig();
-  firebaseConfigInput.value = config ? JSON.stringify(config, null, 2) : '';
-  syncStatus.textContent = syncMode ? 'Synchronisatie is actief op dit apparaat.' : '';
-  syncStatus.style.color = 'var(--forest-mid)';
+var settingsOvl=document.getElementById('settingsOvl');
+function openSettings(){
+  document.getElementById('apiKeyInput').value=getApiKey();
+  var cfg=getFirebaseConfig();
+  document.getElementById('firebaseConfigInput').value=cfg?JSON.stringify(cfg,null,2):'';
   updateGeminiStatus();
-  settingsOverlay.classList.add('open');
+  var statusEl=document.getElementById('syncStatus');
+  statusEl.className='status-ok';
+  statusEl.textContent=syncMode?'Synchronisatie is actief op dit apparaat.':'';
+  settingsOvl.classList.add('open');
 }
-function closeSettings() {
-  settingsOverlay.classList.remove('open');
-}
-document.getElementById('settingsBtn').onclick = openSettings;
-document.getElementById('closeSettings').onclick = closeSettings;
-document.getElementById('cancelSettings').onclick = closeSettings;
-document.getElementById('importLocalBtn').onclick = importLocalItems;
-document.getElementById('saveSettings').onclick = () => {
-  const key = apiKeyInput.value.trim();
-  if (key) {
-    localStorage.setItem(GEMINI_KEY_STORAGE, key);
-  } else {
-    localStorage.removeItem(GEMINI_KEY_STORAGE);
-  }
+function closeSettings(){settingsOvl.classList.remove('open');}
+document.getElementById('settingsBtn').onclick=openSettings;
+document.getElementById('closeSettings').onclick=closeSettings;
+document.getElementById('cancelSettings').onclick=closeSettings;
+document.getElementById('saveSettings').onclick=function(){
+  var key=document.getElementById('apiKeyInput').value.trim();
+  if(key)localStorage.setItem(GEMINI_KEY_STORAGE,key);else localStorage.removeItem(GEMINI_KEY_STORAGE);
   updateGeminiStatus();
-
-  const rawConfig = firebaseConfigInput.value.trim();
-  if (!rawConfig) {
+  var raw=document.getElementById('firebaseConfigInput').value.trim();
+  var statusEl=document.getElementById('syncStatus');
+  if(!raw){
     localStorage.removeItem(FIREBASE_CONFIG_STORAGE);
-    syncStatus.style.color = 'var(--forest-mid)';
-    syncStatus.textContent = 'Synchronisatie uitgeschakeld — gegevens blijven lokaal op dit apparaat.';
-    renderAiArea();
-    initSync();
-    return;
+    statusEl.className='status-ok';
+    statusEl.textContent='Synchronisatie uitgeschakeld — gegevens blijven lokaal op dit apparaat.';
+    initSync();return;
   }
-  try {
-    const parsed = parseFirebaseConfig(rawConfig);
-    localStorage.setItem(FIREBASE_CONFIG_STORAGE, JSON.stringify(parsed));
-    syncStatus.style.color = 'var(--forest-mid)';
-    syncStatus.textContent = 'Instellingen bewaard, synchronisatie wordt gestart…';
-    renderAiArea();
+  try{
+    var parsed=parseFirebaseConfig(raw);
+    localStorage.setItem(FIREBASE_CONFIG_STORAGE,JSON.stringify(parsed));
+    statusEl.className='status-ok';
+    statusEl.textContent='Instellingen bewaard, synchronisatie wordt gestart\u2026';
     initSync();
-  } catch (err) {
-    syncStatus.style.color = 'var(--rust)';
-    syncStatus.textContent = 'Kon de configuratie niet lezen. Plak het hele firebaseConfig-object, inclusief { }.';
+  }catch(err){
+    statusEl.className='status-warn';
+    statusEl.textContent='Kon de configuratie niet lezen. Plak het hele firebaseConfig-object.';
   }
 };
-settingsOverlay.addEventListener('click', (e) => { if (e.target === settingsOverlay) closeSettings(); });
+document.getElementById('importLocalBtn').onclick=async function(){
+  var statusEl=document.getElementById('syncStatus');
+  if(!syncMode){statusEl.className='status-warn';statusEl.textContent='Stel eerst synchronisatie in en bewaar de instellingen.';return;}
+  statusEl.className='status-ok';statusEl.textContent='Lokale platen worden ge\u00efmporteerd\u2026';
+  try{
+    var raw=localStorage.getItem(SKEY);
+    var localCol=raw?JSON.parse(raw):[];
+    localCol.forEach(function(p){if(!p.id)p.id='legacy_'+hashStr((p.artiest||'')+'|'+(p.titel||'')+'|'+(p.jaar||'')+'|'+(p.label||''));});
+    if(!localCol.length){statusEl.textContent='Geen lokale platen gevonden op dit apparaat.';return;}
+    var count=0;
+    for(var i=0;i<localCol.length;i++){
+      await firestoreDb.collection('platen').doc(localCol[i].id).set(localCol[i],{merge:true});
+      count++;
+    }
+    statusEl.textContent=count+' lokale platen ge\u00efmporteerd naar de synchronisatie.';
+  }catch(err){
+    statusEl.className='status-warn';statusEl.textContent='Importeren is niet gelukt.';
+  }
+};
+settingsOvl.addEventListener('click',function(e){if(e.target===settingsOvl)closeSettings();});
 
+// ---------- Export: PDF & Excel ----------
+function triggerDownload(blob,filename){
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');
+  a.href=url;a.download=filename;
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+function loadImageAsDataUrl(src){
+  return new Promise(function(resolve){
+    if(!src){resolve(null);return;}
+    if(src.indexOf('data:')===0){resolve(src);return;}
+    var img=new Image();
+    img.crossOrigin='anonymous';
+    img.onload=function(){
+      try{
+        var canvas=document.createElement('canvas');
+        canvas.width=img.naturalWidth;canvas.height=img.naturalHeight;
+        canvas.getContext('2d').drawImage(img,0,0);
+        resolve(canvas.toDataURL('image/jpeg',0.85));
+      }catch(e){resolve(null);}
+    };
+    img.onerror=function(){resolve(null);};
+    img.src=src;
+  });
+}
+async function handleExportXls(){
+  var btn=document.getElementById('exportXlsBtn');
+  btn.disabled=true;
+  try{
+    var workbook=new ExcelJS.Workbook();
+    var sheet=workbook.addWorksheet('Platencollectie');
+    sheet.columns=[
+      {header:'Artiest',key:'artiest',width:22},{header:'Foto',key:'foto',width:13},
+      {header:'Titel',key:'titel',width:28},{header:'Jaar',key:'jaar',width:8},
+      {header:'Label / Nr.',key:'label',width:22},{header:'Barcode',key:'barcode',width:16},
+      {header:'Formaat',key:'formaat',width:12},{header:'Genre',key:'genre',width:14},
+      {header:'Land',key:'land',width:8},{header:'Staat Vinyl',key:'staat_vinyl',width:18},
+      {header:'Staat Hoes',key:'staat_hoes',width:18},{header:'Opmerkingen',key:'opmerkingen',width:30},
+    ];
+    sheet.getRow(1).font={bold:true};
+    for(var idx=0;idx<col.length;idx++){
+      var p=col[idx];var rowNumber=idx+2;
+      sheet.addRow({artiest:p.artiest,foto:'',titel:p.titel,jaar:p.jaar||'',label:p.label||'',barcode:p.barcode||'',formaat:p.formaat||'',genre:p.genre||'',land:p.land||'',staat_vinyl:p.staat_vinyl||'',staat_hoes:p.staat_hoes||'',opmerkingen:p.opmerkingen||''});
+      sheet.getRow(rowNumber).height=58;
+      var src=getImg(p);
+      if(src){
+        var dataUrl=await loadImageAsDataUrl(src);
+        if(dataUrl){
+          try{
+            var imageId=workbook.addImage({base64:dataUrl,extension:'jpeg'});
+            sheet.addImage(imageId,{tl:{col:1,row:rowNumber-1},ext:{width:66,height:66}});
+          }catch(e){}
+        }
+      }
+    }
+    var buffer=await workbook.xlsx.writeBuffer();
+    var blob=new Blob([buffer],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    triggerDownload(blob,'platencollectie-'+new Date().toISOString().slice(0,10)+'.xlsx');
+  }catch(err){
+    showErr('Exporteren naar Excel is niet gelukt: '+(err&&err.message?err.message:String(err)));
+  }finally{btn.disabled=false;}
+}
+function getImgDims(dataUrl){
+  return new Promise(function(resolve){
+    var img=new Image();
+    img.onload=function(){resolve({w:img.naturalWidth||1,h:img.naturalHeight||1});};
+    img.onerror=function(){resolve({w:1,h:1});};
+    img.src=dataUrl;
+  });
+}
+async function handleExportPdf(){
+  if(!col.length)return;
+  var btn=document.getElementById('exportPdfBtn');
+  btn.disabled=true;
+  try{
+    var jsPDFCtor=window.jspdf.jsPDF;
+    var doc=new jsPDFCtor({unit:'mm',format:'a4'});
+    var marginX=18;
+    var pageW=doc.internal.pageSize.getWidth();
+    var pageH=doc.internal.pageSize.getHeight();
+    var contentW=pageW-marginX*2;
+    for(var idx=0;idx<col.length;idx++){
+      var p=col[idx];
+      if(idx>0)doc.addPage();
+      var y=20;
+      doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(192,57,43);
+      doc.text((p.jaar?String(p.jaar):''),pageW-marginX,y,{align:'right'});
+      doc.setFont('helvetica','bold');doc.setFontSize(19);doc.setTextColor(20,20,20);
+      var titleLines=doc.splitTextToSize(p.titel||'Zonder titel',contentW-25);
+      doc.text(titleLines,marginX,y);y+=titleLines.length*8;
+      doc.setFont('helvetica','normal');doc.setFontSize(12);doc.setTextColor(184,140,10);
+      doc.text(p.artiest||'',marginX,y);y+=8;
+      doc.setDrawColor(192,57,43);doc.setLineWidth(0.4);doc.line(marginX,y,pageW-marginX,y);y+=8;
+      var src=getImg(p);
+      if(src){
+        var dataUrl=await loadImageAsDataUrl(src);
+        if(dataUrl){
+          var dims=await getImgDims(dataUrl);
+          var maxW=75,maxH=75,w=maxW,h=(dims.h/dims.w)*w;
+          if(h>maxH){h=maxH;w=(dims.w/dims.h)*h;}
+          try{doc.addImage(dataUrl,'JPEG',marginX,y,w,h);}catch(e){}
+          y+=h+10;
+        }else{
+          doc.setFont('helvetica','italic');doc.setFontSize(9);doc.setTextColor(140,140,140);
+          doc.text('(hoesfoto niet beschikbaar voor deze export)',marginX,y);y+=8;
+        }
+      }
+      doc.setFont('helvetica','normal');doc.setFontSize(10);doc.setTextColor(30,30,30);
+      var fields=[['Label / Nr.',p.label],['Formaat',p.formaat],['Genre',p.genre],['Land',p.land],['Staat vinyl',p.staat_vinyl],['Staat hoes',p.staat_hoes],['Barcode',p.barcode]].filter(function(f){return f[1];});
+      fields.forEach(function(f){
+        if(y>pageH-25){doc.addPage();y=20;}
+        doc.setFont('helvetica','bold');doc.text(f[0]+':',marginX,y);
+        doc.setFont('helvetica','normal');
+        var lines=doc.splitTextToSize(String(f[1]),contentW-50);
+        doc.text(lines,marginX+45,y);
+        y+=Math.max(6,lines.length*5);
+      });
+      if(p.opmerkingen){
+        y+=3;
+        if(y>pageH-25){doc.addPage();y=20;}
+        doc.setFont('helvetica','italic');doc.setTextColor(100,100,100);
+        var noteLines=doc.splitTextToSize(p.opmerkingen,contentW);
+        if(y+noteLines.length*5>pageH-15){doc.addPage();y=20;}
+        doc.text(noteLines,marginX,y);
+      }
+    }
+    doc.save('platencollectie-'+new Date().toISOString().slice(0,10)+'.pdf');
+  }catch(err){
+    showErr('PDF maken is niet gelukt: '+(err&&err.message?err.message:String(err)));
+  }finally{btn.disabled=false;}
+}
+document.getElementById('exportPdfBtn').onclick=handleExportPdf;
+document.getElementById('exportXlsBtn').onclick=handleExportXls;
+
+renderFotoArea();
 initSync();
 </script>
 </body>
