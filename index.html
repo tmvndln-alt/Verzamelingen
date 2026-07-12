@@ -123,7 +123,6 @@ main { max-width: 1100px; margin: 0 auto; padding: 28px 20px; }
   position: absolute;
   top: 8px;
   left: 8px;
-  transform: rotate(-8deg);
   border: 1.5px solid var(--rust);
   color: var(--rust);
   background: rgba(255,255,255,0.88);
@@ -324,9 +323,59 @@ main { max-width: 1100px; margin: 0 auto; padding: 28px 20px; }
   padding: 2px 8px;
   border-radius: 2px;
   font-family: 'IBM Plex Mono', monospace;
-  transform: rotate(-4deg);
 }
 .settings-text { font-size: 13px; line-height: 1.5; color: var(--text-dark); }
+.batch-modal .modal { max-width: 640px; }
+.batch-drop {
+  width: 100%;
+  height: 140px;
+  border: 2px dashed var(--line);
+  border-radius: 3px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: var(--brass-dark);
+  font-size: 14px;
+  cursor: pointer;
+  background: none;
+}
+.batch-list { display: flex; flex-direction: column; gap: 10px; }
+.batch-card {
+  display: flex;
+  gap: 10px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 8px;
+}
+.batch-card img { width: 64px; height: 64px; object-fit: cover; border-radius: 3px; flex-shrink: 0; }
+.batch-card-fields { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.batch-card-row { display: flex; gap: 6px; }
+.batch-card input {
+  background: var(--cream);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 5px 7px;
+  font-size: 12.5px;
+  font-family: 'Work Sans', sans-serif;
+  color: var(--text-dark);
+  flex: 1;
+  min-width: 0;
+}
+.batch-card-remove {
+  background: none;
+  border: none;
+  color: var(--rust);
+  font-size: 16px;
+  padding: 0 4px;
+  flex-shrink: 0;
+  align-self: flex-start;
+}
+.batch-card-err { font-size: 11px; color: var(--rust); }
+.batch-card.analyzing { opacity: 0.6; }
+.batch-toolbar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
 .settings-text a { color: var(--brass-dark); }
 .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(0,0,0,0.2); border-top-color: currentColor; border-radius: 50%; animation: spin .7s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -348,6 +397,7 @@ main { max-width: 1100px; margin: 0 auto; padding: 28px 20px; }
       <button class="btn-brass" id="exportPdfBtn"><span>⬇</span> Naar PDF</button>
       <button class="btn-brass" id="exportBtn"><span>⬇</span> Naar Excel</button>
       <button class="btn-primary" id="addBtn"><span>+</span> Nieuwe vondst</button>
+      <button class="btn-outline" id="batchAddBtn" style="border:1px solid var(--line);color:var(--ink);padding:10px 16px;">+ Batch</button>
     </div>
   </div>
 </header>
@@ -416,6 +466,30 @@ main { max-width: 1100px; margin: 0 auto; padding: 28px 20px; }
     <div class="modal-foot">
       <button class="btn-outline" id="detailCloseBtn">Sluiten</button>
       <button class="btn-primary" id="detailEditBtn">Bewerken</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay batch-modal" id="batchOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h2 class="serif">Batch toevoegen</h2>
+      <button id="closeBatch">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="error-box" id="batchErrorBox"></div>
+      <p class="settings-text" style="margin-bottom:10px;">Elke geselecteerde foto wordt een <strong>aparte vondst</strong>. Handig als je in één keer meerdere spullen hebt gefotografeerd. Vul per item minimaal een naam in, of laat de AI dat voor je doen.</p>
+      <div id="batchDropArea"></div>
+      <input type="file" id="batchFileInput" accept="image/*" multiple style="display:none">
+      <div class="batch-toolbar" id="batchToolbar" style="display:none;">
+        <button class="btn-brass" id="batchAnalyzeAllBtn" style="border-radius:3px;padding:8px 14px;font-size:13px;">✨ Analyseer alles met AI</button>
+        <button class="btn-outline" id="batchAddMoreBtn" style="border:1px solid var(--line);color:var(--ink);padding:8px 14px;">+ Meer foto's</button>
+      </div>
+      <div class="batch-list" id="batchList"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-outline" id="cancelBatchBtn">Annuleren</button>
+      <button class="btn-primary" id="saveBatchBtn">Bewaar alles</button>
     </div>
   </div>
 </div>
@@ -1334,6 +1408,181 @@ overlay.addEventListener('click', (e) => { if (e.target === overlay) closeForm()
 document.getElementById('closeDetail').onclick = closeDetail;
 document.getElementById('detailCloseBtn').onclick = closeDetail;
 detailOverlay.addEventListener('click', (e) => { if (e.target === detailOverlay) closeDetail(); });
+
+// ---------- Batch toevoegen ----------
+const MAX_BATCH = 20;
+let batchItems = [];
+const batchOverlay = document.getElementById('batchOverlay');
+const batchDropArea = document.getElementById('batchDropArea');
+const batchFileInput = document.getElementById('batchFileInput');
+const batchList = document.getElementById('batchList');
+const batchToolbar = document.getElementById('batchToolbar');
+const batchErrorBox = document.getElementById('batchErrorBox');
+
+function showBatchError(msg) {
+  batchErrorBox.textContent = msg;
+  batchErrorBox.classList.add('show');
+}
+function clearBatchError() {
+  batchErrorBox.textContent = '';
+  batchErrorBox.classList.remove('show');
+}
+
+function openBatch() {
+  batchItems = [];
+  clearBatchError();
+  renderBatchDropArea();
+  renderBatchList();
+  batchOverlay.classList.add('open');
+}
+function closeBatch() {
+  batchOverlay.classList.remove('open');
+  batchItems = [];
+}
+
+function renderBatchDropArea() {
+  batchDropArea.innerHTML = `<button class="batch-drop" type="button" id="batchDropBtn">📷 Selecteer foto's — elke foto wordt een aparte vondst</button>`;
+  document.getElementById('batchDropBtn').onclick = () => batchFileInput.click();
+}
+
+function renderBatchList() {
+  batchToolbar.style.display = batchItems.length ? 'flex' : 'none';
+  if (!batchItems.length) { batchList.innerHTML = ''; return; }
+  batchList.innerHTML = batchItems.map((b, idx) => `
+    <div class="batch-card${b.analyzing ? ' analyzing' : ''}">
+      <img src="${b.photoData}" alt="Vondst ${idx + 1}">
+      <div class="batch-card-fields">
+        <div class="batch-card-row">
+          <input type="text" placeholder="Naam *" value="${b.naam.replace(/"/g, '&quot;')}" data-batch-field="naam" data-batch-idx="${idx}">
+          <input type="text" placeholder="Categorie" value="${b.categorie.replace(/"/g, '&quot;')}" data-batch-field="categorie" data-batch-idx="${idx}">
+        </div>
+        <div class="batch-card-row">
+          <input type="text" placeholder="Merk / maker" value="${b.merkMaker.replace(/"/g, '&quot;')}" data-batch-field="merkMaker" data-batch-idx="${idx}">
+          <input type="number" placeholder="Waarde vanaf (€)" value="${b.waardeMin}" data-batch-field="waardeMin" data-batch-idx="${idx}">
+          <input type="number" placeholder="Waarde tot (€)" value="${b.waardeMax}" data-batch-field="waardeMax" data-batch-idx="${idx}">
+        </div>
+        ${b.error ? `<p class="batch-card-err">${b.error}</p>` : ''}
+      </div>
+      <button class="batch-card-remove" type="button" data-batch-remove="${idx}" aria-label="Verwijder">✕</button>
+    </div>
+  `).join('');
+
+  batchList.querySelectorAll('[data-batch-field]').forEach((inp) => {
+    inp.oninput = () => {
+      const idx = Number(inp.dataset.batchIdx);
+      const field = inp.dataset.batchField;
+      batchItems[idx][field] = inp.value;
+    };
+  });
+  batchList.querySelectorAll('[data-batch-remove]').forEach((btn) => {
+    btn.onclick = () => {
+      batchItems.splice(Number(btn.dataset.batchRemove), 1);
+      renderBatchList();
+    };
+  });
+}
+
+batchFileInput.addEventListener('change', async (e) => {
+  const files = Array.from(e.target.files || []);
+  if (!files.length) return;
+  clearBatchError();
+  const room = MAX_BATCH - batchItems.length;
+  const toProcess = files.slice(0, room);
+  if (files.length > room) {
+    showBatchError(`Je kunt maximaal ${MAX_BATCH} vondsten in één batch verwerken. De eerste ${room > 0 ? room : 0} van je selectie zijn toegevoegd.`);
+  }
+  try {
+    for (const file of toProcess) {
+      const dataUrl = await resizeImageWithLimit(file, PHOTO_MAX_CHARS);
+      batchItems.push({ photoData: dataUrl, naam: '', categorie: '', merkMaker: '', waardeMin: '', waardeMax: '', analyzing: false, error: '' });
+    }
+    renderBatchList();
+  } catch (err) {
+    showBatchError('Een van de foto\'s kon niet worden geladen.');
+  }
+  e.target.value = '';
+});
+
+async function analyzeAllBatch() {
+  const apiKey = getApiKey();
+  if (!apiKey) { showBatchError('Stel eerst een gratis Gemini API-key in via het ⚙-icoon rechtsboven.'); return; }
+  clearBatchError();
+  const analyzeBtn = document.getElementById('batchAnalyzeAllBtn');
+  analyzeBtn.disabled = true;
+  for (let i = 0; i < batchItems.length; i++) {
+    const b = batchItems[i];
+    if (b.naam) continue; // al ingevuld, niet overschrijven
+    b.analyzing = true;
+    b.error = '';
+    renderBatchList();
+    analyzeBtn.textContent = `✨ Bezig… (${i + 1}/${batchItems.length})`;
+    try {
+      const s = await analyzeWithGemini(b.photoData, apiKey);
+      b.naam = s.naam || '';
+      b.categorie = s.categorie || '';
+      b.merkMaker = s.merkMaker || '';
+      b.waardeMin = s.waardeMin ?? '';
+      b.waardeMax = s.waardeMax ?? '';
+    } catch (err) {
+      b.error = err && err.message ? err.message : 'AI-herkenning mislukt voor deze foto.';
+    } finally {
+      b.analyzing = false;
+    }
+  }
+  analyzeBtn.textContent = '✨ Analyseer alles met AI';
+  analyzeBtn.disabled = false;
+  renderBatchList();
+}
+
+async function saveBatchAll() {
+  clearBatchError();
+  const toSave = batchItems.filter((b) => b.naam.trim());
+  const skipped = batchItems.length - toSave.length;
+  if (!toSave.length) { showBatchError('Geef minimaal één vondst een naam voordat je opslaat.'); return; }
+  const saveBtn = document.getElementById('saveBatchBtn');
+  saveBtn.disabled = true;
+  let volgnummer = Math.max(0, ...items.map((i) => i.volgnummer || 0));
+  try {
+    for (const b of toSave) {
+      volgnummer += 1;
+      const id = `${Date.now()}_${volgnummer}`;
+      const item = {
+        id,
+        volgnummer,
+        inventarisnummer: formatInventoryNumber(volgnummer),
+        photos: [b.photoData],
+        naam: b.naam.trim(),
+        categorie: b.categorie.trim(),
+        merkMaker: b.merkMaker.trim(),
+        periode: '',
+        materiaal: '',
+        conditie: '',
+        waardeMin: b.waardeMin === '' ? null : Number(b.waardeMin),
+        waardeMax: b.waardeMax === '' ? null : Number(b.waardeMax),
+        aankoopprijs: null,
+        locatie: '',
+        notities: '',
+        toelichting: '',
+        datumToegevoegd: new Date().toISOString(),
+      };
+      await saveItem(item);
+    }
+    if (!syncMode) await loadItems();
+    closeBatch();
+  } catch (err) {
+    showBatchError('Opslaan is niet gelukt. Probeer het opnieuw.');
+  } finally {
+    saveBtn.disabled = false;
+  }
+}
+
+document.getElementById('batchAddBtn').onclick = openBatch;
+document.getElementById('closeBatch').onclick = closeBatch;
+document.getElementById('cancelBatchBtn').onclick = closeBatch;
+document.getElementById('batchAddMoreBtn').onclick = () => batchFileInput.click();
+document.getElementById('batchAnalyzeAllBtn').onclick = analyzeAllBatch;
+document.getElementById('saveBatchBtn').onclick = saveBatchAll;
+batchOverlay.addEventListener('click', (e) => { if (e.target === batchOverlay) closeBatch(); });
 
 function updateGeminiStatus() {
   const geminiStatus = document.getElementById('geminiStatus');
