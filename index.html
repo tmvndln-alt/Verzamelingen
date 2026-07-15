@@ -226,6 +226,17 @@ main { max-width: 1100px; margin: 0 auto; padding: 28px 20px; }
   font-size: 13px; line-height: 1; padding: 0;
   display: flex; align-items: center; justify-content: center;
 }
+.photo-thumb-move {
+  position: absolute; bottom: 3px; right: 3px;
+  display: flex; gap: 3px;
+}
+.photo-thumb-move button {
+  width: 20px; height: 20px; border-radius: 3px;
+  background: rgba(0,0,0,0.55); color: #fff;
+  font-size: 10px; line-height: 1; padding: 0; border: none;
+  display: flex; align-items: center; justify-content: center;
+}
+.photo-thumb-move span { width: 20px; height: 20px; display: inline-block; }
 .photo-thumb-add {
   height: 88px;
   border: 2px dashed var(--line);
@@ -858,6 +869,10 @@ function renderPhotoArea() {
       <img src="${src}" alt="Foto ${idx + 1}">
       ${idx === 0 ? '<span class="cover-tag">omslag</span>' : ''}
       <button class="remove-btn" type="button" data-remove-photo="${idx}" aria-label="Verwijder foto">✕</button>
+      <div class="photo-thumb-move">
+        ${idx > 0 ? `<button type="button" data-move-photo="${idx}" data-move-dir="-1" aria-label="Naar voren">◀</button>` : '<span></span>'}
+        ${idx < currentPhotos.length - 1 ? `<button type="button" data-move-photo="${idx}" data-move-dir="1" aria-label="Naar achteren">▶</button>` : '<span></span>'}
+      </div>
     </div>`).join('');
   const addTile = currentPhotos.length < MAX_PHOTOS
     ? `<button class="photo-thumb-add" id="photoAddBtn" type="button" aria-label="Foto toevoegen">+</button>`
@@ -872,6 +887,16 @@ function renderPhotoArea() {
   photoArea.querySelectorAll('[data-remove-photo]').forEach((btn) => {
     btn.onclick = () => {
       currentPhotos.splice(Number(btn.dataset.removePhoto), 1);
+      renderPhotoArea();
+    };
+  });
+  photoArea.querySelectorAll('[data-move-photo]').forEach((btn) => {
+    btn.onclick = () => {
+      const idx = Number(btn.dataset.movePhoto);
+      const dir = Number(btn.dataset.moveDir);
+      const target = idx + dir;
+      if (target < 0 || target >= currentPhotos.length) return;
+      [currentPhotos[idx], currentPhotos[target]] = [currentPhotos[target], currentPhotos[idx]];
       renderPhotoArea();
     };
   });
