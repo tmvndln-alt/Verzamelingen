@@ -820,11 +820,9 @@ function getApiKey() {
   return localStorage.getItem(GEMINI_KEY_STORAGE) || '';
 }
 
-async function analyzeWithGemini(dataUrl, apiKey) {
-  const match = dataUrl.match(/^data:(.+);base64,(.*)$/);
-  if (!match) throw new Error('Ongeldige afbeelding');
-  const [, mimeType, base64] = match;
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${encodeURIComponent(apiKey)}`;
+function sleep(ms) { return new Promise((resolve) => setTimeout(resolve, ms)); }
+
+async function callGeminiOnce(url, mimeType, base64) {
   let response;
   try {
     response = await fetch(url, {
@@ -848,9 +846,34 @@ async function analyzeWithGemini(dataUrl, apiKey) {
       const errBody = await response.json();
       detail = errBody?.error?.message || '';
     } catch (e) { /* geen JSON-body */ }
-    throw new Error(`AI-analyse mislukt (${response.status})${detail ? ': ' + detail : ''}`);
+    const err = new Error(`AI-analyse mislukt (${response.status})${detail ? ': ' + detail : ''}`);
+    err.status = response.status;
+    throw err;
   }
-  const data = await response.json();
+  return response.json();
+}
+
+async function analyzeWithGemini(dataUrl, apiKey) {
+  const match = dataUrl.match(/^data:(.+);base64,(.*)$/);
+  if (!match) throw new Error('Ongeldige afbeelding');
+  const [, mimeType, base64] = match;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${encodeURIComponent(apiKey)}`;
+
+  const maxAttempts = 3;
+  let data;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      data = await callGeminiOnce(url, mimeType, base64);
+      break;
+    } catch (err) {
+      const isBusy = err.status === 503 || err.status === 429;
+      if (isBusy && attempt < maxAttempts) {
+        await sleep(attempt * 2000); // 2s, dan 4s wachten voor een nieuwe poging
+        continue;
+      }
+      throw err;
+    }
+  }
   const candidate = data?.candidates?.[0];
   if (!candidate) {
     throw new Error('Geen antwoord van de AI ontvangen. Mogelijk werd de foto geweigerd (' + (data?.promptFeedback?.blockReason || 'onbekende reden') + ').');
