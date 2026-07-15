@@ -522,6 +522,7 @@ main { max-width: 1100px; margin: 0 auto; padding: 28px 20px; }
         <input id="apiKeyInput" type="password" autocapitalize="off" autocorrect="off" spellcheck="false" autocomplete="off" placeholder="AIzaSy…">
       </div>
       <p class="settings-text" id="geminiStatus"></p>
+      <button type="button" id="clearGeminiBtn" style="background:none;border:none;color:var(--rust);font-size:12px;padding:0 0 8px;text-decoration:underline;">Key verwijderen</button>
       <p class="settings-text" style="color:var(--brass-dark);">
         De key wordt alleen lokaal in je browser bewaard (localStorage) en nergens anders naartoe gestuurd dan rechtstreeks naar Google.
       </p>
@@ -556,6 +557,7 @@ service cloud.firestore {
           <label>Firebase-configuratie</label>
           <textarea id="firebaseConfigInput" rows="6" autocapitalize="off" autocorrect="off" spellcheck="false" autocomplete="off" placeholder='{"apiKey": "...", "authDomain": "...", "projectId": "...", ...}'></textarea>
         </div>
+        <button type="button" id="clearFirebaseBtn" style="background:none;border:none;color:var(--rust);font-size:12px;padding:0 0 8px;text-decoration:underline;">Synchronisatie stopzetten</button>
         <button class="btn-outline" id="importLocalBtn" type="button" style="margin-top:4px;">Importeer lokale vondsten naar synchronisatie</button>
         <p class="settings-text" id="syncStatus"></p>
       </div>
@@ -1206,7 +1208,7 @@ async function handleSave() {
     await saveItem(item);
     closeForm();
   } catch (err) {
-    showError('Opslaan is niet gelukt. Mogelijk is de opslagruimte vol of is de synchronisatie niet goed ingesteld.');
+    showError('Opslaan is niet gelukt: ' + (err && err.message ? err.message : String(err)));
   }
 }
 
@@ -1632,22 +1634,35 @@ document.getElementById('settingsBtn').onclick = openSettings;
 document.getElementById('closeSettings').onclick = closeSettings;
 document.getElementById('cancelSettings').onclick = closeSettings;
 document.getElementById('importLocalBtn').onclick = importLocalItems;
+document.getElementById('clearGeminiBtn').onclick = () => {
+  if (!confirm('Gemini API-key verwijderen? AI-herkenning werkt dan niet meer totdat je een nieuwe key invult.')) return;
+  localStorage.removeItem(GEMINI_KEY_STORAGE);
+  apiKeyInput.value = '';
+  updateGeminiStatus();
+};
+document.getElementById('clearFirebaseBtn').onclick = () => {
+  if (!confirm('Synchronisatie stopzetten op dit apparaat? Je vondsten blijven bewaard in de cloud, maar dit apparaat gebruikt daarna weer alleen lokale opslag totdat je opnieuw een configuratie invult.')) return;
+  localStorage.removeItem(FIREBASE_CONFIG_STORAGE);
+  firebaseConfigInput.value = '';
+  syncStatus.style.color = 'var(--forest-mid)';
+  syncStatus.textContent = 'Synchronisatie uitgeschakeld — gegevens blijven lokaal op dit apparaat.';
+  initSync();
+};
 document.getElementById('saveSettings').onclick = () => {
   const key = apiKeyInput.value.trim();
   if (key) {
     localStorage.setItem(GEMINI_KEY_STORAGE, key);
-  } else {
-    localStorage.removeItem(GEMINI_KEY_STORAGE);
   }
+  // Een leeg veld verwijdert de key niet meer — gebruik "Key verwijderen" om 'm bewust te wissen.
   updateGeminiStatus();
 
   const rawConfig = firebaseConfigInput.value.trim();
   if (!rawConfig) {
-    localStorage.removeItem(FIREBASE_CONFIG_STORAGE);
+    // Een leeg veld laat een bestaande synchronisatie-configuratie ongemoeid.
     syncStatus.style.color = 'var(--forest-mid)';
-    syncStatus.textContent = 'Synchronisatie uitgeschakeld — gegevens blijven lokaal op dit apparaat.';
-    renderAiArea();
-    initSync();
+    syncStatus.textContent = getFirebaseConfig()
+      ? 'Synchronisatie-instellingen ongewijzigd (veld was leeg — gebruik "Synchronisatie stopzetten" om echt te stoppen).'
+      : 'Synchronisatie is niet ingesteld — gegevens blijven lokaal op dit apparaat.';
     return;
   }
   try {
