@@ -660,8 +660,8 @@ let unsubscribeSnapshot = null;
 let persistenceAttempted = false;
 
 const IDENTIFY_PROMPT = `Je bent een expert in antiek, vintage verzamelobjecten, keramiek, speelgoed, hifi-apparatuur, glaswerk en vlooienmarktvondsten. Bekijk de foto goed en geef ALLEEN een JSON-object terug, zonder andere tekst, markdown-opmaak of uitleg eromheen, in exact dit formaat:
-{"naam": "korte titel van het object", "categorie": "vrije omschrijving, bv. keramiek, speelgoed, meubels, audio, glaswerk, religieus object", "merkMaker": "merk of maker indien herkenbaar, anders lege string", "periode": "geschatte periode of decennium indien herkenbaar, anders lege string", "materiaal": "materiaal indien duidelijk zichtbaar, anders lege string", "conditie": "korte inschatting van de staat in enkele woorden", "waardeMin": geheel getal in euro of null, "waardeMax": geheel getal in euro of null, "toelichting": "1 tot 2 zinnen met de redenering achter de inschatting"}
-Wees realistisch en voorzichtig met waardeschattingen; het zijn indicaties, geen taxaties.`;
+{"naam": "korte titel van het object", "categorie": "vrije omschrijving, bv. keramiek, speelgoed, meubels, audio, glaswerk, religieus object", "merkMaker": "merk of maker indien herkenbaar, anders lege string", "periode": "geschatte periode of decennium indien herkenbaar, anders lege string", "materiaal": "materiaal indien duidelijk zichtbaar, anders lege string", "conditie": "korte inschatting van de staat in enkele woorden", "waardeMin": geheel getal in euro of null, "waardeMax": geheel getal in euro of null, "toelichting": "1 tot 2 zinnen met de redenering achter de inschatting", "vraag": "een korte, concrete vervolgvraag aan de eigenaar als je merk, maker of conditie niet zeker genoeg kunt aflezen van de foto (bv. over een merkstempel, beschadigingen, of een detail dat niet zichtbaar is) — anders een lege string"}
+Wees realistisch en voorzichtig met waardeschattingen; het zijn indicaties, geen taxaties. Stel alleen een vraag als dat de inschatting echt zou verbeteren; bij twijfel liever geen vraag.`;
 
 function fmtNum(id) { return 'f_' + id; }
 
@@ -822,70 +822,76 @@ function getApiKey() {
 
 function sleep(ms) { return new Promise((resolve) => setTimeout(resolve, ms)); }
 
-async function callGeminiOnce(url, mimeType, base64) {
+async function callGeminiConversation(apiKey, contents) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${encodeURIComponent(apiKey)}`;
+  const maxAttempts = 3;
   let response;
-  try {
-    response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{
-          parts: [
-            { text: IDENTIFY_PROMPT },
-            { inline_data: { mime_type: mimeType, data: base64 } },
-          ],
-        }],
-      }),
-    });
-  } catch (networkErr) {
-    throw new Error('Geen verbinding met Google kunnen maken. Controleer je internetverbinding.');
-  }
-  if (!response.ok) {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents }),
+      });
+    } catch (networkErr) {
+      throw new Error('Geen verbinding met Google kunnen maken. Controleer je internetverbinding.');
+    }
+    if (response.ok) break;
     let detail = '';
     try {
       const errBody = await response.json();
       detail = errBody?.error?.message || '';
     } catch (e) { /* geen JSON-body */ }
-    const err = new Error(`AI-analyse mislukt (${response.status})${detail ? ': ' + detail : ''}`);
-    err.status = response.status;
-    throw err;
-  }
-  return response.json();
-}
-
-async function analyzeWithGemini(dataUrl, apiKey) {
-  const match = dataUrl.match(/^data:(.+);base64,(.*)$/);
-  if (!match) throw new Error('Ongeldige afbeelding');
-  const [, mimeType, base64] = match;
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${encodeURIComponent(apiKey)}`;
-
-  const maxAttempts = 3;
-  let data;
-  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    try {
-      data = await callGeminiOnce(url, mimeType, base64);
-      break;
-    } catch (err) {
-      const isBusy = err.status === 503 || err.status === 429;
-      if (isBusy && attempt < maxAttempts) {
-        await sleep(attempt * 2000); // 2s, dan 4s wachten voor een nieuwe poging
-        continue;
-      }
-      throw err;
+    const status = response.status;
+    if ((status === 503 || status === 429) && attempt < maxAttempts) {
+      await sleep(attempt * 2000); // 2s, dan 4s wachten voor een nieuwe poging
+      continue;
     }
+    throw new Error(`AI-analyse mislukt (${status})${detail ? ': ' + detail : ''}`);
   }
+  const data = await response.json();
   const candidate = data?.candidates?.[0];
   if (!candidate) {
     throw new Error('Geen antwoord van de AI ontvangen. Mogelijk werd de foto geweigerd (' + (data?.promptFeedback?.blockReason || 'onbekende reden') + ').');
   }
   const text = candidate?.content?.parts?.[0]?.text;
   if (!text) throw new Error('Geen tekstantwoord van de AI ontvangen (finishReason: ' + (candidate?.finishReason || 'onbekend') + ').');
+  return text;
+}
+
+function parseAiJson(text) {
   const clean = text.replace(/```json|```/g, '').trim();
   try {
     return JSON.parse(clean);
   } catch (parseErr) {
     throw new Error('Het antwoord van de AI kon niet worden gelezen: ' + clean.slice(0, 120));
   }
+}
+
+async function analyzeWithGemini(dataUrl, apiKey) {
+  const match = dataUrl.match(/^data:(.+);base64,(.*)$/);
+  if (!match) throw new Error('Ongeldige afbeelding');
+  const [, mimeType, base64] = match;
+  const contents = [{
+    role: 'user',
+    parts: [
+      { text: IDENTIFY_PROMPT },
+      { inline_data: { mime_type: mimeType, data: base64 } },
+    ],
+  }];
+  const text = await callGeminiConversation(apiKey, contents);
+  const suggestion = parseAiJson(text);
+  return { suggestion, conversation: [...contents, { role: 'model', parts: [{ text }] }] };
+}
+
+async function askGeminiFollowUp(apiKey, conversation, userAnswer) {
+  const newContents = [...conversation, {
+    role: 'user',
+    parts: [{ text: userAnswer + '\n\nGeef op basis hiervan opnieuw ALLEEN het JSON-object in exact hetzelfde format als eerder, met je bijgewerkte, definitieve inschatting. Vul "vraag" alleen opnieuw in als er nog een noodzakelijke onduidelijkheid overblijft, anders laat je dat veld leeg.' }],
+  }];
+  const text = await callGeminiConversation(apiKey, newContents);
+  const suggestion = parseAiJson(text);
+  return { suggestion, conversation: [...newContents, { role: 'model', parts: [{ text }] }] };
 }
 
 function renderPhotoArea() {
@@ -928,11 +934,34 @@ function renderPhotoArea() {
   renderAiArea();
 }
 
+let aiConversation = null;
+let aiPendingQuestion = '';
+let aiFollowUpRounds = 0;
+const MAX_AI_FOLLOWUPS = 2;
+
 function renderAiArea() {
   if (!currentPhotos.length) { aiArea.innerHTML = ''; return; }
   const hasKey = !!getApiKey();
   if (analyzing) {
     aiArea.innerHTML = `<button class="btn-brass ai-btn" disabled><span class="spinner"></span> AI bekijkt de foto…</button>`;
+    return;
+  }
+  if (aiPendingQuestion) {
+    aiArea.innerHTML = `
+      <div class="error-box" style="background:rgba(184,135,59,0.12);border-color:rgba(184,135,59,0.35);color:var(--brass-dark);margin-bottom:8px;">
+        <strong>AI vraagt:</strong> ${aiPendingQuestion}
+      </div>
+      <div style="display:flex;gap:6px;margin-bottom:10px;">
+        <input type="text" id="aiAnswerInput" placeholder="Typ hier je antwoord…" style="flex:1;border-radius:3px;padding:8px 10px;border:1px solid var(--line);background:var(--cream);font-size:13px;">
+        <button class="btn-brass ai-btn" id="aiAnswerBtn" type="button" style="width:auto;margin:0;">Versturen</button>
+      </div>
+      <button type="button" id="aiSkipQuestionBtn" style="background:none;border:none;color:var(--brass-dark);font-size:12px;text-decoration:underline;padding:0;">Vraag overslaan</button>
+    `;
+    document.getElementById('aiAnswerBtn').onclick = handleAnswerFollowUp;
+    document.getElementById('aiAnswerInput').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); handleAnswerFollowUp(); }
+    });
+    document.getElementById('aiSkipQuestionBtn').onclick = () => { aiPendingQuestion = ''; aiConversation = null; renderAiArea(); };
     return;
   }
   aiArea.innerHTML = `<button class="btn-brass ai-btn" id="analyzeBtn" type="button">✨ Laat AI dit herkennen</button>`;
@@ -944,26 +973,65 @@ function renderAiArea() {
   }
 }
 
+function applyAiSuggestion(s) {
+  document.getElementById('f_naam').value = s.naam || document.getElementById('f_naam').value;
+  document.getElementById('f_categorie').value = s.categorie || '';
+  document.getElementById('f_merkMaker').value = s.merkMaker || '';
+  document.getElementById('f_periode').value = s.periode || '';
+  document.getElementById('f_materiaal').value = s.materiaal || '';
+  document.getElementById('f_conditie').value = s.conditie || '';
+  document.getElementById('f_waardeMin').value = s.waardeMin ?? '';
+  document.getElementById('f_waardeMax').value = s.waardeMax ?? '';
+  document.getElementById('f_toelichting').value = s.toelichting || '';
+}
+
 async function handleAnalyze() {
   const apiKey = getApiKey();
   if (!apiKey) { showError('Stel eerst een gratis Gemini API-key in via het ⚙-icoon rechtsboven.'); return; }
   if (!currentPhotos.length) return;
   clearError();
   analyzing = true;
+  aiPendingQuestion = '';
+  aiFollowUpRounds = 0;
   renderAiArea();
   try {
-    const s = await analyzeWithGemini(currentPhotos[0], apiKey);
-    document.getElementById('f_naam').value = s.naam || document.getElementById('f_naam').value;
-    document.getElementById('f_categorie').value = s.categorie || '';
-    document.getElementById('f_merkMaker').value = s.merkMaker || '';
-    document.getElementById('f_periode').value = s.periode || '';
-    document.getElementById('f_materiaal').value = s.materiaal || '';
-    document.getElementById('f_conditie').value = s.conditie || '';
-    document.getElementById('f_waardeMin').value = s.waardeMin ?? '';
-    document.getElementById('f_waardeMax').value = s.waardeMax ?? '';
-    document.getElementById('f_toelichting').value = s.toelichting || '';
+    const { suggestion, conversation } = await analyzeWithGemini(currentPhotos[0], apiKey);
+    applyAiSuggestion(suggestion);
+    if (suggestion.vraag) {
+      aiPendingQuestion = suggestion.vraag;
+      aiConversation = conversation;
+    }
   } catch (err) {
     showError(err && err.message ? err.message : 'De AI kon deze foto niet analyseren. Vul de gegevens eventueel handmatig aan, of probeer het opnieuw.');
+  } finally {
+    analyzing = false;
+    renderAiArea();
+  }
+}
+
+async function handleAnswerFollowUp() {
+  const apiKey = getApiKey();
+  const input = document.getElementById('aiAnswerInput');
+  const answer = input ? input.value.trim() : '';
+  if (!answer || !aiConversation) return;
+  clearError();
+  analyzing = true;
+  renderAiArea();
+  try {
+    const { suggestion, conversation } = await askGeminiFollowUp(apiKey, aiConversation, answer);
+    applyAiSuggestion(suggestion);
+    aiFollowUpRounds += 1;
+    if (suggestion.vraag && aiFollowUpRounds < MAX_AI_FOLLOWUPS) {
+      aiPendingQuestion = suggestion.vraag;
+      aiConversation = conversation;
+    } else {
+      aiPendingQuestion = '';
+      aiConversation = null;
+    }
+  } catch (err) {
+    showError(err && err.message ? err.message : 'Het versturen van je antwoord is niet gelukt. Probeer het opnieuw.');
+    aiPendingQuestion = '';
+    aiConversation = null;
   } finally {
     analyzing = false;
     renderAiArea();
@@ -996,6 +1064,9 @@ function openForm(item) {
   clearError();
   currentPhotos = item ? getItemPhotos(item).slice() : [];
   editingId = item ? item.id : null;
+  aiPendingQuestion = '';
+  aiConversation = null;
+  aiFollowUpRounds = 0;
   modalTitle.textContent = item ? 'Vondst bewerken' : 'Nieuwe vondst';
   fieldIds.forEach((id) => {
     const el = document.getElementById(fmtNum(id));
@@ -1010,6 +1081,9 @@ function closeForm() {
   editingId = null;
   currentPhotos = [];
   analyzing = false;
+  aiPendingQuestion = '';
+  aiConversation = null;
+  aiFollowUpRounds = 0;
 }
 
 function detailField(label, value) {
@@ -1563,7 +1637,7 @@ async function analyzeAllBatch() {
     renderBatchList();
     analyzeBtn.textContent = `✨ Bezig… (${i + 1}/${batchItems.length})`;
     try {
-      const s = await analyzeWithGemini(b.photoData, apiKey);
+      const { suggestion: s } = await analyzeWithGemini(b.photoData, apiKey);
       b.naam = s.naam || '';
       b.categorie = s.categorie || '';
       b.merkMaker = s.merkMaker || '';
