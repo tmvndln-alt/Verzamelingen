@@ -913,6 +913,12 @@ async function callGeminiConversation(apiKey, contents) {
       detail = errBody?.error?.message || '';
     } catch (e) { /* geen JSON-body */ }
     const status = response.status;
+    const isQuota = status === 429 && /quota|free_tier_requests/i.test(detail);
+    if (isQuota) {
+      const quotaErr = new Error('Je hebt het gratis dagelijkse AI-quotum van Google bereikt. Probeer het morgen weer, of vul dit item voor nu handmatig in.');
+      quotaErr.quotaExceeded = true;
+      throw quotaErr;
+    }
     if ((status === 503 || status === 429) && attempt < maxAttempts) {
       await sleep(attempt * 2000); // 2s, dan 4s wachten voor een nieuwe poging
       continue;
@@ -1007,6 +1013,7 @@ function renderPhotoArea() {
 let aiConversation = null;
 let aiPendingQuestion = '';
 let aiFollowUpRounds = 0;
+let aiQuotaExceeded = false;
 const MAX_AI_FOLLOWUPS = 2;
 
 function renderAiArea() {
@@ -1014,6 +1021,10 @@ function renderAiArea() {
   const hasKey = !!getApiKey();
   if (analyzing) {
     aiArea.innerHTML = `<button class="btn-brass ai-btn" disabled><span class="spinner"></span> AI bekijkt de foto…</button>`;
+    return;
+  }
+  if (aiQuotaExceeded) {
+    aiArea.innerHTML = `<p class="ai-hint" style="color:var(--rust);">Dagelijkse AI-limiet bereikt — morgen weer beschikbaar. Vul dit item voor nu handmatig aan.</p>`;
     return;
   }
   if (aiPendingQuestion) {
@@ -1058,6 +1069,7 @@ function applyAiSuggestion(s) {
 async function handleAnalyze() {
   const apiKey = getApiKey();
   if (!apiKey) { showError('Stel eerst een gratis Gemini API-key in via het ⚙-icoon rechtsboven.'); return; }
+  if (aiQuotaExceeded) { renderAiArea(); return; }
   if (!currentPhotos.length) return;
   clearError();
   analyzing = true;
@@ -1072,7 +1084,11 @@ async function handleAnalyze() {
       aiConversation = conversation;
     }
   } catch (err) {
-    showError(err && err.message ? err.message : 'De AI kon deze foto niet analyseren. Vul de gegevens eventueel handmatig aan, of probeer het opnieuw.');
+    if (err && err.quotaExceeded) {
+      aiQuotaExceeded = true;
+    } else {
+      showError(err && err.message ? err.message : 'De AI kon deze foto niet analyseren. Vul de gegevens eventueel handmatig aan, of probeer het opnieuw.');
+    }
   } finally {
     analyzing = false;
     renderAiArea();
@@ -1099,9 +1115,13 @@ async function handleAnswerFollowUp() {
       aiConversation = null;
     }
   } catch (err) {
-    showError(err && err.message ? err.message : 'Het versturen van je antwoord is niet gelukt. Probeer het opnieuw.');
     aiPendingQuestion = '';
     aiConversation = null;
+    if (err && err.quotaExceeded) {
+      aiQuotaExceeded = true;
+    } else {
+      showError(err && err.message ? err.message : 'Het versturen van je antwoord is niet gelukt. Probeer het opnieuw.');
+    }
   } finally {
     analyzing = false;
     renderAiArea();
@@ -1884,6 +1904,7 @@ batchFileInput.addEventListener('change', async (e) => {
 async function analyzeAllBatch() {
   const apiKey = getApiKey();
   if (!apiKey) { showBatchError('Stel eerst een gratis Gemini API-key in via het ⚙-icoon rechtsboven.'); return; }
+  if (aiQuotaExceeded) { showBatchError('Dagelijkse AI-limiet bereikt — morgen weer beschikbaar. Vul de items voor nu handmatig aan.'); return; }
   clearBatchError();
   const analyzeBtn = document.getElementById('batchAnalyzeAllBtn');
   analyzeBtn.disabled = true;
@@ -1902,6 +1923,13 @@ async function analyzeAllBatch() {
       b.waardeMin = s.waardeMin ?? '';
       b.waardeMax = s.waardeMax ?? '';
     } catch (err) {
+      b.analyzing = false;
+      if (err && err.quotaExceeded) {
+        aiQuotaExceeded = true;
+        showBatchError('Dagelijkse AI-limiet bereikt — morgen weer beschikbaar. Vul de resterende items voor nu handmatig aan.');
+        renderBatchList();
+        break;
+      }
       b.error = err && err.message ? err.message : 'AI-herkenning mislukt voor deze foto.';
     } finally {
       b.analyzing = false;
