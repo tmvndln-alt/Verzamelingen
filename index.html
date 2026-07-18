@@ -56,7 +56,38 @@ h1 {
   color: var(--ink);
   margin: 0;
 }
-.btn-row { display: flex; gap: 8px; }
+.btn-row { display: flex; gap: 8px; position: relative; }
+.dropdown-wrap { position: relative; }
+.dropdown-menu {
+  display: none;
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: var(--cream);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  min-width: 200px;
+  box-shadow: 0 10px 24px -8px rgba(27,42,30,0.35);
+  z-index: 60;
+  overflow: hidden;
+}
+.dropdown-menu.open { display: block; }
+.dropdown-menu button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 11px 14px;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--line);
+  font-size: 13px;
+  font-family: 'Work Sans', sans-serif;
+  color: var(--ink);
+  cursor: pointer;
+}
+.dropdown-menu button:last-child { border-bottom: none; }
+.dropdown-menu button:hover { background: var(--paper); }
+.dropdown-menu button:disabled { opacity: 0.4; cursor: default; }
 button {
   font-family: 'Work Sans', sans-serif;
   border: none;
@@ -417,11 +448,21 @@ main { max-width: 1100px; margin: 0 auto; padding: 28px 20px; }
     </div>
     <div class="btn-row">
       <button class="btn-icon" id="settingsBtn" title="AI-instellingen" aria-label="AI-instellingen">⚙</button>
-      <button class="btn-brass" id="exportInsuranceBtn"><span>⬇</span> Verzekeringsrapport</button>
-      <button class="btn-brass" id="exportPdfBtn"><span>⬇</span> Naar PDF</button>
-      <button class="btn-brass" id="exportBtn"><span>⬇</span> Naar Excel</button>
-      <button class="btn-primary" id="addBtn"><span>+</span> Nieuwe vondst</button>
-      <button class="btn-outline" id="batchAddBtn" style="border:1px solid var(--line);color:var(--ink);padding:10px 16px;">+ Batch</button>
+      <div class="dropdown-wrap">
+        <button class="btn-brass" id="exportMenuBtn">⬇ Exporteren ▾</button>
+        <div class="dropdown-menu" id="exportMenu">
+          <button type="button" id="exportPdfBtn">Naar PDF</button>
+          <button type="button" id="exportBtn">Naar Excel</button>
+          <button type="button" id="exportInsuranceBtn">Verzekeringsrapport</button>
+        </div>
+      </div>
+      <div class="dropdown-wrap">
+        <button class="btn-primary" id="addMenuBtn">+ Toevoegen ▾</button>
+        <div class="dropdown-menu" id="addMenu">
+          <button type="button" id="addBtn">Nieuwe vondst</button>
+          <button type="button" id="batchAddBtn">Batch toevoegen</button>
+        </div>
+      </div>
     </div>
   </div>
 </header>
@@ -436,19 +477,19 @@ main { max-width: 1100px; margin: 0 auto; padding: 28px 20px; }
     </div>
   </div>
 
-  <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:16px;">
+  <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:20px;">
     <div class="search-wrap" style="margin-bottom:0;">
       <span class="search-icon">🔍</span>
       <input id="searchInput" type="text" placeholder="Zoek op naam, categorie, merk, locatie…">
     </div>
+    <select id="categorySelect" style="border:1px solid var(--line);background:var(--cream);border-radius:3px;padding:9px 10px;font-size:13px;color:var(--text-dark);font-family:'Work Sans',sans-serif;display:none;">
+    </select>
     <select id="sortSelect" style="border:1px solid var(--line);background:var(--cream);border-radius:3px;padding:9px 10px;font-size:13px;color:var(--text-dark);font-family:'Work Sans',sans-serif;">
       <option value="nieuwste">Nieuwste eerst</option>
       <option value="naam">Naam (A-Z)</option>
       <option value="waarde">Waarde (hoog-laag)</option>
     </select>
   </div>
-
-  <div id="categoryChips" class="chips-row" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:20px;"></div>
 
   <div id="emptyState" class="empty-state" style="display:none;">
     <p class="title serif" id="emptyTitle">De schappen zijn nog leeg.</p>
@@ -1217,7 +1258,7 @@ async function importLocalItems() {
 
 let categoryFilter = '';
 
-function renderCategoryChips() {
+function renderCategorySelect() {
   const counts = {};
   items.forEach((it) => {
     const cat = (it.categorie || '').trim();
@@ -1225,14 +1266,13 @@ function renderCategoryChips() {
     counts[cat] = (counts[cat] || 0) + 1;
   });
   const cats = Object.keys(counts).sort((a, b) => a.localeCompare(b));
-  const chipsEl = document.getElementById('categoryChips');
-  if (!cats.length) { chipsEl.innerHTML = ''; return; }
-  const allChip = `<button type="button" class="chip${categoryFilter === '' ? ' active' : ''}" data-cat="">Alles <span class="count">${items.length}</span></button>`;
-  const catChips = cats.map((c) => `<button type="button" class="chip${categoryFilter === c ? ' active' : ''}" data-cat="${escapeHtml(c)}">${escapeHtml(c)} <span class="count">${counts[c]}</span></button>`).join('');
-  chipsEl.innerHTML = allChip + catChips;
-  chipsEl.querySelectorAll('[data-cat]').forEach((btn) => {
-    btn.onclick = () => { categoryFilter = btn.dataset.cat; render(); };
-  });
+  const sel = document.getElementById('categorySelect');
+  if (!cats.length) { sel.style.display = 'none'; sel.innerHTML = ''; categoryFilter = ''; return; }
+  sel.style.display = '';
+  if (!cats.includes(categoryFilter)) categoryFilter = '';
+  sel.innerHTML = `<option value="">Alle categorieën (${items.length})</option>` +
+    cats.map((c) => `<option value="${escapeHtml(c)}">${escapeHtml(c)} (${counts[c]})</option>`).join('');
+  sel.value = categoryFilter;
 }
 
 function sortItems(list) {
@@ -1253,7 +1293,7 @@ function sortItems(list) {
 }
 
 function render() {
-  renderCategoryChips();
+  renderCategorySelect();
   checkBackupReminder();
   const q = searchInput.value.trim().toLowerCase();
   let filtered = items.filter((it) => {
@@ -1712,15 +1752,35 @@ document.getElementById('backupBannerDismissBtn').onclick = () => {
 };
 
 // ---------- Events ----------
-document.getElementById('addBtn').onclick = () => openForm(null);
+document.getElementById('addBtn').onclick = () => { closeAllMenus(); openForm(null); };
 document.getElementById('closeModal').onclick = closeForm;
 document.getElementById('cancelBtn').onclick = closeForm;
 document.getElementById('saveBtn').onclick = handleSave;
-document.getElementById('exportBtn').onclick = handleExport;
-document.getElementById('exportPdfBtn').onclick = handleExportPdf;
-document.getElementById('exportInsuranceBtn').onclick = handleExportInsurance;
+document.getElementById('exportBtn').onclick = () => { closeAllMenus(); handleExport(); };
+document.getElementById('exportPdfBtn').onclick = () => { closeAllMenus(); handleExportPdf(); };
+document.getElementById('exportInsuranceBtn').onclick = () => { closeAllMenus(); handleExportInsurance(); };
+
+function closeAllMenus() {
+  document.querySelectorAll('.dropdown-menu.open').forEach((m) => m.classList.remove('open'));
+}
+function toggleMenu(menuId) {
+  const menu = document.getElementById(menuId);
+  const wasOpen = menu.classList.contains('open');
+  closeAllMenus();
+  if (!wasOpen) menu.classList.add('open');
+}
+document.getElementById('exportMenuBtn').onclick = (e) => { e.stopPropagation(); toggleMenu('exportMenu'); };
+document.getElementById('addMenuBtn').onclick = (e) => { e.stopPropagation(); toggleMenu('addMenu'); };
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.dropdown-wrap')) closeAllMenus();
+});
+
 searchInput.addEventListener('input', render);
 document.getElementById('sortSelect').addEventListener('change', render);
+document.getElementById('categorySelect').addEventListener('change', () => {
+  categoryFilter = document.getElementById('categorySelect').value;
+  render();
+});
 overlay.addEventListener('click', (e) => { if (e.target === overlay) closeForm(); });
 
 document.getElementById('closeDetail').onclick = closeDetail;
@@ -1894,7 +1954,7 @@ async function saveBatchAll() {
   }
 }
 
-document.getElementById('batchAddBtn').onclick = openBatch;
+document.getElementById('batchAddBtn').onclick = () => { closeAllMenus(); openBatch(); };
 document.getElementById('closeBatch').onclick = closeBatch;
 document.getElementById('cancelBatchBtn').onclick = closeBatch;
 document.getElementById('batchAddMoreBtn').onclick = () => batchFileInput.click();
