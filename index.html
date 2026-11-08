@@ -643,6 +643,7 @@ service cloud.firestore {
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
@@ -828,7 +829,47 @@ function updateSyncBadge() {
   syncBadge.textContent = syncMode ? '● gesynchroniseerd' : '';
 }
 
-function initSync() {
+// ---- Inloggen (alleen Tom mag lezen en schrijven) ----
+async function zorgVoorLogin() {
+  var auth = firebase.auth();
+  var gebruiker = await new Promise(function (ok) {
+    var stop = auth.onAuthStateChanged(function (u) { stop(); ok(u); });
+  });
+  var fout = '';
+  while (gebruiker === null) {
+    var g = await vraagLogin(fout);
+    try {
+      gebruiker = (await auth.signInWithEmailAndPassword(g.email, g.ww)).user;
+    } catch (e) {
+      fout = 'Inloggen mislukt (' + (e.code || e.message) + '). Probeer opnieuw.';
+    }
+  }
+  return gebruiker;
+}
+function vraagLogin(fout) {
+  return new Promise(function (ok) {
+    var d = document.createElement('div');
+    d.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:99999;font-family:-apple-system,sans-serif';
+    d.innerHTML = '<form style="background:#fff;color:#222;padding:24px;border-radius:12px;width:min(90vw,340px);display:flex;flex-direction:column;gap:10px">'
+      + '<b style="font-size:18px">Inloggen</b>'
+      + '<div class="lgFout" style="color:#b00;font-size:14px"></div>'
+      + '<input class="lgEmail" type="email" autocomplete="username" placeholder="E-mailadres" style="padding:10px;font-size:16px">'
+      + '<input class="lgWw" type="password" autocomplete="current-password" placeholder="Wachtwoord" style="padding:10px;font-size:16px">'
+      + '<button type="submit" style="padding:12px;font-size:16px">Inloggen</button></form>';
+    document.body.appendChild(d);
+    d.querySelector('.lgFout').textContent = fout || '';
+    d.querySelector('form').addEventListener('submit', function (ev) {
+      ev.preventDefault();
+      var email = d.querySelector('.lgEmail').value.trim();
+      var ww = d.querySelector('.lgWw').value;
+      d.remove();
+      ok({ email: email, ww: ww });
+    });
+    setTimeout(function () { d.querySelector('.lgEmail').focus(); }, 50);
+  });
+}
+
+async function initSync() {
   const config = getFirebaseConfig();
   if (unsubscribeSnapshot) { unsubscribeSnapshot(); unsubscribeSnapshot = null; }
   if (!config) { syncMode = false; updateSyncBadge(); loadItems(); return; }
@@ -846,7 +887,7 @@ function initSync() {
       firebase.app().delete().catch(() => {});
       firebase.initializeApp(config);
     }
-    firestoreDb = firebase.firestore();
+    firestoreDb = firebase.firestore(); await zorgVoorLogin();
     if (!persistenceAttempted) {
       persistenceAttempted = true;
       try {
