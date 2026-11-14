@@ -112,6 +112,7 @@ async function shrink(file, max=1280){
   const w = bmp.width||bmp.naturalWidth, h = bmp.height||bmp.naturalHeight, s = Math.min(1, max/Math.max(w,h));
   const c = document.createElement('canvas'); c.width=Math.round(w*s); c.height=Math.round(h*s);
   c.getContext('2d').drawImage(bmp,0,0,c.width,c.height);
+  if(bmp.close) bmp.close();
   return new Promise(r => c.toBlob(r,'image/jpeg',0.82));
 }
 const toDataURL = b => new Promise(r=>{ const f=new FileReader(); f.onload=()=>r(f.result); f.readAsDataURL(b); });
@@ -123,7 +124,7 @@ function parseJSON(t){
   t = t.replace(/```json|```/g,'').trim();
   const a=t.indexOf('{'), b=t.lastIndexOf('}');
   if(a<0||b<0) throw new AIError('AI gaf een onleesbaar antwoord. Probeer het nog eens.');
-  return JSON.parse(t.slice(a,b+1));
+  try{ return JSON.parse(t.slice(a,b+1)); }catch{ throw new AIError('AI gaf een onleesbaar of afgekapt antwoord. Probeer het nog eens.'); }
 }
 async function gemini(parts, json=true){
   const key = (LS.get('vk_key')||'').trim();
@@ -203,7 +204,8 @@ let cancelQueue = false;
 async function runQueue(){
   const todo = (await dbAll()).filter(f=>f.status==='wacht').sort((a,b)=>a.id-b.id);
   if(!todo.length){ toast('Niets te verwerken'); return; }
-  cancelQueue = false; let done=0, failed=0, stop='';
+  cancelQueue = false; let done=0, failed=0, stop='', lock=null;
+  try{ lock = await navigator.wakeLock?.request('screen'); }catch{}
   $('#banner').onclick = () => { cancelQueue = true; setBusyText('Stoppen na deze vondst…'); };
   for(const f of todo){
     if(cancelQueue){ stop='Gestopt.'; break; }
@@ -214,6 +216,7 @@ async function runQueue(){
     await sleep(1500);
   }
   setBusy(null); $('#banner').onclick = null;
+  try{ await lock?.release(); }catch{}
   await render();
   alertBox(`${done} vondst(en) bekeken` + (failed?`, ${failed} mislukt (blijft staan om opnieuw te proberen)`:'') + (stop?`\n\n${stop}`:''));
 }
@@ -337,7 +340,7 @@ const files = async (list, target) => {
 };
 async function saveDraft(thenAI){
   if(!draft.photos.length) return;
-  draft.note = ($('#dnote')?.value)||draft.note;
+  draft.note = $('#dnote')?.value ?? draft.note;
   const id = await nextNr();
   await dbPut({id, created:Date.now(), status:'wacht', photos:draft.photos, note:draft.note.trim(),
     naam:'',categorie:'',omschrijving:'',periode:'',materiaal:'',zekerheid:'',waarde_min:null,waarde_max:null,waarde_toelichting:'',vragen:[]});
@@ -358,10 +361,16 @@ function dl(name, blob){
 async function exportAll(){
   setBusy('Back-up maken…');
   try{
-    const all = await dbAll(), out=[];
-    for(const f of all) out.push({...f, photos: await Promise.all(f.photos.map(toDataURL))});
+    const all = await dbAll();
     const counter = (await P(db.transaction('meta').objectStore('meta').get('counter')))||0;
-    const blob = new Blob([JSON.stringify({app:'vondsten',versie:1,counter,finds:out})],{type:'application/json'});
+    // stuk voor stuk opbouwen, zodat nooit alle foto's tegelijk als één grote tekst in het geheugen staan
+    const parts = [`{"app":"vondsten","versie":1,"counter":${counter},"finds":[`];
+    for(let i=0;i<all.length;i++){
+      const f = all[i];
+      parts.push((i?',':'') + JSON.stringify({...f, photos: await Promise.all(f.photos.map(toDataURL))}));
+    }
+    parts.push(']}');
+    const blob = new Blob(parts,{type:'application/json'});
     const name = 'vondsten-backup-'+new Date().toISOString().slice(0,10)+'.json';
     const file = new File([blob],name,{type:'application/json'});
     if(navigator.canShare && navigator.canShare({files:[file]})){
@@ -375,7 +384,7 @@ async function exportAll(){
 async function exportCSV(){
   const all=(await dbAll()).sort((a,b)=>a.id-b.id);
   const cols=[['Nr','id'],['Naam','naam'],['Categorie','categorie'],['Omschrijving','omschrijving'],['Periode','periode'],['Materiaal','materiaal'],['Waarde van','waarde_min'],['Waarde tot','waarde_max'],['Zekerheid','zekerheid'],['Opmerking','note'],['Datum',null]];
-  const q=v=>'"'+String(v??'').replace(/"/g,'""').replace(/\r?\n/g,' ')+'"';
+  const q=v=>'"'+String(v??'').replace(/^([=+\-@])/,"'$1").replace(/"/g,'""').replace(/\r?\n/g,' ')+'"';
   const lines=[cols.map(c=>q(c[0])).join(';')];
   for(const f of all) lines.push(cols.map(([,k])=>q(k?f[k]:new Date(f.created).toLocaleDateString('nl-NL'))).join(';'));
   dl('vondsten-lijst.csv', new Blob(['﻿'+lines.join('\r\n')],{type:'text/csv'}));
@@ -386,8 +395,16 @@ async function importAll(file){
     if(j.app!=='vondsten'||!Array.isArray(j.finds)) throw new Error('Dit is geen back-upbestand van deze app.');
     if(!confirm(`Er staan ${j.finds.length} vondsten in dit bestand. Alles op deze telefoon wordt vervangen. Doorgaan?`)) return;
     setBusy('Terugzetten…');
-    for(const f of await dbAll()) await dbDel(f.id);
-    for(const f of j.finds){ f.photos = await Promise.all(f.photos.map(fromDataURL)); await dbPut(f); }
+    // eerst alles omzetten; pas als dat gelukt is wordt het oude vervangen (in één keer)
+    for(const f of j.finds){
+      if(!f || typeof f.id!=='number' || !Array.isArray(f.photos)) throw new Error('Het bestand is beschadigd.');
+      f.photos = await Promise.all(f.photos.map(fromDataURL));
+    }
+    await new Promise((res,rej)=>{
+      const t = db.transaction('finds','readwrite'), s = t.objectStore('finds');
+      s.clear(); j.finds.forEach(f=>s.put(f));
+      t.oncomplete=res; t.onerror=()=>rej(t.error); t.onabort=()=>rej(t.error);
+    });
     await raiseCounter(Math.max(j.counter||0, ...j.finds.map(f=>f.id),0));
     LS.set('vk_lastbackup',String(Date.now())); LS.set('vk_changes','0');
     toast('Teruggezet');
@@ -412,7 +429,7 @@ document.addEventListener('click', async e => {
   else if(act==='save-ai') await saveDraft(true);
   else if(act==='queue') await runQueue();
   else if(act==='goto-settings'){ view='settings'; await render(); storageInfo(); }
-  else if(act==='ai'){ const f=await dbGet(currentId); if(f.status==='klaar' && !confirm('De AI vult de velden opnieuw in. Je eigen wijzigingen gaan dan verloren. Doorgaan?')) return; await doAI(currentId); }
+  else if(act==='ai'){ const f=await dbGet(currentId); if(f.status!=='wacht' && !confirm('De AI vult de velden opnieuw in. Je eigen wijzigingen gaan dan verloren. Doorgaan?')) return; await doAI(currentId); }
   else if(act==='addphoto') $('#fadd').click();
   else if(act==='answer'){
     const f=await dbGet(currentId);
