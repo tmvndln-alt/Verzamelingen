@@ -670,6 +670,35 @@ service cloud.firestore {
         <button class="btn-outline" id="importLocalBtn" type="button" style="margin-top:4px;">Importeer lokale vondsten naar synchronisatie</button>
         <p class="settings-text" id="syncStatus"></p>
       </div>
+      <div class="field full" style="margin-top:18px;border-top:1px solid var(--line);padding-top:14px;">
+        <label>Back-up naar Google Drive</label>
+        <p class="settings-text">
+          Bewaart je hele Vondstenboek (met foto's) als bestand in de Drive-map "Vondstenboek back-ups".
+          De app ziet alleen bestanden die hij zelf maakt, niets anders in je Drive. De laatste 8 back-ups blijven bewaard.
+          Een back-up gebeurt automatisch zodra je de app opent en de vorige ouder is dan 7 dagen.
+        </p>
+        <input id="driveClientId" type="text" placeholder="OAuth-client-ID (eindigt op .apps.googleusercontent.com)" autocomplete="off" spellcheck="false">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
+          <button type="button" class="btn-outline" id="driveSaveBtn">ID bewaren</button>
+          <button type="button" class="btn-primary" id="driveBackupBtn">Nu back-up naar Drive</button>
+          <button type="button" class="btn-outline danger" id="driveClearBtn">Drive-koppeling verwijderen</button>
+        </div>
+        <p class="settings-text" id="driveStatus" style="margin-top:8px;"></p>
+        <label style="margin-top:12px;">Terugzetten uit een back-upbestand</label>
+        <p class="settings-text">Download het bestand uit Drive en kies het hier. Vondsten met hetzelfde id worden overschreven, andere vondsten blijven staan.</p>
+        <input type="file" id="restoreFile" accept="application/json,.json">
+        <details style="margin-top:10px;font-size:12px;">
+          <summary style="cursor:pointer;">Eenmalig instellen: zo krijg je een client-ID</summary>
+          <ol style="padding-left:18px;line-height:1.5;">
+            <li>Ga naar <a href="https://console.cloud.google.com/" target="_blank" rel="noopener">console.cloud.google.com</a> en kies je Firebase-project (of maak een nieuw project).</li>
+            <li>Zoek "Google Drive API" bij <b>APIs &amp; Services &rarr; Library</b> en kies <b>Enable</b>.</li>
+            <li>Ga naar <b>OAuth consent screen</b> (of <b>Google Auth Platform</b>): type <b>External</b>, vul een naam en je e-mailadres in en voeg jezelf toe als <b>test user</b>.</li>
+            <li>Ga naar <b>Credentials &rarr; Create credentials &rarr; OAuth client ID</b>, type <b>Web application</b>.</li>
+            <li>Zet bij <b>Authorized JavaScript origins</b> het adres van deze site, zonder pad: <code id="driveOrigin"></code></li>
+            <li>Kopieer het client-ID, plak het hierboven en tik op <b>ID bewaren</b>, dan <b>Nu back-up naar Drive</b>.</li>
+          </ol>
+        </details>
+      </div>
     </div>
     <div class="modal-foot">
       <button class="btn-outline" id="cancelSettings">Annuleren</button>
@@ -683,6 +712,7 @@ service cloud.firestore {
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 <script>
 // ---------- IndexedDB helpers ----------
@@ -1397,6 +1427,7 @@ function sortItems(list) {
 
 function render() {
   renderCategorySelect();
+  if (typeof driveAutoBackup === 'function' && items.length) driveAutoBackup();
   if (typeof openPendingLink === 'function') openPendingLink();
   checkBackupReminder();
   const q = searchInput.value.trim().toLowerCase();
@@ -2304,6 +2335,187 @@ document.getElementById('closeQr').onclick = () => qrOverlay.classList.remove('o
 document.getElementById('qrCancelBtn').onclick = () => qrOverlay.classList.remove('open');
 document.getElementById('qrMakeBtn').onclick = makeQrPdf;
 qrOverlay.addEventListener('click', (e) => { if (e.target === qrOverlay) qrOverlay.classList.remove('open'); });
+
+// ---------- Back-up naar Google Drive ----------
+const DRIVE_CLIENT_STORAGE = 'vondstenboek_drive_client_id';
+const DRIVE_LAST_STORAGE = 'vondstenboek_drive_last';
+const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
+const DRIVE_FOLDER_NAME = 'Vondstenboek back-ups';
+const DRIVE_KEEP = 8;
+const DRIVE_DUE_DAYS = 7;
+const driveStatus = document.getElementById('driveStatus');
+const driveClientInput = document.getElementById('driveClientId');
+let driveToken = null; // { value, expires }
+let driveBusy = false;
+let driveAutoTried = false;
+
+function getDriveClientId() { return (localStorage.getItem(DRIVE_CLIENT_STORAGE) || '').trim(); }
+
+function setDriveStatus(msg, bad) {
+  driveStatus.textContent = msg;
+  driveStatus.style.color = bad ? 'var(--rust)' : 'var(--forest-mid)';
+}
+function refreshDriveStatus() {
+  const id = getDriveClientId();
+  const last = localStorage.getItem(DRIVE_LAST_STORAGE);
+  if (!id) { setDriveStatus('Drive-back-up is niet ingesteld.'); return; }
+  setDriveStatus(last
+    ? 'Laatste back-up naar Drive: ' + new Date(last).toLocaleString('nl-NL') + '.'
+    : 'Ingesteld. Er is nog geen back-up naar Drive gemaakt.');
+}
+
+function getDriveToken(interactive) {
+  return new Promise((resolve, reject) => {
+    if (driveToken && driveToken.expires > Date.now() + 60000) { resolve(driveToken.value); return; }
+    const clientId = getDriveClientId();
+    if (!clientId) { reject(new Error('Vul eerst een OAuth-client-ID in en bewaar het.')); return; }
+    if (!window.google || !google.accounts || !google.accounts.oauth2) {
+      reject(new Error('De Google-inlogbibliotheek kon niet geladen worden. Controleer je internetverbinding.')); return;
+    }
+    const client = google.accounts.oauth2.initTokenClient({
+      client_id: clientId,
+      scope: DRIVE_SCOPE,
+      callback: (resp) => {
+        if (resp.error || !resp.access_token) { reject(new Error(resp.error_description || resp.error || 'Geen toegang tot Drive gekregen.')); return; }
+        driveToken = { value: resp.access_token, expires: Date.now() + (Number(resp.expires_in) || 3000) * 1000 };
+        resolve(driveToken.value);
+      },
+      error_callback: (err) => reject(new Error(err && err.type === 'popup_closed' ? 'Het Google-venster is gesloten voordat toestemming was gegeven.' : 'Google-inloggen mislukt' + (err && err.type ? ' (' + err.type + ')' : '') + '.'))
+    });
+    client.requestAccessToken({ prompt: interactive ? '' : 'none' });
+  });
+}
+
+async function driveApi(token, url, opts) {
+  const resp = await fetch(url, Object.assign({}, opts, { headers: Object.assign({ Authorization: 'Bearer ' + token }, (opts && opts.headers) || {}) }));
+  if (resp.status === 401) driveToken = null;
+  if (!resp.ok) {
+    let detail = '';
+    try { detail = (await resp.json()).error.message; } catch (e) { /* geen details */ }
+    throw new Error('Drive-fout ' + resp.status + (detail ? ': ' + detail : ''));
+  }
+  return resp;
+}
+
+async function ensureDriveFolder(token) {
+  const q = encodeURIComponent(`name='${DRIVE_FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and trashed=false`);
+  const found = await (await driveApi(token, `https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id)&pageSize=1`)).json();
+  if (found.files && found.files.length) return found.files[0].id;
+  const made = await (await driveApi(token, 'https://www.googleapis.com/drive/v3/files?fields=id', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: DRIVE_FOLDER_NAME, mimeType: 'application/vnd.google-apps.folder' })
+  })).json();
+  return made.id;
+}
+
+async function runDriveBackup(interactive) {
+  if (driveBusy) return false;
+  driveBusy = true;
+  const btn = document.getElementById('driveBackupBtn');
+  btn.disabled = true;
+  try {
+    if (!items.length) { setDriveStatus('Er zijn nog geen vondsten om te bewaren.'); return false; }
+    setDriveStatus('Verbinden met Google Drive…');
+    const token = await getDriveToken(interactive);
+    setDriveStatus('Back-up wordt gemaakt…');
+    const folderId = await ensureDriveFolder(token);
+    const payload = JSON.stringify({ app: 'vondstenboek', versie: 1, gemaakt: new Date().toISOString(), aantal: items.length, items });
+    const stamp = new Date().toISOString().replace('T', '_').slice(0, 16).replace(':', '-');
+    const name = `vondstenboek-backup-${stamp}.json`;
+    // Hervatbare upload: werkt ook voor grote back-ups met veel foto's.
+    const start = await driveApi(token, 'https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&fields=id', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json; charset=UTF-8', 'X-Upload-Content-Type': 'application/json' },
+      body: JSON.stringify({ name, parents: [folderId], mimeType: 'application/json' })
+    });
+    const uploadUrl = start.headers.get('Location');
+    if (!uploadUrl) throw new Error('Drive gaf geen uploadadres terug.');
+    await driveApi(token, uploadUrl, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: payload });
+    localStorage.setItem(DRIVE_LAST_STORAGE, new Date().toISOString());
+    // Oude back-ups opruimen: alleen bestanden in onze map, de laatste DRIVE_KEEP blijven staan.
+    const q = encodeURIComponent(`'${folderId}' in parents and trashed=false and name contains 'vondstenboek-backup-'`);
+    const list = await (await driveApi(token, `https://www.googleapis.com/drive/v3/files?q=${q}&orderBy=createdTime desc&fields=files(id)&pageSize=100`)).json();
+    for (const f of (list.files || []).slice(DRIVE_KEEP)) {
+      await driveApi(token, `https://www.googleapis.com/drive/v3/files/${f.id}`, { method: 'DELETE' });
+    }
+    document.getElementById('backupBanner').style.display = 'none';
+    refreshDriveStatus();
+    setDriveStatus('Back-up gelukt: ' + name + ' (' + items.length + ' vondsten).');
+    return true;
+  } catch (err) {
+    setDriveStatus('Back-up naar Drive mislukt: ' + (err && err.message ? err.message : String(err)), true);
+    return false;
+  } finally {
+    driveBusy = false;
+    btn.disabled = false;
+  }
+}
+
+// Automatisch: bij openen van de app als de vorige back-up ouder is dan DRIVE_DUE_DAYS.
+function driveBackupDue() {
+  if (!getDriveClientId() || !items.length) return false;
+  const last = localStorage.getItem(DRIVE_LAST_STORAGE);
+  return !last || (Date.now() - new Date(last).getTime()) / 86400000 >= DRIVE_DUE_DAYS;
+}
+async function driveAutoBackup() {
+  if (driveAutoTried || !driveBackupDue()) return;
+  driveAutoTried = true;
+  if (await runDriveBackup(false)) return;
+  // Stil inloggen lukte niet (bv. Safari): toon een knop, want daarvoor is één tik van jou nodig.
+  const banner = document.getElementById('backupBanner');
+  document.getElementById('backupBannerText').textContent = 'De wekelijkse back-up naar Google Drive is aan de beurt.';
+  const btn = document.getElementById('backupBannerExportBtn');
+  btn.textContent = 'Back-up naar Drive';
+  btn.onclick = async () => { btn.disabled = true; await runDriveBackup(true); btn.disabled = false; btn.textContent = 'Nu exporteren'; btn.onclick = () => handleExport(); };
+  banner.style.display = 'flex';
+}
+
+async function restoreFromFile(file) {
+  try {
+    const data = JSON.parse(await file.text());
+    const list = Array.isArray(data) ? data : data && data.items;
+    if (!Array.isArray(list) || !list.length || !list.every((i) => i && typeof i.id === 'string')) {
+      throw new Error('Dit lijkt geen Vondstenboek-back-up te zijn.');
+    }
+    if (!confirm(`${list.length} vondsten terugzetten? Vondsten met hetzelfde id worden overschreven.`)) return;
+    setDriveStatus('Terugzetten…');
+    for (const it of list) {
+      if (syncMode) await firestoreDb.collection('vondsten').doc(it.id).set(it);
+      else await dbPut(it);
+    }
+    if (!syncMode) await loadItems();
+    setDriveStatus(`${list.length} vondsten teruggezet.`);
+  } catch (err) {
+    setDriveStatus('Terugzetten mislukt: ' + (err && err.message ? err.message : String(err)), true);
+  } finally {
+    document.getElementById('restoreFile').value = '';
+  }
+}
+
+document.getElementById('driveSaveBtn').onclick = () => {
+  const v = driveClientInput.value.trim();
+  if (v && !/\.apps\.googleusercontent\.com$/.test(v)) { setDriveStatus('Dat ziet er niet uit als een client-ID (het eindigt op .apps.googleusercontent.com).', true); return; }
+  if (v) localStorage.setItem(DRIVE_CLIENT_STORAGE, v); else localStorage.removeItem(DRIVE_CLIENT_STORAGE);
+  driveToken = null;
+  refreshDriveStatus();
+};
+document.getElementById('driveBackupBtn').onclick = () => {
+  const v = driveClientInput.value.trim();
+  if (v && v !== getDriveClientId()) document.getElementById('driveSaveBtn').click();
+  runDriveBackup(true);
+};
+document.getElementById('driveClearBtn').onclick = () => {
+  if (!confirm('Drive-koppeling verwijderen? Bestaande back-ups in Drive blijven staan.')) return;
+  localStorage.removeItem(DRIVE_CLIENT_STORAGE);
+  localStorage.removeItem(DRIVE_LAST_STORAGE);
+  driveClientInput.value = '';
+  driveToken = null;
+  refreshDriveStatus();
+};
+document.getElementById('restoreFile').onchange = (e) => { if (e.target.files[0]) restoreFromFile(e.target.files[0]); };
+document.getElementById('driveOrigin').textContent = location.origin;
+document.getElementById('settingsBtn').addEventListener('click', () => { driveClientInput.value = getDriveClientId(); refreshDriveStatus(); });
 
 initSync();
 </script>
