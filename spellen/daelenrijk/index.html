@@ -194,7 +194,7 @@ function paintPath(x,tc,pts,col1,col2,seed,pebbles){const r=mulberry(seed);x.sav
   x.globalCompositeOperation='multiply';const g=x.createLinearGradient(0,0,0,1536);g.addColorStop(0,col2);g.addColorStop(1,'#ffffff');x.fillStyle=g;x.fillRect(0,0,2048,1536);x.restore();}
 function addGround(sc,tex,snow){const g=new THREE.Mesh(new THREE.PlaneGeometry(80,60,40,30),std({map:tex,roughness:.95,metalness:0}));g.rotation.x=-Math.PI/2;g.position.set(0,0,-15);g.receiveShadow=true;
   const p=g.geometry.attributes.position;for(let i=0;i<p.count;i++){const lx=p.getX(i),ly=p.getY(i);const wz=-15-ly;if(wz<-14||Math.abs(lx)>14){p.setZ(i,(Math.sin(lx*.15)+Math.cos(wz*.2))*.8*clamp((-wz-14)/10+ (Math.abs(lx)-14)/10,0,1));}}g.geometry.computeVertexNormals();g.userData.noOutline=true;sc.add(g);return g;}
-function scatterGrass(sc,x1,x2,z1,z2,n,avoid,seed,cols){const r=mulberry(seed);const geo=new THREE.ConeGeometry(.025,.22,3);geo.translate(0,.11,0);const mat=std({roughness:.9});mat.onBeforeCompile=sh=>{sh.uniforms.uT=WIND;sh.vertexShader='uniform float uT;\n'+sh.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\n float sw=sin(uT*1.7+instanceMatrix[3].x*.9+instanceMatrix[3].z*.6)*position.y*.55;transformed.x+=sw;transformed.z+=sw*.4;');};mat.customProgramCacheKey=()=>'windgrass';const im=new THREE.InstancedMesh(geo,mat,n);const m4=new THREE.Matrix4(),q=new THREE.Quaternion(),e=new THREE.Euler(),c=new THREE.Color();let k=0;
+function scatterGrass(sc,x1,x2,z1,z2,n,avoid,seed,cols){const r=mulberry(seed);const geo=new THREE.ConeGeometry(.025,.22,3);geo.translate(0,.11,0);const mat=std({roughness:.9});const im=new THREE.InstancedMesh(geo,mat,n);const m4=new THREE.Matrix4(),q=new THREE.Quaternion(),e=new THREE.Euler(),c=new THREE.Color();let k=0;
   for(let i=0;i<n*3&&k<n;i++){const x=lerp(x1,x2,r()),z=lerp(z1,z2,r());if(avoid&&avoid(x,z))continue;e.set((r()-.5)*.5,r()*6,(r()-.5)*.5);q.setFromEuler(e);const s=.6+r()*1.1;m4.compose(V3(x,0,z),q,V3(s,s*(.7+r()*.8),s));im.setMatrixAt(k,m4);c.set(cols[Math.floor(r()*cols.length)]);im.setColorAt(k,c);k++;}
   im.count=k;im.receiveShadow=true;sc.add(im);return im;}
 function scatterFlowers(sc,x1,x2,z1,z2,n,seed,cols,avoid){const r=mulberry(seed);const geo=SPH(.045,6,5);const im=new THREE.InstancedMesh(geo,std({roughness:.6}),n);const st=new THREE.InstancedMesh(CYL(.006,.006,.18,3),std({color:0x3e6a24}),n);const m4=new THREE.Matrix4(),c=new THREE.Color();let k=0;
@@ -210,7 +210,7 @@ function makeTree(h,seed,opt){opt=opt||{};const r=mulberry(seed);const g=new THR
   const lc=opt.leaf||[0x5c9a32,0x4a8a2a,0x6aa83a,0x3e7a24];const cr=h*.34*(opt.wide||1);
   const nb=opt.balls||8;for(let i=0;i<nb;i++){const a=r()*Math.PI*2,d=cr*(.15+r()*.55);const bx=Math.cos(a)*d*1.1,bz=Math.sin(a)*d*.9,by=h*.72+(r()-.3)*cr*.7;const br=cr*(.45+r()*.3);
     const lm=std({color:lc[Math.floor(r()*lc.length)],vertexColors:true,roughness:.85});g.add(M(blobGeo(br,seed+i*3),lm,bx,by,bz));}
-  g.userData.crownY=h*.72;g.userData.crownR=cr;g.userData.sw=R()*6;TREES.push(g);return g;}
+  g.userData.crownY=h*.72;g.userData.crownR=cr;return g;}
 function makePine(h,col){const g=new THREE.Group();const m=std({color:col||0x2e4a2e,roughness:.9,flatShading:true});for(let i=0;i<4;i++){const c=M(new THREE.ConeGeometry(h*(.32-i*.06),h*.42,9),m,0,h*.3+i*h*.17,0);g.add(c);}g.add(M(CYL(h*.03,h*.04,h*.3),std({color:0x3a2a1a}),0,h*.15,0));return g;}
 function rock(s,seed){const g=new THREE.DodecahedronGeometry(s,1);const p=g.attributes.position;const r=mulberry(seed);for(let i=0;i<p.count;i++){p.setXYZ(i,p.getX(i)*(.8+r()*.4),p.getY(i)*(.55+r()*.3),p.getZ(i)*(.8+r()*.4));}g.computeVertexNormals();return M(g,std({color:0x8a8478,roughness:.95,flatShading:true}));}
 // ---- figuren ----
@@ -240,8 +240,8 @@ function skinTex(base,seed,old){return ctex(256,256,(x,w,h)=>{x.fillStyle=base;x
 // ---------- inktlijnen (omgekeerde schil) ----------
 const OLM={};
 function outlineMat(th,col){const k=th+'_'+(col||0);if(OLM[k])return OLM[k];const m=new THREE.MeshBasicMaterial({color:col||0x1c1008,side:THREE.BackSide});
-  m.onBeforeCompile=sh=>{sh.vertexShader=sh.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\n  transformed += normalize(normal) * '+th.toFixed(4)+';');};m.customProgramCacheKey=()=>'ol'+k;OLM[k]=m;return m;}
-function addOutline(root,th,col){const list=[];root.traverse(o=>{if(o.isMesh&&!o.isInstancedMesh&&!o.userData.isOutline&&!o.userData.noOutline&&!(o.material&&o.material.transparent))list.push(o);});
+  m.onBeforeCompile=sh=>{sh.vertexShader=sh.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\n  transformed += normalize(objectNormal) * '+th.toFixed(4)+';');};m.customProgramCacheKey=()=>'ol'+k;OLM[k]=m;return m;}
+function addOutline(root,th,col){return;const list=[];root.traverse(o=>{if(o.isMesh&&!o.isInstancedMesh&&!o.userData.isOutline&&!o.userData.noOutline&&!(o.material&&o.material.transparent))list.push(o);});
   list.forEach(o=>{const s=o.scale;const avg=(Math.abs(s.x)+Math.abs(s.y)+Math.abs(s.z))/3||1;const ol=new THREE.Mesh(o.geometry,outlineMat(+(th/avg).toFixed(4),col));ol.userData.isOutline=true;ol.castShadow=false;ol.receiveShadow=false;ol.raycast=()=>{};o.add(ol);});}
 // ---------- realistische hoofden ----------
 function humanHead(o){const head=new THREE.Group();const F={eyes:[]};const sk=o.skinMat;const s=o.s||1;
@@ -333,7 +333,7 @@ const PaintShader={uniforms:{tDiffuse:{value:null},res:{value:new THREE.Vector2(
   'vec3 q=floor(col*12.0+0.5)/12.0;col=mix(col,q,0.22);\n'+
   'float l=dot(col,vec3(.299,.587,.114));col=mix(vec3(l),col,1.15);col*=vec3(1.05,1.0,.9);col=pow(col,vec3(1.04));\n'+
   'float n=h(floor(vUv*res*.5));col+=(n-.5)*.03;float cv=h(floor(vUv*res*.12)+3.0);col*=0.985+cv*0.03;\n'+
-  'vec2 qv=vUv-.5;col*=1.0-dot(qv,qv)*.6;col=mix(col,col*vec3(1.06,1.0,.92),smoothstep(.55,.95,l));col=mix(col,col*vec3(.94,.98,1.06),1.0-smoothstep(.0,.35,l));gl_FragColor=vec4(col,c.a);}'};
+  'gl_FragColor=vec4(col,c.a);}'};
 
 function animHero(H,walking,ph,t){const sw=walking?Math.sin(ph):0;H.legs[0].rotation.x=sw*.55;H.legs[1].rotation.x=-sw*.55;H.legs.forEach((l,i)=>{const k=walking?Math.max(0,(i?-1:1)*Math.cos(ph))*.7:0;l.userData.knee.rotation.x=k;});
   H.arms[0].rotation.x=-sw*.5;H.arms[1].rotation.x=sw*.5;H.arms.forEach((a,i)=>{a.rotation.z=(i?-1:1)*.08;a.userData.el.rotation.x=-.25-(walking?.15:0);});
@@ -466,7 +466,7 @@ function ink(sc,list){list.forEach(o=>addOutline(o,clamp(.006,.006,.02)));}
 
 // ---------- gebouwen en voorwerpen ----------
 function plaster(c1,c2,seed){return ctex(256,256,(x,w,h)=>{x.fillStyle=c1;x.fillRect(0,0,w,h);const r=mulberry(seed);for(let i=0;i<900;i++){x.fillStyle=r()<.5?'rgba(0,0,0,'+(r()*.07)+')':'rgba(255,250,235,'+(r()*.07)+')';x.beginPath();x.arc(r()*w,r()*h,1+r()*7,0,7);x.fill();}x.strokeStyle=c2;x.lineWidth=2;for(let y=0;y<h;y+=64){x.beginPath();x.moveTo(0,y);x.lineTo(w,y);x.stroke();}},true);}
-function makeWindmill(){const g=new THREE.Group();const pt=plaster('#e8dcc0','rgba(120,100,70,.35)',81);pt.repeat.set(3,3);const wall=std({map:pt,roughness:.9});const wd=std({map:TX.wood,roughness:.8});
+function makeWindmill(){const g=new THREE.Group();const pt=plaster('#cdbd9a','rgba(100,80,50,.4)',81);pt.repeat.set(3,3);const wall=std({map:pt,roughness:.9});const wd=std({map:TX.wood,roughness:.8});
   g.add(M(CYL(1.5,2.1,6.2,24),wall,0,3.1,0));const rf=TX.roof.clone();rf.repeat.set(6,3);rf.needsUpdate=true;g.add(M(new THREE.ConeGeometry(1.85,2.2,24),std({map:rf,roughness:.75}),0,7.3,0));
   g.add(M(BOX(1.0,1.9,.15),std({map:TX.wood,roughness:.8,color:0x8a6a4a}),0,.95,2.08));[2.4,4.0].forEach((y,i)=>{const rz=2.1-.6*y/6.2;g.add(M(BOX(.4,.6,.12),std({color:0x1a120a,emissive:0x442a10,emissiveIntensity:.5}),0,y,rz+.02));});const shf=M(CYL(.2,.2,1.1,10),wd,0,5.6,1.6);shf.rotation.x=Math.PI/2;g.add(shf);
   const sails=new THREE.Group();sails.position.set(0,5.6,2.1);for(let k=0;k<4;k++){const arm=new THREE.Group();arm.rotation.z=k*Math.PI/2;arm.add(M(BOX(.2,5.2,.16),std({color:0x5a3a20,roughness:.8}),0,2.6,0));const cl=M(BOX(1.1,3.4,.04),std({map:clothTex('#c0442e','#f0e2c4',true,83,3),roughness:.95,side:THREE.DoubleSide}),.62,2.8,.03);arm.add(cl);for(let j=0;j<6;j++)arm.add(M(BOX(1.2,.07,.06),std({color:0x5a3a20,roughness:.8}),.6,1.2+j*.55,.02));sails.add(arm);}
@@ -644,9 +644,9 @@ function buildChapters(){
 
  // ======================= 3. DE MOLEN VAN WIEBE =======================
  {const {sc,S}=newScene('molen',{name:'De Molen van Wiebe',desc:'Een zonnig korenveld met een grote houten molen. De wieken staan stil. Naast de molen ligt een hooiberg.',
-   light:{sky:0xc8d8f0,ground:0x7a6a2a,hemi:.85,sun:0xffe0a0,sunI:3.4,dir:[12,22,14],fog:0xe8e0c8,fogN:30,fogF:120},
+   light:{sky:0xb0c8e8,ground:0x4a5a20,hemi:.68,sun:0xffd890,sunI:2.9,dir:[12,22,14],fog:0xd8d8c0,fogN:40,fogF:140},
    bd:{sky:['#4a8ad8','#a6cdf0','#f6ecd0'],sun:[780,100],seed:51,clouds:[[200,90,1.2],[560,60,.9],[860,130,.7]],mBase:300,mH:120,mCol:'#8a9ab8',mHaze:'#c8d4e4',r1:['#a8b070','#b8c080'],r2:['#b0a860','#c0b870']},
-   g1:'#b8a840',g2:'#d0bc54',seed:50,paths:[[[-9.5,2],[-3,1.6],[-1.2,-4.8],[.4,-4.8],[1.4,1.3],[9.5,2.2],[9.5,4.4],[-9.5,4.4]]],pc1:'#b89a68',pc2:'#d8c090',birds:true,
+   g1:'#a0a838',g2:'#bcb04a',seed:50,paths:[[[-9.5,2],[-3,1.6],[-1.2,-4.8],[.4,-4.8],[1.4,1.3],[9.5,2.2],[9.5,4.4],[-9.5,4.4]]],pc1:'#b89a68',pc2:'#d8c090',birds:true,
    blocked:[{x:-1,z:-6.2,r:2.2},{x:5.8,z:-2.6,r:1.5},{x:-5,z:-2,r:.4},{x:-3.6,z:-.4,r:.55}]});
   const mill=makeWindmill();mill.position.set(-1,0,-7);sc.add(mill);
   const hay=makeHay();hay.position.set(5.8,0,-2.6);sc.add(hay);const can=makeOilcan();can.position.set(7.2,0,-1.4);can.scale.setScalar(1.6);sc.add(can);
@@ -674,7 +674,7 @@ function buildChapters(){
 
  // ======================= 4. DE MARKT VAN BEUKENHOUT =======================
  {const {sc,S}=newScene('markt',{name:'Beukenhout, de Markt',desc:'Een druk marktplein met kleurrijke kraampjes. In het midden staat een fontein. Maar de marktlui lopen slaperig rond.',
-   light:{sky:0xc0d4f0,ground:0x7a6a50,hemi:.8,sun:0xffe0b0,sunI:3.2,dir:[-12,22,12],fog:0xe0e0e0,fogN:30,fogF:120},
+   light:{sky:0xb0c8e8,ground:0x4a5a30,hemi:.65,sun:0xffd8a0,sunI:2.8,dir:[-12,22,12],fog:0xd4d8dc,fogN:40,fogF:140},
    bd:{sky:['#5a8ad0','#b0d0f0','#f2e8d6'],sun:[160,100],seed:61,clouds:[[300,80,1],[700,120,.8]],mBase:300,mH:100,mCol:'#8a9ab8',mHaze:'#c4d0e0',r1:['#7a9a68','#8aaa78'],r2:['#6a9058','#7aa068']},
    g1:'#7a9a46',g2:'#92b25a',seed:60,paths:[[[-9.5,-4.6],[9.5,-4.6],[9.5,4.4],[-9.5,4.4]]],pc1:'#a09a8c',pc2:'#c8c0b0',peb:3000,
    blocked:[{x:3.2,z:-.2,r:1.3},{x:-5.5,z:-3.6,r:1.6},{x:0.2,z:-4.5,r:1.6},{x:5.8,z:-3.6,r:1.6}]});
@@ -706,7 +706,7 @@ function buildChapters(){
 
  // ======================= 5. HET MEER VAN SPIEGELWATER =======================
  {const {sc,S}=newScene('meer',{name:'Het Meer van Spiegelwater',desc:'Een rimpelloos meer, glad als een spiegel. Een houten steiger loopt het water in, met een roeiboot eraan. Aan de overkant ligt een klein eiland.',
-   light:{sky:0xc8dcf4,ground:0x8a8a5a,hemi:.9,sun:0xfff0d0,sunI:3.4,dir:[10,24,10],fog:0xdce8f0,fogN:26,fogF:130},
+   light:{sky:0xb0cce8,ground:0x4a6a30,hemi:.7,sun:0xffe8c0,sunI:2.9,dir:[10,24,10],fog:0xd0e0ec,fogN:40,fogF:150},
    bd:{sky:['#5a9ae0','#b8dcf4','#f6f0e0'],sun:[720,100],seed:71,clouds:[[200,80,1.2],[520,50,.8],[860,120,.9]],mBase:290,mH:140,mCol:'#7a98c0',mHaze:'#c4d8e8',snow:true,r1:['#6a9a78','#7aaa88'],pines:['#3a6a54','#2a5a44'],r2:['#6a9a60','#7aaa70']},
    g1:'#7aa048',g2:'#8ab458',seed:70,paths:[[[-9.5,2.4],[-3,2.0],[2.4,1.4],[2.4,-.6],[4.2,-.6],[4.2,1.6],[9.5,2.4],[9.5,4.4],[-9.5,4.4]]],pc1:'#d8c898',pc2:'#e8dcb0',peb:300,paint:(x,tc,CW,CH)=>{const a=tc(-40,-3.2),b=tc(40,1.4);const g=x.createLinearGradient(0,a[1],0,b[1]);g.addColorStop(0,'rgba(216,200,152,0)');g.addColorStop(.6,'rgba(220,204,156,.95)');g.addColorStop(1,'rgba(214,198,150,.95)');x.fillStyle=g;x.fillRect(0,a[1],CW,b[1]-a[1]);},
    blocked:[{x:-4.5,z:.5,r:.7},{x:3.3,z:-4.3,r:1.2}]});
@@ -1114,7 +1114,7 @@ function sync3D(){const sc=G.state==='title'?SCENES.plein:SCN;const t=G.t;
     wantL=mid.clone();wantL.y-=.08;let nx=-(a.z-b.z),nz=(a.x-b.x);const nl=Math.hypot(nx,nz)||1;nx/=nl;nz/=nl;if(nz<0){nx=-nx;nz=-nz;}if(nz<.35){nz=.35;const l2=Math.hypot(nx,nz);nx/=l2;nz/=l2;}
     const dist=Math.max(1.25,sep*.95+.75)*(G.msgs[0].who==='Trol'?1.5:1);wantP=mid.clone().add(new THREE.Vector3(nx*dist,.1+(G.msgs[0].who==='Trol'?.25:0),nz*dist));wantL.y-=.05;}
   if(!window.__cp){window.__cp=wantP.clone();window.__cl=wantL.clone();}const k=spk?.07:.06;window.__cp.lerp(wantP,k);window.__cl.lerp(wantL,k);camera.position.copy(window.__cp);camera.lookAt(window.__cl);
-  (sc.anim||[]).forEach(f=>f(t));if(sc.update)sc.update(t);WIND.value=t*.03;TREES.forEach(g=>{if(g.parent===sc.three)g.rotation.z=Math.sin(t*.014+g.userData.sw)*.007;});
+  (sc.anim||[]).forEach(f=>f(t));if(sc.update)sc.update(t);
   // praten: mond van wie spreekt
   const who=G.msgs.length?G.msgs[0].who:null;if(sc.npcs)Object.entries(sc.npcs).forEach(([n,npc])=>{if(npc.face&&npc.face.mouth){npc.face.mouth.scale.y=n===who?.35+Math.abs(Math.sin(t*.4))*.6:.35;}});
   renderPass.scene=sc.three;}
