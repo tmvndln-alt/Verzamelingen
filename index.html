@@ -456,6 +456,7 @@ main { max-width: 1100px; margin: 0 auto; padding: 28px 20px; }
           <button type="button" id="exportPdfBtn">Naar PDF</button>
           <button type="button" id="exportBtn">Naar Excel</button>
           <button type="button" id="exportInsuranceBtn">Verzekeringsrapport</button>
+          <button type="button" id="qrMenuBtn">QR-stickers (PDF)</button>
         </div>
       </div>
       <div class="dropdown-wrap">
@@ -548,6 +549,7 @@ main { max-width: 1100px; margin: 0 auto; padding: 28px 20px; }
     <div class="modal-body" id="detailBody"></div>
     <div class="modal-foot">
       <button class="btn-outline" id="detailCloseBtn">Sluiten</button>
+      <button class="btn-outline" id="detailQrBtn">QR-sticker</button>
       <button class="btn-primary" id="detailEditBtn">Bewerken</button>
     </div>
   </div>
@@ -573,6 +575,41 @@ main { max-width: 1100px; margin: 0 auto; padding: 28px 20px; }
     <div class="modal-foot">
       <button class="btn-outline" id="cancelBatchBtn">Annuleren</button>
       <button class="btn-primary" id="saveBatchBtn">Bewaar alles</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay settings-modal" id="qrOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h2 class="serif">QR-stickers</h2>
+      <button id="closeQr">✕</button>
+    </div>
+    <div class="modal-body">
+      <p class="settings-text">
+        Maak een vel met QR-codes om op je vinyl (of andere vondsten) te plakken.
+        Scan je de sticker met je telefoon, dan opent het Vondstenboek meteen op die vondst.
+      </p>
+      <div class="field full">
+        <label for="qrScope">Welke vondsten?</label>
+        <select id="qrScope"></select>
+      </div>
+      <div class="field full" style="margin-top:10px;">
+        <label for="qrLayout">Formaat</label>
+        <select id="qrLayout">
+          <option value="label">Etiketvel 63,5 × 38,1 mm (3 × 7 per A4, zoals Avery L7160)</option>
+          <option value="mini">Kleine vierkante stickers 32 × 32 mm (6 × 8 per A4)</option>
+        </select>
+      </div>
+      <label style="display:flex;gap:8px;align-items:center;margin-top:10px;font-size:13px;">
+        <input type="checkbox" id="qrGuides" checked> Knipranden tonen (handig op gewoon papier)
+      </label>
+      <p class="settings-text" id="qrInfo" style="margin-top:10px;"></p>
+      <div id="qrError" class="error-box" style="display:none;"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-outline" id="qrCancelBtn">Sluiten</button>
+      <button class="btn-primary" id="qrMakeBtn">PDF maken</button>
     </div>
   </div>
 </div>
@@ -646,6 +683,7 @@ service cloud.firestore {
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 <script>
 // ---------- IndexedDB helpers ----------
 const DB_NAME = 'vondstenboek';
@@ -1224,7 +1262,9 @@ function detailField(label, value) {
   return `<div><p class="detail-field-label">${escapeHtml(label)}</p><p class="detail-field-value">${escapeHtml(String(value))}</p></div>`;
 }
 
+let currentDetailItem = null;
 function openDetail(item) {
+  currentDetailItem = item;
   const detailBody = document.getElementById('detailBody');
   document.getElementById('detailTitle').textContent = item.naam || 'Vondst';
   const photos = getItemPhotos(item);
@@ -1357,6 +1397,7 @@ function sortItems(list) {
 
 function render() {
   renderCategorySelect();
+  if (typeof openPendingLink === 'function') openPendingLink();
   checkBackupReminder();
   const q = searchInput.value.trim().toLowerCase();
   let filtered = items.filter((it) => {
@@ -2104,6 +2145,165 @@ document.getElementById('saveSettings').onclick = () => {
   }
 };
 settingsOverlay.addEventListener('click', (e) => { if (e.target === settingsOverlay) closeSettings(); });
+
+// ---------- QR-stickers + directe link naar een vondst ----------
+function appBaseUrl() {
+  return location.origin + location.pathname;
+}
+function itemLink(item) {
+  return appBaseUrl() + '#vondst=' + encodeURIComponent(item.id);
+}
+
+let pendingLinkId = null;
+function readLinkFromHash() {
+  const m = location.hash.match(/^#vondst=(.+)$/);
+  pendingLinkId = m ? decodeURIComponent(m[1]) : null;
+}
+function openPendingLink() {
+  if (!pendingLinkId || !items.length) return;
+  const item = items.find((i) => i.id === pendingLinkId);
+  pendingLinkId = null;
+  if (item) {
+    openDetail(item);
+  } else {
+    showGlobalError('Deze QR-sticker verwijst naar een vondst die niet (meer) in dit Vondstenboek staat.');
+  }
+}
+window.addEventListener('hashchange', () => { readLinkFromHash(); openPendingLink(); });
+readLinkFromHash();
+
+const qrOverlay = document.getElementById('qrOverlay');
+const QR_LAYOUTS = {
+  label: { cols: 3, rows: 7, w: 63.5, h: 38.1, left: 7.2, top: 15.15, gapX: 2.5, qr: 28 },
+  mini:  { cols: 6, rows: 8, w: 32,   h: 32,   left: 9,   top: 20,    gapX: 0,   qr: 26 }
+};
+let qrItemsOverride = null; // gebruikt voor één losse sticker vanuit de detailweergave
+
+function qrCandidates() {
+  const scope = document.getElementById('qrScope').value;
+  if (qrItemsOverride) return qrItemsOverride;
+  const sorted = items.slice().sort((a, b) => (a.volgnummer || 0) - (b.volgnummer || 0));
+  if (scope === '__all') return sorted;
+  return sorted.filter((it) => (it.categorie || '').trim() === scope);
+}
+
+function updateQrInfo() {
+  const info = document.getElementById('qrInfo');
+  const n = qrCandidates().length;
+  const l = QR_LAYOUTS[document.getElementById('qrLayout').value];
+  const perPage = l.cols * l.rows;
+  info.textContent = n
+    ? `${n} sticker${n === 1 ? '' : 's'} op ${Math.ceil(n / perPage)} vel${Math.ceil(n / perPage) === 1 ? '' : 'len'}.`
+    : 'Geen vondsten gevonden voor deze keuze.';
+  document.getElementById('qrMakeBtn').disabled = !n;
+}
+
+function openQrDialog(singleItem) {
+  qrItemsOverride = singleItem ? [singleItem] : null;
+  const scope = document.getElementById('qrScope');
+  const err = document.getElementById('qrError');
+  err.style.display = 'none';
+  if (singleItem) {
+    scope.innerHTML = `<option>${escapeHtml(singleItem.naam || singleItem.inventarisnummer)}</option>`;
+    scope.disabled = true;
+  } else {
+    scope.disabled = false;
+    const cats = [...new Set(items.map((i) => (i.categorie || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'nl'));
+    scope.innerHTML = `<option value="__all">Alle vondsten (${items.length})</option>` +
+      cats.map((c) => `<option value="${escapeHtml(c)}">${escapeHtml(c)} (${items.filter((i) => (i.categorie || '').trim() === c).length})</option>`).join('');
+    const vinyl = cats.find((c) => /vinyl|lp|plaat|platen|elpee|single/i.test(c));
+    if (vinyl) scope.value = vinyl;
+  }
+  updateQrInfo();
+  qrOverlay.classList.add('open');
+}
+
+function drawQr(doc, text, x, y, size) {
+  const qr = qrcode(0, 'M');
+  qr.addData(text);
+  qr.make();
+  const n = qr.getModuleCount();
+  const quiet = 2;                       // witte rand in modules
+  const cell = size / (n + quiet * 2);
+  doc.setFillColor(255, 255, 255);
+  doc.rect(x, y, size, size, 'F');
+  doc.setFillColor(0, 0, 0);
+  for (let r = 0; r < n; r++) {
+    for (let c = 0; c < n; c++) {
+      if (qr.isDark(r, c)) {
+        // iets overlappende vierkantjes voorkomen haarlijntjes bij het printen
+        doc.rect(x + (c + quiet) * cell, y + (r + quiet) * cell, cell + 0.02, cell + 0.02, 'F');
+      }
+    }
+  }
+}
+
+function makeQrPdf() {
+  const err = document.getElementById('qrError');
+  err.style.display = 'none';
+  const btn = document.getElementById('qrMakeBtn');
+  try {
+    if (!window.qrcode || !window.jspdf) throw new Error('De QR- of PDF-bibliotheek kon niet geladen worden. Controleer je internetverbinding.');
+    if (location.protocol === 'file:') throw new Error('Open het Vondstenboek via zijn webadres (niet als los bestand), anders werken de QR-codes niet op je telefoon.');
+    const list = qrCandidates();
+    if (!list.length) return;
+    btn.disabled = true;
+    const layoutKey = document.getElementById('qrLayout').value;
+    const L = QR_LAYOUTS[layoutKey];
+    const guides = document.getElementById('qrGuides').checked;
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+    const perPage = L.cols * L.rows;
+
+    list.forEach((it, idx) => {
+      if (idx > 0 && idx % perPage === 0) doc.addPage();
+      const pos = idx % perPage;
+      const col = pos % L.cols;
+      const row = Math.floor(pos / L.cols);
+      const x = L.left + col * (L.w + L.gapX);
+      const y = L.top + row * L.h;
+      if (guides) {
+        doc.setDrawColor(200);
+        doc.setLineWidth(0.1);
+        doc.rect(x, y, L.w, L.h);
+      }
+      const nr = it.inventarisnummer || formatInventoryNumber(it.volgnummer || 0);
+      doc.setTextColor(0, 0, 0);
+      if (layoutKey === 'label') {
+        const qx = x + 3, qy = y + (L.h - L.qr) / 2;
+        drawQr(doc, itemLink(it), qx, qy, L.qr);
+        const tx = qx + L.qr + 2;
+        const tw = L.w - (tx - x) - 2;
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(13);
+        doc.text(nr, tx, y + 10);
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
+        const lines = doc.splitTextToSize(it.naam || '', tw).slice(0, 4);
+        doc.text(lines, tx, y + 16);
+      } else {
+        drawQr(doc, itemLink(it), x + (L.w - L.qr) / 2, y + 1, L.qr);
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(8);
+        doc.text(nr, x + L.w / 2, y + L.h - 1.5, { align: 'center' });
+      }
+    });
+    doc.save(list.length === 1 ? `qr-sticker-${(list[0].inventarisnummer || 'vondst')}.pdf` : 'qr-stickers.pdf');
+  } catch (e) {
+    err.textContent = 'QR-stickers maken is niet gelukt: ' + (e && e.message ? e.message : String(e));
+    err.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+document.getElementById('qrMenuBtn').onclick = () => { closeAllMenus(); openQrDialog(null); };
+document.getElementById('detailQrBtn').onclick = () => {
+  if (currentDetailItem) { closeDetail(); openQrDialog(currentDetailItem); }
+};
+document.getElementById('qrScope').addEventListener('change', updateQrInfo);
+document.getElementById('qrLayout').addEventListener('change', updateQrInfo);
+document.getElementById('closeQr').onclick = () => qrOverlay.classList.remove('open');
+document.getElementById('qrCancelBtn').onclick = () => qrOverlay.classList.remove('open');
+document.getElementById('qrMakeBtn').onclick = makeQrPdf;
+qrOverlay.addEventListener('click', (e) => { if (e.target === qrOverlay) qrOverlay.classList.remove('open'); });
 
 initSync();
 </script>
