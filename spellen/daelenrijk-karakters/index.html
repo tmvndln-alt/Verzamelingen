@@ -7,8 +7,8 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Daelenrijk">
 <meta name="theme-color" content="#1a120a">
-<title>De Kroon van Daelenrijk</title>
-<script type="importmap">{"imports":{"three":"../three/three.module.js","three/addons/":"../three/addons/"}}</script>
+<title>Daelenrijk 3D, Volledig Avontuur</title>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Alegreya:ital,wght@0,500;0,700;1,500&display=swap" rel="stylesheet">
@@ -149,7 +149,7 @@ const ITEMS={
   veer:{name:'uilenveer',desc:'Een lange, bruin-wit gestreepte veer van de oude oehoe.'},
   drankje:{name:'toverdrankje',desc:'Een flesje met goudkleurig, borrelend wekdrankje. Bijna klaar: er ontbreekt nog een drakenschub.'}
 };
-function drawItemIcon(c,id,x,y,s){c.save();c.translate(x,y);c.scale(s,s);
+function drawItemIconBase(c,id,x,y,s){c.save();c.translate(x,y);c.scale(s,s);
   if(id==='emmer'||id==='water'||id==='maanwater'){const g=c.createLinearGradient(-12,0,12,0);g.addColorStop(0,'#6a4424');g.addColorStop(.5,'#b07a44');g.addColorStop(1,'#5a3418');c.fillStyle=g;c.beginPath();c.moveTo(-13,-10);c.lineTo(13,-10);c.lineTo(10,14);c.lineTo(-10,14);c.closePath();c.fill();c.fillStyle='#3a3a3e';c.fillRect(-12.5,-6,25,3);c.fillRect(-11,8,22,3);c.strokeStyle='#5a5a5e';c.lineWidth=1.6;c.beginPath();c.arc(0,-10,12,Math.PI,0);c.stroke();
     if(id==='maanwater'){c.fillStyle='#d8e4f4';c.beginPath();c.ellipse(0,-10,12.5,3.5,0,0,7);c.fill();c.fillStyle='rgba(255,255,255,.9)';c.beginPath();c.ellipse(-3,-10.5,5,1.2,0,0,7);c.fill();}else if(id==='water'){c.fillStyle='#5aa8e0';c.beginPath();c.ellipse(0,-10,12.5,3.5,0,0,7);c.fill();c.fillStyle='rgba(255,255,255,.6)';c.beginPath();c.ellipse(-4,-10.5,4,1,0,0,7);c.fill();}else{c.fillStyle='#2a1a0c';c.beginPath();c.ellipse(0,-10,12.5,3.5,0,0,7);c.fill();}}
   if(id==='tak'){c.rotate(-.7);c.strokeStyle='#6a4424';c.lineWidth=4;c.lineCap='round';c.beginPath();c.moveTo(-18,0);c.lineTo(18,0);c.stroke();c.lineWidth=2;c.beginPath();c.moveTo(4,0);c.lineTo(10,-7);c.stroke();c.fillStyle='#6fa83a';c.beginPath();c.ellipse(12,-9,4,2.5,.5,0,7);c.fill();c.strokeStyle='rgba(255,220,170,.4)';c.lineWidth=1;c.beginPath();c.moveTo(-17,-1);c.lineTo(17,-1);c.stroke();}
@@ -192,6 +192,8 @@ function makeTextures(){
 }
 // ---- achtergrondschildering (lucht, bergen) ----
 function backdrop(opt){const [c,x]=mkc(W,SH);sky(x,opt.sky[0],opt.sky[1],opt.sky[2],SH);if(opt.sun)sunGlow(x,opt.sun[0],opt.sun[1],420,'rgba(255,240,200,.65)');const r=mulberry(opt.seed);
+  if(opt.stars){for(let i=0;i<260;i++){const sx=r()*W,sy=r()*SH*.7,rad=r()<.07?1.5:r()*.9+.3;x.globalAlpha=(.3+r()*.7)*(1-sy/(SH*.8));x.fillStyle=r()<.2?'#ffe7c4':'#fff';x.beginPath();x.arc(sx,sy,rad,0,7);x.fill();}x.globalAlpha=1;}
+  if(opt.moon){const m=opt.moon;const gg=x.createRadialGradient(m[0],m[1],0,m[0],m[1],130);gg.addColorStop(0,'rgba(200,215,255,.45)');gg.addColorStop(1,'rgba(200,215,255,0)');x.fillStyle=gg;x.fillRect(0,0,W,SH);const mg=x.createRadialGradient(m[0]-6,m[1]-6,0,m[0],m[1],26);mg.addColorStop(0,'#fbfcff');mg.addColorStop(1,'#c4ccdc');x.fillStyle=mg;x.beginPath();x.arc(m[0],m[1],26,0,7);x.fill();}
   (opt.clouds||[]).forEach(cl=>cloud(x,cl[0],cl[1],cl[2],r,'rgba(255,255,255,.95)','rgba(222,230,244,.55)'));
   mountains(x,opt.mBase,opt.mH,opt.mCol,opt.mHaze,opt.seed+1,opt.snow);ridge(x,opt.mBase+40,40,.006,opt.r1[0],opt.r1[1],opt.seed+2);
   if(opt.pines)for(let i=0;i<60;i++){const px=r()*W;pine(x,px,opt.mBase+60-r()*20,24+r()*18,opt.pines[0],opt.pines[1]);}
@@ -461,7 +463,7 @@ async function loadRealChars(){try{
   const gd=sc0.npcs.Wachter;const r=await buildChar({base:'Superhero_Male_FullBody',outfit:'Male_Ranger',extra:['Hair_Beard']});tintHair(r,0x4a2a14);markReal(r);
   gd.root.add(r.root);const keepSpear=[];gd.root.children.forEach(ch=>{if(ch!==r.root&&ch.isGroup&&ch.children.length===2)keepSpear.push(ch);});hideProc(gd.root);keepSpear.forEach(sp=>{sp.traverse(o=>{o.visible=true;});sp.position.set(.32,0,.2);});
   gd.real=r;gd.head=r.head;gd.talkClip='Idle_Talking_Loop';gd.idleClip='Idle_Loop';r.play('Idle_Loop',0);RC.list.push(r);
-  RC.ready=true;loadWitch();loadTroll();}catch(e){console.error('figuren',e);window.__charErr=String(e);}}
+  RC.ready=true;loadWitch();loadTroll();loadRealChars2();}catch(e){console.error('figuren',e);window.__charErr=String(e);}}
 function updRealChars(){const dt=Math.min(.05,_clk.getDelta());if(!RC.ready)return;
   const who=G.msgs.length?G.msgs[0].who:null;
   if(HM.real){const h=HM.real;const walking=G.state==='play'&&HERO&&HERO.moving;const talking=who==='Gijs';h.play(walking?'Walk_Loop':(talking?'Idle_Talking_Loop':'Idle_Loop'),.2);if(h.acts.Walk_Loop)h.acts.Walk_Loop.timeScale=1.15;}
@@ -812,6 +814,7 @@ function buildCh2(){
     cfl.children.forEach((s,i)=>{if(s.isSprite)s.scale.y=.24+Math.sin(t*.3+i)*.04;});cpl.intensity=1.5+Math.sin(t*.2)*.2;
     hut.userData.smoke.children.forEach(s=>{const k=(s.userData.k+t*.003)%1;s.position.set(Math.sin(k*6)*.3,k*3,0);s.scale.setScalar(.6+k*1.6);s.material.opacity=.3*(1-k);});cat.userData.tail.rotation.z=Math.sin(t*.04)*.4;};}
  ['woud','vijver','heks'].forEach(k=>outlineScene(SCENES[k].three));
+ buildChapters();Object.keys(SCENES).forEach(k=>outlineScene(SCENES[k].three));
  // ---- aanpassingen aan hoofdstuk 1-plekken voor hoofdstuk 2 ----
  const T=SCENES.brug;const kh=T.hot.find(h=>h.id==='ketel');kh.use={lantaarn:()=>{if(has('lantaarnaan'))return;take('lantaarn');give('lantaarnaan');points('lantaarnaan',5);sayN('Je houdt het kaarsje van de lantaarn bij het vuurtje onder de ketel van de trol. Het vat vlam! De lantaarn geeft nu een warm, geel licht.');},lantaarnaan:()=>sayN('Je lantaarn brandt al.'),emmer:()=>sayN('Je gaat die vieze trollensoep echt niet in je emmer scheppen.')};
  const coins=T.three.children.find(c=>c.isGroup&&Math.abs(c.position.x+.5)<.01&&Math.abs(c.position.z+4.9)<.01);
@@ -846,10 +849,559 @@ async function loadWitch(){try{const sc=SCENES.heks;const w=sc.npcs.Grimelda;con
   w.root.add(m.root);w.real=m;w.head=m.head;w.talkClip='Idle_Talking_Loop';w.idleClip='Idle_Loop';m.play('Idle_Loop',0);RC.list.push(m);}catch(e){console.error('heks',e);}}
 
 // ===================== SPELSTATUS =====================
-const MAXSCORE=90;let SV=null;
-function newState(){return{ch:1,scene:'plein',hx:0,hz:3,inv:[],score:0,flags:{},done:{}};}
+// ===================== EXTRA: WIND, DEELTJES, FIGUREN, VOORWERPEN =====================
+const WIND={value:0};
+function addMotes(sc,o){const n=o.n||60,pos=new Float32Array(n*3),ph=[];const ar=o.area||[-10,10,-9,6];for(let i=0;i<n;i++){pos[i*3]=lerp(ar[0],ar[1],R());pos[i*3+1]=lerp(.3,o.h||4,R());pos[i*3+2]=lerp(ar[2],ar[3],R());ph.push(R()*6.28);}
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(pos,3));
+  const m=new THREE.Points(g,new THREE.PointsMaterial({map:TX.glow,color:o.color||0xfff2c0,size:o.size||.18,transparent:true,opacity:o.op||.7,blending:THREE.AdditiveBlending,depthWrite:false,sizeAttenuation:true,fog:false}));
+  m.frustumCulled=false;m.userData.noOutline=true;sc.add(m);(sc.userData.motes=sc.userData.motes||[]).push({m,pos,ph,o,ar});return m;}
+function updMotes(sc,t){(sc.userData.motes||[]).forEach(k=>{const p=k.pos,n=p.length/3,h=k.o.h||4,rise=k.o.rise==null?.002:k.o.rise;for(let i=0;i<n;i++){p[i*3]+=Math.sin(t*.01+k.ph[i])*.003*(k.o.sway||1);p[i*3+1]+=rise+Math.cos(t*.013+k.ph[i]*2)*.0015;p[i*3+2]+=Math.cos(t*.008+k.ph[i])*.002;
+      if(p[i*3+1]>h){p[i*3+1]=.2;}if(p[i*3+1]<.05){p[i*3+1]=h;}}k.m.geometry.attributes.position.needsUpdate=true;if(k.o.twinkle)k.m.material.opacity=(k.o.op||.7)*(.7+.3*Math.sin(t*.05));});}
+const TREES=[];
+
+// ---------- gewone mensen ----------
+function folk(o){const N={root:new THREE.Group()},Rt=N.root,w=o.w||1,h=o.h||1,sd0=o.seed||60,fat=o.fat||1;
+  const sk=std({map:skinTex(o.skin||'#e6b896',sd0,o.old),roughness:.68});
+  const robe=std({map:clothTex(o.c1||'#5a6a8a',o.c2||o.c1||'#4a5a7a',o.stripes,sd0+1,4),roughness:.9});
+  const lea=std({map:leatherTex(o.trim||'#4a3018',sd0+2),roughness:.55});
+  if(o.robe){const pr=[[.34*w,0],[.36*w,.06*h],[.3*w,.5*h],[.24*w,.9*h],[.25*w*fat,1.1*h],[.2*w,1.3*h],[.12*w,1.42*h],[.01,1.48*h]].map(p=>new THREE.Vector2(p[0],p[1]));Rt.add(M(new THREE.LatheGeometry(pr,28),robe,0,0,0));
+    [-1,1].forEach(sd=>{const f=M(SPH(.08,10,8),lea,sd*.12*w,.05,.1);f.scale.set(1,.6,1.7);Rt.add(f);});}
+  else{[-1,1].forEach(sd=>{Rt.add(M(CAP(.07*w,.42*h),std({color:o.legs||0x4a4234,roughness:.9}),sd*.1*w,.4*h,0));const f=M(SPH(.08,12,10),lea,sd*.1*w,.05,.06);f.scale.set(1,.6,1.8);Rt.add(f);});
+    const pr=[[.2*w*fat,.7*h],[.23*w*fat,.85*h],[.2*w*fat,1.1*h],[.17*w,1.3*h],[.1*w,1.42*h],[.01,1.48*h]].map(p=>new THREE.Vector2(p[0],p[1]));Rt.add(M(new THREE.LatheGeometry(pr,28),robe,0,0,0));
+    const bl=M(new THREE.TorusGeometry(.215*w*fat,.02,8,24),lea,0,.82*h,0);bl.rotation.x=Math.PI/2;Rt.add(bl);}
+  if(o.apron){Rt.add(M(BOX(.3*w*fat,.55*h,.04),std({map:clothTex(o.apron,'#d8ccb0',false,sd0+4,2),roughness:.9}),0,.88*h,.22*w*fat));}
+  N.arms=[-1,1].map(sd=>{const g=new THREE.Group();g.position.set(sd*.21*w*Math.min(fat,1.2),1.32*h,0);g.add(M(SPH(.06,10,8),robe));g.add(M(CAP(.048,.26*h),robe,0,-.18*h,0));const el=new THREE.Group();el.position.set(0,-.36*h,0);el.add(M(CAP(.042,.22*h),robe,0,-.12*h,0));el.add(M(SPH(.05,10,8),sk,0,-.27*h,0));g.add(el);g.userData.el=el;g.rotation.z=sd*.12;Rt.add(g);return g;});
+  Rt.add(M(CYL(.04,.046,.1,12),sk,0,1.5*h,0));
+  const hs=o.s||1;const hh=humanHead({skinMat:sk,eye:o.eye||0x4a6a8a,brow:o.brow||o.hair||0x3a2414,beard:o.beard,mustache:o.mus,stubble:o.stub,blush:o.blush!==false,nose:o.nose||1,s:hs,wideJaw:o.wide,angry:o.angry});
+  hh.head.position.set(0,1.58*h+.02,0);Rt.add(hh.head);N.head=hh.head;N.face=hh.face;
+  if(!o.bald)hairCap(hh.head,o.hair==null?0x3a2414:o.hair,hs,{tufts:[[-.07,0,-.02,.05,.8,1.4,1],[.07,0,-.02,.05,.8,1.4,1],[0,-.03,-.09,.07,1.2,1,.8]]});
+  const hm=std({map:clothTex(o.hc||'#5a3e6a',o.hc2||o.hc||'#4a2e5a',false,sd0+3,3),roughness:.9});
+  if(o.hat==='punt'){const c=M(new THREE.ConeGeometry(.12*hs,.5*hs,18),hm,0,.22*hs,0);c.rotation.z=.18;hh.head.add(c);const b=M(new THREE.TorusGeometry(.125*hs,.022,8,24),hm,0,.075*hs,0);b.rotation.x=Math.PI/2;hh.head.add(b);}
+  if(o.hat==='hoed'){hh.head.add(M(CYL(.2*hs,.2*hs,.02,26),hm,0,.085*hs,0));hh.head.add(M(CYL(.1*hs,.115*hs,.14*hs,22),hm,0,.16*hs,0));}
+  if(o.hat==='muts'){const c=M(SPH(.125*hs,20,12,0,6.3,0,1.6),hm,0,.03*hs,-.01);hh.head.add(c);const b=M(new THREE.TorusGeometry(.12*hs,.02,8,22),hm,0,.04*hs,0);b.rotation.x=Math.PI/2;hh.head.add(b);hh.head.add(M(SPH(.03*hs,10,8),hm,.03,.14*hs,-.06));}
+  if(o.hat==='pet'){const c=M(SPH(.122*hs,22,12,0,6.3,0,1.5),hm,0,.045*hs,-.005);c.scale.set(1.02,.62,1.12);hh.head.add(c);const pk=M(SPH(.07*hs,14,8,0,6.3,0,1.5),hm,0,.02*hs,.11*hs);pk.scale.set(1.3,.25,.9);hh.head.add(pk);}
+  if(o.hat==='kap'){const c=M(SPH(.14*hs,20,14,0,6.3,0,2.3),hm,0,.0,-.02);c.scale.set(1.05,1.15,1.1);hh.head.add(c);}
+  if(o.sash){const sc=M(new THREE.TorusGeometry(.07,.03,8,18),std({color:o.sash,roughness:.9}),0,1.47*h,.005);sc.rotation.x=Math.PI/2;Rt.add(sc);}
+  Rt.traverse(q=>{if(q.isMesh)q.castShadow=true;});addOutline(Rt,.0065);Rt.userData.outlined=true;if(o.scale)Rt.scale.setScalar(o.scale);return N;}
+function idleFolk(N,t,sd){blink(N.face,t,sd||1);N.head.rotation.y=Math.sin(t*.012+(sd||1))*.28;if(N.arms)N.arms.forEach((a,i)=>{a.rotation.x=Math.sin(t*.02+i*3+(sd||1))*.05;});}
+
+// ---------- bijzondere figuren ----------
+function makeOwl2(){const N={root:new THREE.Group()},Rt=N.root;const br=std({map:clothTex('#7a5a3a','#6a4a2a',false,71,2),roughness:.95}),bl=mat(0xe8dcc0,.9);
+  const bd=M(SPH(.5,24,18),br,0,.55,0);bd.scale.set(1,1.2,.9);Rt.add(bd);const bel=M(SPH(.38,20,14),bl,0,.5,.18);bel.scale.set(1,1.2,.6);Rt.add(bel);
+  [-1,1].forEach(s=>{const wg=M(SPH(.3,14,10),br,s*.46,.55,-.02);wg.scale.set(.35,1.2,.7);wg.rotation.z=s*.15;Rt.add(wg);const ft=M(SPH(.08,8,6),mat(0xd8a038,.7),s*.15,.02,.15);ft.scale.set(1,.5,1.6);Rt.add(ft);});
+  const head=new THREE.Group();head.position.set(0,1.18,.05);Rt.add(head);const hd=M(SPH(.36,22,16),br);hd.scale.set(1.15,.95,1);head.add(hd);
+  [-1,1].forEach(s=>{const disc=M(SPH(.2,16,12),bl,s*.15,.02,.24,false);disc.scale.set(1,1,.35);head.add(disc);const e=M(SPH(.12,16,12),mat(0xfff2c0,.2),s*.15,.04,.3,false);e.scale.set(1,1,.5);head.add(e);const ir=M(SPH(.075,12,10),mat(0xe88a18,.2),s*.15,.04,.34,false);ir.scale.set(1,1,.4);head.add(ir);head.add(M(SPH(.04,10,8),mat(0x050505,.1),s*.15,.04,.365,false));
+    const tf=M(new THREE.ConeGeometry(.06,.2,8),br,s*.24,.34,0);tf.rotation.z=-s*.35;head.add(tf);});
+  const beak=M(new THREE.ConeGeometry(.06,.14,8),mat(0xd8a038,.5),0,-.06,.37);beak.rotation.x=Math.PI/2+.3;head.add(beak);N.head=head;N.face={mouth:beak,eyes:[]};
+  Rt.traverse(q=>{if(q.isMesh)q.castShadow=true;});addOutline(Rt,.008);Rt.userData.outlined=true;return N;}
+function makeGhost(){const N={root:new THREE.Group()},Rt=N.root;const gm=new THREE.MeshStandardMaterial({color:0xdfe8f5,transparent:true,opacity:.8,emissive:0x8aa8d8,emissiveIntensity:.4,roughness:.5,side:THREE.DoubleSide});
+  const pr=[[.01,0],[.3,.04],[.46,.22],[.4,.6],[.34,1.0],[.3,1.3],[.2,1.52],[.01,1.62]].map(p=>new THREE.Vector2(p[0],p[1]));const sh=new THREE.LatheGeometry(pr,28);const pp=sh.attributes.position;for(let i=0;i<pp.count;i++){const y=pp.getY(i);if(y<.25){const a=Math.atan2(pp.getZ(i),pp.getX(i));const k=1+Math.sin(a*6)*.09*(1-y/.25);pp.setX(i,pp.getX(i)*k);pp.setZ(i,pp.getZ(i)*k);}}sh.computeVertexNormals();
+  const body=new THREE.Mesh(sh,gm);body.userData.noOutline=true;Rt.add(body);
+  [-1,1].forEach(s=>{const arm=M(CAP(.07,.35),gm,s*.38,.85,.05,false);arm.rotation.z=s*.5;Rt.add(arm);const e=M(SPH(.07,12,10),mat(0x10141c,.2),s*.13,1.25,.27,false);e.scale.set(.8,1.3,.5);Rt.add(e);});
+  const mouth=M(SPH(.08,12,10),mat(0x10141c,.2),0,1.05,.3,false);mouth.scale.set(1,1.2,.4);Rt.add(mouth);N.face={mouth,eyes:[]};
+  const head=new THREE.Group();head.position.set(0,1.2,.2);Rt.add(head);N.head=head;return N;}
+function makeYeti(){const N={root:new THREE.Group()},Rt=N.root;const fur=std({color:0xd8e0ee,roughness:1}),fur2=std({color:0xbcc8e0,roughness:1}),face=std({color:0x9ab8e0,roughness:.7});
+  const bd=M(SPH(.85,22,16),fur,0,1.0,0);bd.scale.set(1.05,1.1,.9);Rt.add(bd);for(let i=0;i<18;i++){const a=i*.7,b=M(SPH(.22+.08*Math.sin(i),8,6),i%2?fur:fur2,Math.cos(a)*.75,.5+(i%5)*.3,Math.sin(a)*.6);Rt.add(b);}
+  [-1,1].forEach(s=>{const lg=M(CAP(.24,.5),fur,s*.38,.3,.05);Rt.add(lg);const ft=M(SPH(.3,12,10),fur2,s*.4,.07,.2);ft.scale.set(1,.55,1.4);Rt.add(ft);});
+  N.arms=[-1,1].map(s=>{const g=new THREE.Group();g.position.set(s*.85,1.55,0);g.add(M(CAP(.2,.65),fur,0,-.45,.05));g.add(M(SPH(.26,12,10),fur2,0,-.92,.1));g.rotation.z=s*.2;Rt.add(g);return g;});
+  const head=new THREE.Group();head.position.set(0,2.15,.1);Rt.add(head);const hd=M(SPH(.5,22,16),fur);hd.scale.set(1.1,1,1);head.add(hd);const fc=M(SPH(.36,18,12),face,0,-.02,.28);fc.scale.set(1,.95,.55);head.add(fc);
+  [-1,1].forEach(s=>{const e=M(SPH(.07,10,8),mat(0xffffff,.2),s*.14,.08,.5,false);head.add(e);head.add(M(SPH(.035,8,6),mat(0x050a18,.1),s*.14,.07,.55,false));const hr=M(new THREE.ConeGeometry(.1,.3,8),mat(0xeee4c8,.5),s*.38,.45,0);hr.rotation.z=-s*.5;head.add(hr);});
+  head.add(M(SPH(.07,10,8),mat(0x4a5a80,.4),0,-.04,.58));const mouth=M(SPH(.12,12,8),mat(0x3a1a28,.5),0,-.2,.5,false);mouth.scale.set(1.3,.4,.5);head.add(mouth);N.head=head;N.face={mouth,eyes:[]};
+  Rt.traverse(q=>{if(q.isMesh)q.castShadow=true;});addOutline(Rt,.01,0x2a3a58);Rt.userData.outlined=true;return N;}
+function rockSolid(r,seed,rough){const g=new THREE.SphereGeometry(r,34,24);const p=g.attributes.position;const q=seed*1.7;for(let i=0;i<p.count;i++){const x=p.getX(i),y=p.getY(i),z=p.getZ(i);const u=x/r*3,v=y/r*3,w=z/r*3;const n=Math.sin(u*1.3+q)*Math.cos(v*1.1+q*.7)*Math.sin(w*1.5+q*1.3)*.26+Math.sin(u*2.7+w*2.3+q)*.1+Math.sin(v*4.1+u*3.3+q*2)*.05;const d=1+n*(rough||1);p.setXYZ(i,x*d,y*d,z*d);}g.computeVertexNormals();const m=new THREE.Mesh(g,std({color:0x7a7a82,roughness:1,flatShading:true}));m.castShadow=m.receiveShadow=true;return m;}
+function makeCow(){const g=new THREE.Group();const wh=mat(0xf4f0e8,.9),bk=mat(0x2a2624,.9);const bd=M(CAP(.42,.9),wh,0,.85,0);bd.rotation.z=Math.PI/2;g.add(bd);[[-.35,1.1,.34],[.15,1.18,-.36],[.5,.92,.32],[-.1,.7,-.4],[.7,1.05,-.26]].forEach(p=>{const s=M(SPH(.2,10,8),bk,p[0],p[1],p[2]);s.scale.set(1,.9,.45);s.rotation.y=p[2]>0?0:Math.PI;g.add(s);});
+  [[-.6,.3],[-.6,-.3],[.6,.3],[.6,-.3]].forEach(l=>g.add(M(CYL(.08,.07,.7,8),wh,l[0],.35,l[1])));const hd=M(SPH(.26,14,10),wh,1.05,1.05,0);hd.scale.set(1.2,1,.9);g.add(hd);g.add(M(SPH(.12,10,8),mat(0xe8a0a0,.7),1.28,.98,0));[-1,1].forEach(s=>{g.add(M(SPH(.04,6,5),mat(0x050505,.1),1.18,1.12,s*.15,false));g.add(M(new THREE.ConeGeometry(.04,.18,6),mat(0xeee4c8,.5),1.0,1.35,s*.18));});
+  const tail=M(CYL(.015,.015,.6,5),bk,-.95,.8,0);tail.rotation.z=.3;g.add(tail);g.traverse(q=>{if(q.isMesh)q.castShadow=true;});g.userData.head=hd;return g;}
+function makeJar(lit){const g=new THREE.Group();const gl=new THREE.MeshStandardMaterial({color:0xcfe8f0,transparent:true,opacity:.35,roughness:.05,metalness:.1});g.add(M(CYL(.1,.1,.22,16),gl,0,.11,0,false));g.add(M(CYL(.105,.105,.03,16),mat(0x6a4a2a,.6),0,.235,0));if(lit){const l=new THREE.Sprite(new THREE.SpriteMaterial({map:TX.glow,color:0xfff2a0,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false}));l.scale.set(.8,.8,1);l.position.y=.12;g.add(l);}return g;}
+function ink(sc,list){list.forEach(o=>addOutline(o,clamp(.006,.006,.02)));}
+
+// ---------- gebouwen en voorwerpen ----------
+function plaster(c1,c2,seed){return ctex(256,256,(x,w,h)=>{x.fillStyle=c1;x.fillRect(0,0,w,h);const r=mulberry(seed);for(let i=0;i<900;i++){x.fillStyle=r()<.5?'rgba(0,0,0,'+(r()*.07)+')':'rgba(255,250,235,'+(r()*.07)+')';x.beginPath();x.arc(r()*w,r()*h,1+r()*7,0,7);x.fill();}x.strokeStyle=c2;x.lineWidth=2;for(let y=0;y<h;y+=64){x.beginPath();x.moveTo(0,y);x.lineTo(w,y);x.stroke();}},true);}
+function makeWindmill(){const g=new THREE.Group();const pt=plaster('#cdbd9a','rgba(100,80,50,.4)',81);pt.repeat.set(3,3);const wall=std({map:pt,roughness:.9});const wd=std({map:TX.wood,roughness:.8});
+  g.add(M(CYL(1.5,2.1,6.2,24),wall,0,3.1,0));const rf=TX.roof.clone();rf.repeat.set(6,3);rf.needsUpdate=true;g.add(M(new THREE.ConeGeometry(1.85,2.2,24),std({map:rf,roughness:.75}),0,7.3,0));
+  g.add(M(BOX(1.0,1.9,.15),std({map:TX.wood,roughness:.8,color:0x8a6a4a}),0,.95,2.08));[2.4,4.0].forEach((y,i)=>{const rz=2.1-.6*y/6.2;g.add(M(BOX(.4,.6,.12),std({color:0x1a120a,emissive:0x442a10,emissiveIntensity:.5}),0,y,rz+.02));});const shf=M(CYL(.2,.2,1.1,10),wd,0,5.6,1.6);shf.rotation.x=Math.PI/2;g.add(shf);
+  const sails=new THREE.Group();sails.position.set(0,5.6,2.1);for(let k=0;k<4;k++){const arm=new THREE.Group();arm.rotation.z=k*Math.PI/2;arm.add(M(BOX(.2,5.2,.16),std({color:0x5a3a20,roughness:.8}),0,2.6,0));const cl=M(BOX(1.1,3.4,.04),std({map:clothTex('#c0442e','#f0e2c4',true,83,3),roughness:.95,side:THREE.DoubleSide}),.62,2.8,.03);arm.add(cl);for(let j=0;j<6;j++)arm.add(M(BOX(1.2,.07,.06),std({color:0x5a3a20,roughness:.8}),.6,1.2+j*.55,.02));sails.add(arm);}
+  sails.add(M(CYL(.22,.22,.4,12),wd,0,0,0)).rotation.x=Math.PI/2;g.add(sails);g.userData.sails=sails;return g;}
+function makeStall(c1,c2,seed){const g=new THREE.Group();const wd=std({map:TX.wood,roughness:.8});[[-1.3,-.7],[1.3,-.7],[-1.3,.7],[1.3,.7]].forEach(p=>g.add(M(CYL(.06,.06,2.3,8),wd,p[0],1.15,p[1])));
+  g.add(M(BOX(2.8,.9,.9),wd,0,.45,.15));g.add(M(BOX(3.0,.08,1.1),std({map:TX.wood,roughness:.8,color:0xb89870}),0,.94,.15));
+  const cn=std({map:clothTex(c1,c2,true,seed,6),roughness:.9,side:THREE.DoubleSide});const ca=M(new THREE.PlaneGeometry(3.2,1.5),cn,0,2.55,.1);ca.rotation.x=-.45+Math.PI;ca.rotation.y=Math.PI;ca.scale.set(1,1,1);g.add(ca);
+  const sc=M(BOX(3.2,.28,.05),cn,0,2.0,.82);g.add(sc);return g;}
+function makeHouse(c,seed,w,h){const g=new THREE.Group();w=w||3.2;h=h||2.6;const pt=plaster(c,'rgba(90,60,40,.5)',seed);pt.repeat.set(2,2);const wall=std({map:pt,roughness:.9}),wd=std({map:TX.wood,roughness:.8,color:0x6a4a2a});
+  g.add(M(BOX(w,h,2.6),wall,0,h/2,0));[[-w/2,0],[w/2,0],[0,0]].forEach(p=>g.add(M(BOX(.14,h,2.7),wd,p[0],h/2,0)));g.add(M(BOX(w+.1,.14,2.7),wd,0,h*.55,0));
+  const rf=TX.roof.clone();rf.repeat.set(3,2);rf.needsUpdate=true;const rm=std({map:rf,roughness:.8,side:THREE.DoubleSide});[-1,1].forEach(s=>{const p=M(new THREE.PlaneGeometry(w+.5,2.2),rm,0,h+.85,s*.6);p.rotation.x=s*-.95;g.add(p);});g.add(M(BOX(w+.5,.1,.1),wd,0,h+1.5,0));
+  [[-.8],[.8]].forEach(p=>g.add(M(BOX(.5,.55,.08),std({color:0x1a120a,emissive:0x553510,emissiveIntensity:.6}),p[0],h*.7,1.32)));g.add(M(BOX(.7,1.2,.1),wd,0,.6,1.32));return g;}
+function makeCrate(){const g=new THREE.Group();const wd=std({map:TX.wood,roughness:.85});g.add(M(BOX(.7,.55,.6),wd,0,.275,0));[[-.33,-.28],[.33,-.28],[-.33,.28],[.33,.28]].forEach(p=>g.add(M(BOX(.06,.57,.06),std({color:0x4a3018,roughness:.9}),p[0],.28,p[1])));return g;}
+function makeBarrel(){const g=new THREE.Group();const wd=std({map:TX.wood,roughness:.8});const pr=[[.3,0],[.36,.2],[.38,.4],[.36,.6],[.3,.8]].map(p=>new THREE.Vector2(p[0],p[1]));g.add(M(new THREE.LatheGeometry(pr,18),wd,0,0,0));[.15,.65].forEach(y=>{const b=M(new THREE.TorusGeometry(.34+(y>.3?0:-.02),.015,6,20),std({color:0x3a3a3e,metalness:.8,roughness:.4}),0,y,0);b.rotation.x=Math.PI/2;g.add(b);});g.add(M(CYL(.3,.3,.02,18),wd,0,.8,0));return g;}
+function makeCactus(s){const g=new THREE.Group();const m=std({color:0x4a8a3a,roughness:.8});g.add(M(CAP(.2*s,1.2*s),m,0,.8*s,0));[-1,1].forEach((d,i)=>{const a=M(CAP(.12*s,.5*s),m,d*.4*s,(.9+i*.2)*s,0);a.rotation.z=d*.0;g.add(a);const u=M(CAP(.12*s,.4*s),m,d*.4*s,(1.2+i*.2)*s,0);g.add(u);});return g;}
+function makeBoat(){const g=new THREE.Group();const wd=std({map:TX.wood,roughness:.8,color:0xa07a50});const hull=M(SPH(1.3,20,12,0,6.3,Math.PI/2,Math.PI/2),wd,0,.45,0);hull.scale.set(1.5,.55,.65);g.add(hull);const hole=M(new THREE.CircleGeometry(.1,12),new THREE.MeshBasicMaterial({color:0x050403}),.5,.2,.8,false);hole.userData.noOutline=true;g.add(hole);g.userData.hole=hole;
+  g.add(M(BOX(.1,.08,1.2),wd,.7,.55,0));g.add(M(BOX(.1,.08,1.2),wd,-.7,.55,0));g.add(M(BOX(1.9,.06,.1),wd,0,.5,.55));return g;}
+function makeOar(){const g=new THREE.Group();const wd=std({map:TX.wood,roughness:.8});const s=M(CYL(.03,.03,1.8,8),wd,0,.05,0);s.rotation.z=Math.PI/2;g.add(s);const b=M(BOX(.5,.04,.2),wd,.95,.05,0);g.add(b);return g;}
+function makeGrave(sd){const g=new THREE.Group();const st=std({color:0x8a8e96,roughness:.95,flatShading:true});const b=M(BOX(.6,.9,.14),st,0,.45,0);g.add(b);g.add(M(CYL(.3,.3,.14,14,1),st,0,.9,0)).rotation.x=Math.PI/2;g.rotation.set((sd%3-1)*.08,0,((sd%5)-2)*.05);return g;}
+function makeDeadTree(h,seed){const g=new THREE.Group();const bm=std({map:TX.bark,roughness:.95,color:0x8a8078});const r=mulberry(seed);const tr=M(CYL(.12,.3,h,10),bm,0,h/2,0);g.add(tr);for(let i=0;i<7;i++){const a=r()*6.28,len=1.2+r()*1.6;const b=M(CYL(.025,.07,len,6),bm,Math.cos(a)*.1,h*(.5+r()*.45),Math.sin(a)*.1);b.rotation.z=Math.cos(a)*(.8+r()*.5);b.rotation.x=Math.sin(a)*(.8+r()*.5);g.add(b);}return g;}
+function makeSnowPine(h){const g=new THREE.Group();const m=std({color:0x2e4a3e,roughness:.9,flatShading:true}),sn=std({color:0xf4f8ff,roughness:1,flatShading:true});for(let i=0;i<4;i++){const r0=h*(.32-i*.06);g.add(M(new THREE.ConeGeometry(r0,h*.42,9),m,0,h*.3+i*h*.17,0));const c2=M(new THREE.ConeGeometry(r0*.85,h*.3,9),sn,0,h*.36+i*h*.17,0);c2.scale.set(1.02,.9,1.02);g.add(c2);}g.add(M(CYL(h*.03,h*.04,h*.3),std({color:0x3a2a1a}),0,h*.15,0));return g;}
+function makeCampfire(){const g=new THREE.Group();const st=std({color:0x7a7a80,roughness:1,flatShading:true});for(let i=0;i<9;i++){const a=i/9*6.28;const r2=M(new THREE.DodecahedronGeometry(.18,0),st,Math.cos(a)*.55,.1,Math.sin(a)*.55);g.add(r2);}
+  const logs=new THREE.Group();[0,1.2,2.4].forEach(a=>{const l=M(CYL(.07,.08,.8,8),std({map:TX.bark,roughness:.95}),0,.18,0);l.rotation.z=1.3;l.rotation.y=a;logs.add(l);});g.add(logs);g.userData.logs=logs;logs.visible=false;
+  const fire=new THREE.Group();const fm=new THREE.MeshBasicMaterial({color:0xffa030,transparent:true,opacity:.9,blending:THREE.AdditiveBlending,depthWrite:false});const f1=M(new THREE.ConeGeometry(.28,.8,10),fm,0,.45,0,false);const f2=M(new THREE.ConeGeometry(.16,.55,10),new THREE.MeshBasicMaterial({color:0xfff0a0,transparent:true,opacity:.95,blending:THREE.AdditiveBlending,depthWrite:false}),0,.38,0,false);fire.add(f1);fire.add(f2);f1.userData.noOutline=f2.userData.noOutline=true;const pl=new THREE.PointLight(0xff9a40,0,9,2);pl.position.y=.8;fire.add(pl);fire.visible=false;g.add(fire);g.userData.fire=fire;g.userData.pl=pl;return g;}
+function makeDome(){const g=new THREE.Group();const pt=plaster('#d8d8e0','rgba(90,90,110,.3)',91);pt.repeat.set(3,2);const wall=std({map:pt,roughness:.85});g.add(M(CYL(2.2,2.4,3,28),wall,0,1.5,0));const dm=M(SPH(2.3,28,16,0,6.3,0,Math.PI/2),std({color:0x5a6a9a,metalness:.7,roughness:.35}),0,3,0);g.add(dm);const slit=M(BOX(.7,1.9,.08),std({color:0x1a1a2a,metalness:.6,roughness:.5}),0,4.05,2.05);slit.rotation.x=-.5;g.add(slit);g.add(M(BOX(1,1.8,.15),std({map:TX.wood,roughness:.8,color:0x7a5a3a}),0,.9,2.3));return g;}
+function makeTelescope(){const g=new THREE.Group();const br=std({color:0xb08a40,metalness:.8,roughness:.3}),dk=std({color:0x3a3a44,metalness:.6,roughness:.5});[0,2.1,4.2].forEach(a=>{const l=M(CYL(.03,.04,1.5,6),dk,Math.cos(a)*.3,.7,Math.sin(a)*.3);l.rotation.z=Math.cos(a)*.2;l.rotation.x=-Math.sin(a)*.2;g.add(l);});const tube=new THREE.Group();tube.position.set(0,1.45,0);tube.rotation.z=.9;const t=M(CYL(.15,.12,1.6,16),br,0,0,0);tube.add(t);const ring=M(new THREE.TorusGeometry(.14,.03,8,18),dk,0,.82,0);ring.rotation.x=Math.PI/2;tube.add(ring);const lens=M(CYL(.125,.125,.03,18),new THREE.MeshStandardMaterial({color:0x9ad0ff,transparent:true,opacity:.7,roughness:.05,metalness:.2,emissive:0x2a5a8a,emissiveIntensity:.5}),0,.82,0,false);lens.visible=false;tube.add(lens);g.add(tube);g.userData.lens=lens;g.userData.tube=tube;return g;}
+function makeWizTower(){const g=new THREE.Group();const st=TX.stone.clone();st.repeat.set(3,6);st.needsUpdate=true;const sm=std({map:st,bumpMap:st,bumpScale:2,roughness:.9,color:0x9a8aa8});
+  g.add(M(CYL(2.0,2.4,9,28),sm,0,4.5,0));g.add(M(CYL(2.5,2.2,1,28),sm,0,9.5,0));for(let i=0;i<12;i++){const a=i/12*6.28;g.add(M(BOX(.5,.6,.5),sm,Math.cos(a)*2.35,10.3,Math.sin(a)*2.35));}
+  const rf=std({color:0x3a2a5a,roughness:.7,metalness:.2});g.add(M(new THREE.ConeGeometry(2.0,4.5,28),rf,0,12.4,0));g.add(M(SPH(.25,10,8),std({color:0xf2c22a,metalness:1,roughness:.2,emissive:0x442a00}),0,14.8,0));
+  [3,5.5,8].forEach((y,i)=>g.add(M(BOX(.4,.8,.2),std({color:0x1a1030,emissive:0x8a5aff,emissiveIntensity:.8}),Math.sin(i*2)*1.2,y,Math.sqrt(Math.max(0,4-Math.pow(Math.sin(i*2)*1.2,2)))*.98,false)));
+  const door=M(BOX(1.6,2.6,.2),std({map:TX.wood,roughness:.8,color:0x3a2a3a}),0,1.3,2.3);g.add(door);g.userData.door=door;
+  const disks=[];for(let i=0;i<9;i++){const a=-Math.PI*.9+i/8*Math.PI*1.8;const d=M(new THREE.CylinderGeometry(.14,.14,.05,16),std({color:0x2a2030,roughness:.5,metalness:.6,emissive:0x000000}),Math.sin(a)*1.05,1.7+Math.cos(a)*.95*(-1)+.25,2.42,false);d.rotation.x=Math.PI/2;g.add(d);disks.push(d);}g.userData.disks=disks;return g;}
+function makeTemple(){const g=new THREE.Group();const sd=std({color:0xd8b878,roughness:.95,flatShading:true});const tx=ctex(256,256,(x,w,h)=>{x.fillStyle='#d8bc84';x.fillRect(0,0,w,h);const r=mulberry(95);for(let i=0;i<600;i++){x.fillStyle=r()<.5?'rgba(120,80,30,'+(r()*.1)+')':'rgba(255,240,200,'+(r()*.1)+')';x.beginPath();x.arc(r()*w,r()*h,1+r()*6,0,7);x.fill();}for(let y=0;y<h;y+=48){x.strokeStyle='rgba(110,80,40,.4)';x.lineWidth=2;x.beginPath();x.moveTo(0,y);x.lineTo(w,y);x.stroke();}},true);tx.repeat.set(2,2);const sm=std({map:tx,roughness:.95});
+  [0,1,2].forEach(i=>g.add(M(BOX(9-i*.4,.3,5-i*.3),sm,0,.15+i*.3,0)));[-3.2,-1.1,1.1,3.2].forEach(x=>{g.add(M(CYL(.4,.45,4.2,16),sm,x,3.0,1.2));g.add(M(BOX(1.1,.25,1.1),sm,x,5.2,1.2));});g.add(M(BOX(9.2,.8,1.6),sm,0,5.7,1.2));g.add(M(BOX(9.6,.3,2),sm,0,6.2,1.2));
+  g.add(M(BOX(7.6,4.8,.5),sm,0,3.3,-.8));const door=M(BOX(2.2,3.4,.3),std({color:0x8a7a60,roughness:1}),0,2.2,-.45);g.add(door);g.userData.door=door;
+  const sun=new THREE.Group();sun.add(M(CYL(.9,.9,.12,28),std({color:0xe8b830,metalness:.8,roughness:.3,emissive:0x442a00}),0,0,0)).rotation.x=Math.PI/2;for(let i=0;i<12;i++){const a=i/12*6.28;const r2=M(new THREE.ConeGeometry(.12,.7,6),std({color:0xe8b830,metalness:.8,roughness:.3}),Math.cos(a)*1.25,Math.sin(a)*1.25,0);r2.rotation.z=a-Math.PI/2;sun.add(r2);}sun.position.set(0,5.0,.72);sun.scale.setScalar(.8);g.add(sun);g.userData.sun=sun;return g;}
+function makeSunStatue(){const g=new THREE.Group();const sm=std({color:0xc8a868,roughness:.95,flatShading:true});g.add(M(BOX(1.2,1.1,1.2),sm,0,.55,0));g.add(M(CYL(.5,.6,.5,16),sm,0,1.35,0));const eye=M(CYL(.42,.42,.1,24),std({color:0x4a3a28,roughness:.5,metalness:.5}),0,2.0,.0);eye.rotation.x=Math.PI/2;g.add(eye);for(let i=0;i<10;i++){const a=i/10*6.28;const r2=M(new THREE.ConeGeometry(.08,.4,5),sm,Math.cos(a)*.62,2.0+Math.sin(a)*.62,0);r2.rotation.z=a-Math.PI/2;g.add(r2);}g.userData.eye=eye;return g;}
+function makeHay(){const g=new THREE.Group();const hm=std({color:0xd8b848,roughness:1});const h=M(SPH(1.1,16,12,0,6.3,0,1.6),hm,0,0,0);h.scale.set(1.2,1,1);g.add(h);for(let i=0;i<30;i++){const a=R()*6.28,y=R()*.8;const s=M(CYL(.01,.01,.6,3),mat(0xe8c858,1),Math.cos(a)*(1.2-y*.6),y,Math.sin(a)*(1.0-y*.6),false);s.rotation.set(R()*2,R()*3,R()*2);g.add(s);}return g;}
+function makeOilcan(){const g=new THREE.Group();const m=std({color:0xb83a2a,metalness:.5,roughness:.4});g.add(M(CYL(.1,.12,.2,14),m,0,.1,0));const sp=M(CYL(.015,.02,.2,6),std({color:0x8a8a90,metalness:.8,roughness:.3}),.12,.22,0);sp.rotation.z=-.9;g.add(sp);return g;}
+function makeScarecrow(){const g=new THREE.Group();const wd=std({map:TX.wood,roughness:.8});g.add(M(CYL(.05,.05,2.1,8),wd,0,1.05,0));const arm=M(CYL(.04,.04,1.6,8),wd,0,1.6,0);arm.rotation.z=Math.PI/2;g.add(arm);g.add(M(SPH(.22,14,10),mat(0xd8b878,.9),0,2.2,0));g.add(M(CYL(.28,.28,.03,18),mat(0x6a4a2a,.8),0,2.38,0));g.add(M(CYL(.15,.18,.22,14),mat(0x6a4a2a,.8),0,2.5,0));g.add(M(BOX(.5,.7,.2),std({map:clothTex('#6a7a9a','#5a6a8a',true,97,3),roughness:.95}),0,1.5,0));return g;}
+function makeFountain(){const g=new THREE.Group();const st=TX.stone.clone();st.repeat.set(3,1);st.needsUpdate=true;const sm=std({map:st,bumpMap:st,bumpScale:1.5,roughness:.9});const pr=[[1.5,0],[1.6,.1],[1.6,.7],[1.45,.75],[1.35,.6],[1.35,.2]].map(p=>new THREE.Vector2(p[0],p[1]));g.add(M(new THREE.LatheGeometry(pr,32),sm,0,0,0));g.add(M(CYL(1.35,1.35,.02,28),std({color:0x3e7c9e,roughness:.05,metalness:.3,transparent:true,opacity:.9}),0,.5,0,false));g.add(M(CYL(.18,.25,1.3,12),sm,0,1.0,0));g.add(M(CYL(.5,.15,.15,16),sm,0,1.6,0));return g;}
+function makeStump(){const g=new THREE.Group();const bm=std({map:TX.bark,roughness:.95});g.add(M(CYL(.55,.65,.9,16),bm,0,.45,0));g.add(M(CYL(.5,.5,.03,16),std({color:0xc8a070,roughness:.8}),0,.9,0));return g;}
+function makeLantern(){const g=new THREE.Group();g.add(M(CYL(.1,.12,.04,6),std({color:0x3a3a3e,metalness:.7,roughness:.4}),0,.02,0));g.add(M(CYL(.08,.08,.22,8),new THREE.MeshStandardMaterial({color:0xffd890,emissive:0xffa040,emissiveIntensity:.8,transparent:true,opacity:.8}),0,.15,0,false));g.add(M(CYL(.01,.1,.07,8),std({color:0x3a3a3e,metalness:.7,roughness:.4}),0,.3,0));const r=M(new THREE.TorusGeometry(.06,.008,6,12,Math.PI),std({color:0x3a3a3e,metalness:.7}),0,.33,0);g.add(r);return g;}
+function makePick(){const g=new THREE.Group();const wd=std({map:TX.wood,roughness:.8});const s=M(CYL(.025,.025,1.0,6),wd,0,.5,0);s.rotation.z=1.2;g.add(s);const hd=M(BOX(.55,.06,.06),std({color:0x8a8a92,metalness:.8,roughness:.3}),.45,.95,0);hd.rotation.z=1.2;g.add(hd);return g;}
+function makeCrystals(){const g=new THREE.Group();const cm=new THREE.MeshStandardMaterial({color:0x7ad8ff,emissive:0x2a9aff,emissiveIntensity:1.2,roughness:.1,metalness:.3,transparent:true,opacity:.9});for(let i=0;i<9;i++){const c=M(new THREE.ConeGeometry(.12+R()*.12,.6+R()*.7,6),cm,(R()-.5)*1.4,.3,(R()-.5)*.5,false);c.rotation.z=(R()-.5)*.7;c.userData.noOutline=true;g.add(c);}const pl=new THREE.PointLight(0x5ab8ff,2,7,2);pl.position.y=.8;g.add(pl);g.userData.pl=pl;g.userData.noOutline=true;return g;}
+function makeSeal(col){const g=new THREE.Group();const m=std({color:col||0xffd85a,emissive:col||0xffa800,emissiveIntensity:1.0,metalness:.7,roughness:.2});const d=M(CYL(.16,.16,.06,6),m,0,0,0,false);d.rotation.x=Math.PI/2;g.add(d);g.add(M(SPH(.07,10,8),std({color:0xfff5c0,emissive:0xffe080,emissiveIntensity:.9}),0,0,.04,false));const gl=new THREE.Sprite(new THREE.SpriteMaterial({map:TX.glow,color:col||0xffd070,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,opacity:.8}));gl.scale.set(1.1,1.1,1);g.add(gl);g.userData.spin=true;g.userData.noOutline=true;return g;}
+function hitBox(sc,x,y,z,w,h,d){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshBasicMaterial({visible:false}));m.position.set(x,y,z);m.userData.noOutline=true;sc.add(m);return m;}
+function hitSphere(sc,x,y,z,r){const m=new THREE.Mesh(new THREE.SphereGeometry(r,8,6),new THREE.MeshBasicMaterial({visible:false}));m.position.set(x,y,z);m.userData.noOutline=true;sc.add(m);return m;}
+function scatterRocks(sc,n,seed,x1,x2,z1,z2,avoid,s0,s1){const r=mulberry(seed);for(let i=0;i<n;i++){const x=lerp(x1,x2,r()),z=lerp(z1,z2,r());if(avoid&&avoid(x,z))continue;const q=rock((s0||.15)+r()*((s1||.4)-(s0||.15)),seed+i);q.position.set(x,0,z);sc.add(q);}}
+function dunes(sc,seed,col){const r=mulberry(seed);const m=std({color:col||0xe0c080,roughness:1});for(let i=0;i<9;i++){const d=M(SPH(5+r()*5,20,12,0,6.3,0,1.6),m,-26+i*7+r()*3,-.5,-18-r()*10);d.scale.set(1.6,.35+r()*.2,1);d.castShadow=false;sc.add(d);}}
+function bunting(sc,x1,y1,x2,y2,z,seed){const cols=[0xe04a3a,0xf2c22a,0x3a8ad8,0x4aa84a,0xd85ab8];const g=new THREE.Group();const n=14;const flags=[];for(let i=0;i<n;i++){const t=(i+.5)/n,x=lerp(x1,x2,t),y=lerp(y1,y2,t)-Math.sin(t*Math.PI)*.5;const f=M(new THREE.ConeGeometry(.16,.4,3),std({color:cols[(i+seed)%5],roughness:.9,side:THREE.DoubleSide}),x,y-.2,z,false);f.rotation.z=Math.PI;f.scale.z=.2;f.userData.noOutline=true;g.add(f);flags.push(f);}
+  const pts=[];for(let i=0;i<=20;i++){const t=i/20;pts.push(V3(lerp(x1,x2,t),lerp(y1,y2,t)-Math.sin(t*Math.PI)*.5,z));}g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial({color:0x3a2a1a})));g.userData.flags=flags;sc.add(g);return g;}
+
+// ---------- pictogrammen voor nieuwe voorwerpen ----------
+const ICONS={
+ potje:c=>{c.fillStyle='rgba(190,225,240,.45)';rr(c,-9,-8,18,22,4);c.fill();c.strokeStyle='#8ab0c0';c.lineWidth=1.6;rr(c,-9,-8,18,22,4);c.stroke();c.fillStyle='#8a5a2a';rr(c,-10,-12,20,6,2);c.fill();c.fillStyle='rgba(255,255,255,.6)';c.fillRect(-6,-4,2,14);},
+ lichtpot:c=>{const g=c.createRadialGradient(0,2,0,0,2,22);g.addColorStop(0,'rgba(255,255,160,.9)');g.addColorStop(1,'rgba(255,255,160,0)');c.fillStyle=g;c.beginPath();c.arc(0,2,22,0,7);c.fill();ICONS.potje(c);c.fillStyle='#fff8a0';[[-3,0],[3,4],[0,-4],[4,-2],[-4,6]].forEach(p=>{c.beginPath();c.arc(p[0],p[1],1.8,0,7);c.fill();});},
+ oliekan:c=>{c.fillStyle='#c0402e';rr(c,-9,-4,18,16,3);c.fill();c.fillStyle='#e8604a';c.fillRect(-8,-3,4,14);c.strokeStyle='#8a8a90';c.lineWidth=3;c.beginPath();c.moveTo(8,-2);c.lineTo(16,-12);c.stroke();c.strokeStyle='#5a3a2a';c.lineWidth=2.5;c.beginPath();c.arc(-1,-6,8,Math.PI,0);c.stroke();},
+ meel:c=>{c.fillStyle='#e8dcc0';c.beginPath();c.moveTo(-10,-6);c.quadraticCurveTo(-14,10,-8,14);c.lineTo(8,14);c.quadraticCurveTo(14,10,10,-6);c.quadraticCurveTo(0,-10,-10,-6);c.fill();c.strokeStyle='#8a7a5a';c.lineWidth=1.6;c.stroke();c.fillStyle='#8a5a2a';c.fillRect(-4,-10,8,5);c.fillStyle='#5a3a1a';c.font='bold 11px Georgia';c.textAlign='center';c.fillText('M',0,9);},
+ brood:c=>{c.fillStyle='#c8883a';c.beginPath();c.ellipse(0,2,15,9,0,0,7);c.fill();c.fillStyle='#e8a850';c.beginPath();c.ellipse(0,-1,13,6,0,0,7);c.fill();c.strokeStyle='#8a5a1e';c.lineWidth=1.6;[-6,0,6].forEach(x=>{c.beginPath();c.moveTo(x-2,-4);c.lineTo(x+2,3);c.stroke();});},
+ vis:c=>{c.fillStyle='#8ab8d8';c.beginPath();c.ellipse(-2,0,13,7,0,0,7);c.fill();c.beginPath();c.moveTo(10,0);c.lineTo(17,-7);c.lineTo(17,7);c.closePath();c.fill();c.fillStyle='#e8f0f8';c.beginPath();c.ellipse(-3,2,9,3,0,0,7);c.fill();c.fillStyle='#fff';c.beginPath();c.arc(-9,-2,2.2,0,7);c.fill();c.fillStyle='#111';c.beginPath();c.arc(-9.4,-2,1,0,7);c.fill();},
+ kurk:c=>{const g=c.createLinearGradient(-8,0,8,0);g.addColorStop(0,'#a8783a');g.addColorStop(.5,'#d8a860');g.addColorStop(1,'#8a5a28');c.fillStyle=g;rr(c,-8,-10,16,22,3);c.fill();c.fillStyle='rgba(60,30,10,.3)';[[-3,-4],[3,2],[-2,8]].forEach(p=>{c.beginPath();c.arc(p[0],p[1],1.4,0,7);c.fill();});},
+ roeiriem:c=>{c.rotate(-.7);c.fillStyle='#a07a4a';rr(c,-20,-2,28,4,2);c.fill();c.fillStyle='#c89a60';rr(c,6,-6,16,12,3);c.fill();c.fillStyle='rgba(255,230,190,.4)';c.fillRect(8,-4,10,2);},
+ houweel:c=>{c.rotate(-.6);c.fillStyle='#8a5a2a';rr(c,-2,-14,4,30,2);c.fill();c.fillStyle='#9aa0aa';c.beginPath();c.moveTo(-14,-10);c.quadraticCurveTo(0,-20,14,-10);c.lineTo(10,-8);c.quadraticCurveTo(0,-14,-10,-8);c.closePath();c.fill();c.fillStyle='rgba(255,255,255,.5)';c.fillRect(-8,-13,10,2);},
+ mijnlamp:c=>{const g=c.createRadialGradient(0,0,0,0,0,22);g.addColorStop(0,'rgba(255,220,120,.7)');g.addColorStop(1,'rgba(255,220,120,0)');c.fillStyle=g;c.beginPath();c.arc(0,0,22,0,7);c.fill();c.strokeStyle='#4a4a50';c.lineWidth=2.4;c.beginPath();c.arc(0,-10,5,Math.PI,0);c.stroke();c.fillStyle='#4a4a50';rr(c,-8,-8,16,4,1);c.fill();rr(c,-8,10,16,4,1);c.fill();c.fillStyle='rgba(255,230,150,.9)';c.fillRect(-6,-4,12,14);c.fillStyle='#ff9020';c.beginPath();c.ellipse(0,5,3,5,0,0,7);c.fill();},
+ sleutel:c=>{c.strokeStyle='#a07a3a';c.fillStyle='#a07a3a';c.lineWidth=3.4;c.beginPath();c.arc(-8,-6,6,0,7);c.stroke();c.beginPath();c.moveTo(-4,-2);c.lineTo(12,14);c.stroke();c.fillRect(6,8,3,6);c.fillRect(10,11,3,6);},
+ viool:c=>{c.rotate(-.5);c.fillStyle='#8a4a1a';c.beginPath();c.ellipse(0,5,10,13,0,0,7);c.fill();c.fillStyle='#a8602a';c.beginPath();c.ellipse(0,5,7,10,0,0,7);c.fill();c.fillStyle='#2a1a0a';rr(c,-2,-20,4,16,1);c.fill();c.strokeStyle='#f0e0b0';c.lineWidth=1;c.beginPath();c.moveTo(0,-14);c.lineTo(0,14);c.stroke();c.fillStyle='#2a1a0a';c.fillRect(-5,12,10,2);},
+ brandhout:c=>{[[-8,6,.15],[0,2,-.1],[8,7,.3]].forEach(l=>{c.save();c.translate(l[0],l[1]);c.rotate(l[2]);c.fillStyle='#7a5430';rr(c,-14,-4,28,8,4);c.fill();c.fillStyle='#c89a60';c.beginPath();c.ellipse(14,0,3,4,0,0,7);c.fill();c.restore();});},
+ vuursteen:c=>{c.fillStyle='#6a6a76';c.beginPath();c.moveTo(-14,6);c.lineTo(-6,-6);c.lineTo(4,0);c.lineTo(0,10);c.closePath();c.fill();c.fillStyle='#3a3a46';c.beginPath();c.moveTo(0,8);c.lineTo(8,-4);c.lineTo(16,6);c.lineTo(10,12);c.closePath();c.fill();c.fillStyle='#ffd040';[[2,-3],[-2,-8],[6,-9]].forEach(p=>{c.beginPath();c.arc(p[0],p[1],1.8,0,7);c.fill();});},
+ sjaal:c=>{c.fillStyle='#e0d0a2';c.beginPath();c.ellipse(0,-4,13,6,0,0,7);c.fill();c.fillStyle='#c8b482';rr(c,-6,-2,8,18,2);c.fill();rr(c,2,-2,8,14,2);c.fill();c.fillStyle='#a89462';[0,4,8,12].forEach(y=>c.fillRect(-6,y,8,2));},
+ waterzak:c=>{c.fillStyle='#8a5a2a';c.beginPath();c.moveTo(-10,-4);c.quadraticCurveTo(-16,12,-6,16);c.lineTo(6,16);c.quadraticCurveTo(16,12,10,-4);c.quadraticCurveTo(0,-8,-10,-4);c.fill();c.fillStyle='#4a2a10';rr(c,-4,-12,8,8,2);c.fill();c.fillStyle='rgba(255,255,255,.3)';c.fillRect(-8,0,3,10);},
+ spiegel:c=>{const g=c.createRadialGradient(-3,-3,2,0,0,13);g.addColorStop(0,'#fff0c0');g.addColorStop(.6,'#e0a050');g.addColorStop(1,'#9a5a20');c.fillStyle='#8a5a20';c.beginPath();c.arc(0,-2,14,0,7);c.fill();c.fillStyle=g;c.beginPath();c.arc(0,-2,11,0,7);c.fill();c.fillStyle='#8a5a20';rr(c,-2,10,4,10,2);c.fill();},
+ net:c=>{c.strokeStyle='#8a5a2a';c.lineWidth=3;c.beginPath();c.moveTo(-14,14);c.lineTo(8,-8);c.stroke();c.strokeStyle='#8a8a90';c.lineWidth=2;c.beginPath();c.ellipse(11,-11,8,6,.6,0,7);c.stroke();c.strokeStyle='rgba(216,200,160,.9)';c.lineWidth=1;for(let i=-6;i<=6;i+=3){c.beginPath();c.moveTo(11+i*.8,-14);c.lineTo(11+i*.8,-5);c.stroke();}},
+ lens:c=>{const g=c.createRadialGradient(-4,-4,1,0,0,14);g.addColorStop(0,'rgba(255,255,255,.9)');g.addColorStop(.4,'rgba(150,210,255,.6)');g.addColorStop(1,'rgba(60,120,200,.5)');c.fillStyle=g;c.beginPath();c.arc(0,0,13,0,7);c.fill();c.strokeStyle='#b08a40';c.lineWidth=3;c.stroke();},
+ kan:c=>{c.fillStyle='#c8c8d0';rr(c,-9,-6,18,20,3);c.fill();c.fillStyle='#a8a8b4';rr(c,-9,-10,18,5,2);c.fill();c.strokeStyle='#8a8a94';c.lineWidth=2.5;c.beginPath();c.arc(10,3,6,-1.5,1.5);c.stroke();c.fillStyle='rgba(255,255,255,.5)';c.fillRect(-7,-3,3,14);},
+ melk:c=>{ICONS.kan(c);c.fillStyle='#fff';c.fillRect(-7,-9,14,2.5);},
+ warmemelk:c=>{ICONS.kan(c);c.strokeStyle='rgba(255,255,255,.8)';c.lineWidth=1.8;[-4,2,8].forEach((x,i)=>{c.beginPath();c.moveTo(x,-12);c.quadraticCurveTo(x+3,-16-i,x,-20);c.stroke();});},
+ slaapmuts:c=>{c.fillStyle='#6a4a9a';c.beginPath();c.moveTo(-14,10);c.quadraticCurveTo(-12,-12,6,-12);c.quadraticCurveTo(14,-10,16,-2);c.lineTo(14,10);c.closePath();c.fill();c.fillStyle='#f4f0e0';rr(c,-15,8,31,6,3);c.fill();c.fillStyle='#f4f0e0';c.beginPath();c.arc(17,-3,4,0,7);c.fill();c.strokeStyle='rgba(255,255,255,.3)';c.lineWidth=2;[-4,3].forEach(x=>{c.beginPath();c.moveTo(x,-8);c.lineTo(x-3,8);c.stroke();});}
+};
+function drawItemIcon(c,id,x,y,s){if(ICONS[id]){c.save();c.translate(x,y);c.scale(s,s);ICONS[id](c);c.restore();}else drawItemIconBase(c,id,x,y,s);}
+
+// ===================== HOOFDSTUKKEN 2 T/M 11 =====================
+Object.assign(ITEMS,{
+  potje:{name:'leeg potje',desc:'Een glazen potje met een deksel. Er zit niets in.'},
+  lichtpot:{name:'pot vuurvliegjes',desc:'Een potje vol dansende vuurvliegjes. Het geeft een zacht, geel licht.'},
+  oliekan:{name:'oliekannetje',desc:'Een roestig oliekannetje. Er zit nog genoeg olie in om iets soepel te maken.'},
+  meel:{name:'zak meel',desc:'Een zak vers gemalen meel, een cadeau van molenaar Wiebe. Wie weet wie dit kan gebruiken.'},
+  brood:{name:'vers brood',desc:'Een knapperig, warm brood. Je maag begint te knorren.'},
+  vis:{name:'verse vis',desc:'Een glimmende vis. Hij ruikt... heel erg naar vis.'},
+  kurk:{name:'kurk',desc:'Een grote ronde kurk uit een wijnvat. Hij past in bijna elk gat.'},
+  roeiriem:{name:'roeiriem',desc:'Een stevige houten roeiriem. Er zit zand aan.'},
+  houweel:{name:'houweel',desc:'Een zware houweel, gemaakt om rotsen mee te kraken.'},
+  mijnlamp:{name:'lantaarn van Brom',desc:'Een kleine lantaarn met een warm, vlammend licht.'},
+  sleutel:{name:'roestige sleutel',desc:'Een zware, roestige sleutel. Hij hing aan een dode tak.'},
+  viool:{name:'viool',desc:'Een oude viool, een beetje stoffig. Er zit nog een snaar in.'},
+  brandhout:{name:'brandhout',desc:'Een bundel droge takken en blokken. Perfect voor een kampvuur.'},
+  vuursteen:{name:'vuursteen',desc:'Twee stenen die vonken geven als je ze tegen elkaar slaat.'},
+  sjaal:{name:'sjaal',desc:'Je eigen warme sjaal, om de nek van een held.'},
+  waterzak:{name:'waterzak',desc:'Een leren waterzak, gevuld met koel oasewater.'},
+  spiegel:{name:'koperen spiegel',desc:'Een gepoetste koperen spiegel. Hij vangt het zonlicht prachtig.'},
+  net:{name:'visnet',desc:'Een klein visnet aan een lange stok.'},
+  lens:{name:'glazen lens',desc:'Een grote, glanzende lens. De sterrenkijker mist precies zoiets.'},
+  kan:{name:'melkkan',desc:'Een lege melkkan van tin.'},
+  melk:{name:'kan koude melk',desc:'Een kan verse melk, nog lauw van de koe.'},
+  warmemelk:{name:'kan warme melk',desc:'Heerlijk warme melk met een vleugje honing. Hier wordt iedereen slaperig van.'},
+  slaapmuts:{name:'slaapmuts',desc:'Een zachte slaapmuts met een kwastje.'}
+});
+const PERSIST=['meel','emmer'];
+const CHX={
+ 3:{title:'Het Vuurvliegjesbos',scene:'vliegenbos',start:[-5.5,2.8],intro:['Grimelda bladert in haar oude boek en mompelt: "De draakschub is een sluiproute. Morvans slaapvloek wordt vastgehouden door negen Droomzegels, verstopt over heel Daelenrijk. Vind ze, dan breekt de vloek vanzelf."','Het eerste zegel zou liggen in een bos vol vuurvliegjes, niet ver van het Donkere Woud.'],end:['De zegelsteen gloeit zacht in je hand.','Eén van de negen Droomzegels is gevonden!','En het bos lijkt je dankbaar toe te knikken.'],next:'Volgende stop: een molen die niet meer draait...'},
+ 4:{title:'De Molen van Wiebe',scene:'molen',start:[-5.5,2.6],intro:['Op een zonnig korenveld hoor je... niets. Geen klepperende wieken, geen gezang.'],end:['De wieken draaien weer, de molen zingt!','Wiebe geeft je een zak vers meel mee.','Zegel nummer twee zit veilig in je rugzak.'],next:'Op naar het marktdorp Beukenhout...'},
+ 5:{title:'De Markt van Beukenhout',scene:'markt',start:[-5.5,2.6],intro:['Het marktdorp Beukenhout is druk en kleurrijk. Maar de marktlui lopen als slaapwandelaars rond.'],end:['Meel werd brood, brood werd vis,','vis werd een Droomzegel! Wat een handel.','Drie zegels binnen. Zes nog te gaan!'],next:'De weg leidt naar het Meer van Spiegelwater...'},
+ 6:{title:'Het Meer van Spiegelwater',scene:'meer',start:[-5.5,2.6],intro:['Het meer ligt er glad en glanzend bij, als een spiegel. Een oude zeebonk zit op een vat en zucht.'],end:['Het eilandje had het zegel al die tijd bewaakt.','Kapitein Knor zwaait je na vanaf de steiger.','Vier zegels. De helft is bijna binnen!'],next:'In de bergen wacht een mijn die dichtzit...'},
+ 7:{title:'De Diepe Mijn',scene:'mijn',start:[-5.5,2.6],intro:['Hoog in de bergen klinkt een gevloek. Een kleine, norse kabouter staat voor een mijningang vol steen.'],end:['Het kristal in de mijn zong zachtjes, tot jij het zegel pakte.','Brom de kabouter doet een vreugdedansje.','Vijf zegels. Het wordt spannend...'],next:'Een koude wind brengt je naar een spookachtige ruïne...'},
+ 8:{title:'De Spookruïne',scene:'ruine',start:[-5.5,2.6],intro:['Het is nacht. Mist kruipt over een oud kerkhof en in de ruïne bij de toren brandt een vreemd, bleek licht.'],end:['Het spook speelt een slaaplied, zo mooi dat de sterren stilstaan.','Hij valt zachtjes in slaap op zijn wolk.','Zes zegels. Drie te gaan!'],next:'Naar de Winterberg, waar iemand het koud heeft...'},
+ 9:{title:'De Winterberg',scene:'berg',start:[-5.5,2.6],intro:['Sneeuw knispert onder je laarzen. Een grote, witte gestalte zit bibberend bij een stapel stenen.'],end:['Het vuur knispert, de jeti spint als een kat.','Hij geeft je het ijskristal dat hij bewaakte.','Zeven zegels! Nog twee, en dan de toren.'],next:'De zon brandt in de Zandstreek...'},
+ 10:{title:'De Zonnetempel',scene:'tempel',start:[-5.5,2.6],intro:['De hitte slaat je in het gezicht. Voor je ligt een eeuwenoude tempel in het zand, met een stenen zon boven de deur.'],end:['De zonnestralen laten de poort kraken en openen.','De priesteres buigt diep voor je.','Acht zegels. Nog één.'],next:'Het laatste zegel ligt bij de sterren...'},
+ 11:{title:'De Sterrenwacht',scene:'sterrenwacht',start:[-5.5,2.6],intro:['Op een heuvel onder een stralende sterrenhemel staat een koepel. Een warrige professor zwaait naar je met een kaart.'],end:['Een vallende ster laat het laatste zegel in je handen vallen.','Negen Droomzegels! Je rugzak gloeit.','Tijd voor de toren van Morvan.'],next:'Het laatste hoofdstuk wacht...'},
+ 12:{title:'De Droomtoren',scene:'toren',start:[-5.5,2.6],intro:['Aan de rand van Daelenrijk, onder een paarse avondhemel, ligt de toren van tovenaar Morvan. Alles is stil.'],end:['Morvan slaapt als een roos, voor het eerst in honderd jaar.','De slaapvloek op de kroon lost op: koning Edwijn wordt wakker!','Hij noemt jou Ridder van Daelenrijk!'],next:''}
+};
+
+
+// ---------- hulpjes ----------
+const fc=(ap,tx,tz)=>Math.atan2(tx-ap[0],tz-ap[1]);
+function zegel(n,naam){if(!SV.zegels.includes(n))SV.zegels.push(n);G.zegelT=220;G.zegelNaam=naam;SFX.point();saveGame();}
+function fin(n){G.endPending=true;if(SV&&SV.ch)SV.flags['chDone'+SV.ch]=1;saveGame();}
+function newScene(id,o){const sc=new THREE.Scene();const S={name:o.name,three:sc,birds:!!o.birds,water:o.water||0,cam:{pos:[0,3.1,11.5],look:[0,2.6,0]},anim:[],hot:[],blocked:o.blocked||[],npcs:{},walk:o.walk||[[-9.2,-5],[9.2,-5],[9.2,4.2],[-9.2,4.2]],start:o.start||[0,2.6],exits:o.exits||{},desc:o.desc};SCENES[id]=S;
+  lights(sc,o.light);addBackdrop(sc,backdrop(o.bd),o.bdDist||90,o.bdY==null?15:o.bdY);
+  addGround(sc,groundTex((x,tc,CW,CH)=>{paintGrass(x,tc,CW,CH,o.g1,o.g2,o.seed||1);(o.paths||[]).forEach((p,i)=>paintPath(x,tc,p,o.pc1||'#a98a62',o.pc2||'#c8b090',(o.seed||1)+i+3,o.peb||400));if(o.paint)o.paint(x,tc,CW,CH);}));
+  return{sc,S};}
+function fill(sc,o){const r=mulberry(o.seed||9);for(let i=0;i<(o.n||24);i++){const x=-26+r()*52,z=-8-r()*24;if(o.skip&&o.skip(x,z))continue;const t=makeTree(7+r()*5,400+i+(o.seed||0),{dark:!!o.dark,leaf:o.leaf});t.position.set(x,0,z);t.rotation.y=r()*6;sc.add(t);}}
+function grassOver(sc,o){const av=o.avoid||((x,z)=>false);scatterGrass(sc,-12,12,-8,7,o.n||7000,av,o.seed||5,o.cols);}
+function ptsHot(obj,fn){return fn;}
+const SAY={ // korte kopieën
+  n:sayN};
+
+function buildChapters(){
+ // ======================= 2. HET DONKERE WOUD =======================
+ {const {sc,S}=newScene('vliegenbos',{name:'Het Vuurvliegjesbos',desc:'Een stil, donker bos. Het maanlicht sijpelt tussen de bomen. Links tussen de takken dwarrelt een zwerm vuurvliegjes.',
+   light:{sky:0x6a7aaa,ground:0x1a2a1a,hemi:.8,sun:0xaac0f0,sunI:1.8,dir:[-8,20,10],fog:0x1a2438,fogN:9,fogF:46},
+   bd:{sky:['#070d1e','#16244a','#34456a'],stars:1,moon:[790,110],seed:41,clouds:[],mBase:310,mH:90,mCol:'#1c2a48',mHaze:'#2a3a5a',r1:['#1a2e32','#223a38'],pines:['#14261e','#0e1c16'],r2:['#122416','#1a3020']},
+   g1:'#223a1c',g2:'#2e4a24',seed:40,paths:[[[-9.5,.5],[-4,.2],[0,1.2],[5,.6],[9.5,.4],[9.5,2.6],[5,2.9],[0,3.4],[-4,2.7],[-9.5,3]]],pc1:'#4a3a28',pc2:'#6a5a44',
+   blocked:[{x:-2.5,z:-3.5,r:1.8},{x:4.6,z:-3,r:.85},{x:-6.5,z:2.3,r:.7}]});
+  fill(sc,{seed:7,dark:true,leaf:[0x24401c,0x1c3416,0x2e4e22,0x16301a],skip:(x,z)=>Math.abs(x+2.5)<4&&z>-12});
+  const hollow=makeTree(11,201,{thick:2.2,dark:true,leaf:[0x24401c,0x1c3416,0x2e4e22]});hollow.position.set(-2.5,0,-3.5);sc.add(hollow);
+  const hole=M(new THREE.CircleGeometry(.62,22),new THREE.MeshBasicMaterial({color:0x040302}),-2.5,1.35,-1.5,false);hole.scale.set(1,1.5,1);hole.userData.noOutline=true;sc.add(hole);
+  const stump=makeStump();stump.position.set(4.6,0,-3);sc.add(stump);const owl=makeOwl2();owl.root.position.set(4.6,.9,-3);owl.root.rotation.y=-.45;owl.root.scale.setScalar(.85);sc.add(owl.root);S.npcs['Uil Oswald']=owl;
+  const st2=makeStump();st2.position.set(-6.5,0,2.3);st2.scale.setScalar(.8);sc.add(st2);const jar=makeJar(false);jar.position.set(-6.5,.74,2.3);jar.scale.setScalar(1.7);{const hb=new THREE.Mesh(new THREE.SphereGeometry(.22,8,6),new THREE.MeshBasicMaterial({visible:false}));hb.position.y=.12;hb.userData.noOutline=true;jar.add(hb);}sc.add(jar);
+  const swarm=addMotes(sc,{n:26,h:2.6,area:[-7.4,-5,-2.4,-.6],color:0xe8ff60,size:.3,op:.95,twinkle:true,rise:0,sway:2});const swHit=hitSphere(sc,-6.2,1.6,-1.5,1.1);
+  addMotes(sc,{n:70,h:4,color:0xd8ff80,size:.16,op:.65,twinkle:true,rise:.0008,sway:1.5});
+  const mush=makeMushrooms();mush.position.set(6.8,0,1.2);mush.scale.setScalar(1.6);sc.add(mush);{const gl=new THREE.Sprite(new THREE.SpriteMaterial({map:TX.glow,color:0x6ab8ff,transparent:true,opacity:.6,blending:THREE.AdditiveBlending,depthWrite:false}));gl.scale.set(2.5,1.6,1);gl.position.set(6.8,.3,1.2);sc.add(gl);}
+  const zs=makeSeal(0x9aff9a);zs.position.set(-2.5,1.3,-1.7);zs.scale.setScalar(1.4);zs.visible=false;sc.add(zs);const zl=new THREE.PointLight(0x7aff7a,0,6,2);zl.position.set(-2.5,1.4,-1.2);sc.add(zl);
+  const rocks=scatterRocks;rocks(sc,14,5,-9,9,-6,3,(x,z)=>inPoly(x,z,[[-9.5,.5],[9.5,.4],[9.5,3],[-9.5,3]]),.12,.35);
+  grassOver(sc,{n:6000,seed:12,cols:[0x2a4a1a,0x34581e,0x1e3a14],avoid:(x,z)=>Math.hypot(x+2.5,z+3.5)<1.5});
+  [[3,6,-6,-.35,3,16,.1],[-7,6,-8,-.3,2.5,16,.08]].forEach(l=>lightShaft(sc,l[0],l[1],l[2],l[3],l[4],l[5],l[6]));
+  S.exits={};S.start=[-5.5,2.8];
+  S.hot=[
+   {id:'uil',name:'uil',obj:owl.root,ap:[3.3,-1.0],face:fc([3.3,-1],4.6,-3),look:()=>sayN('Een grote bruine uil met enorme gele ogen zit op een boomstronk. Hij kijkt je streng en een beetje slaperig aan.'),
+     talk:()=>{if(!SV.flags.uilTalk){SV.flags.uilTalk=1;say('Uil Oswald','"Oehoe! Een jongen in mijn bos. Mijn oom de oehoe zei al dat je zou komen. Ik ben Oswald, de jongste uil van Daelenrijk."');say('Uil Oswald','"Luister. Grimelda heeft gelijk, die draakschub heb je niet nodig. Tovenaar Morvan kan al honderd jaar niet slapen. Uit pure ellende legde hij een slaapspreuk op de kroon, in de hoop dat hij zelf mocht slapen."');say('Uil Oswald','"Dat ging mis. Alleen de koning viel in slaap, en heel Daelenrijk is slaperig en slordig geworden. De spreuk wordt vastgehouden door negen Droomzegels die over het land zijn verspreid."');say('Uil Oswald','"Eén ligt hier in de holle boom. Maar het is er pikkedonker. Vuurvliegjes zijn dol op potjes met een deksel, en een potje ligt op de stronk links."');}
+       else if(!SV.flags.holeLit)say('Uil Oswald','"Het potje ligt op de stronk links. De vuurvliegjes zweven in het midden. Handig, hè? Het licht in een pot."');else say('Uil Oswald','"Mooi licht! Pak het zegel maar. Oehoe!"');},
+     take:()=>sayN('De uil kijkt je zo streng aan dat je je hand terugtrekt.')},
+   {id:'holleboom',name:'holle boom',obj:hollow,ap:[-2.5,-1.1],face:fc([-2.5,-1.1],-2.5,-3.5),look:()=>sayN(SV.flags.holeLit?'In de holte gloeit het licht van de vuurvliegjes en ligt een groenglanzend zegel.':'Een enorme holle boom. In het gat is het pikkedonker. Je ziet je eigen hand niet.'),
+     take:()=>sayN(SV.flags.holeLit?'Het zegel ligt in de holte. Pak het zegel zelf!':'Je steekt je hand in het donker... en trekt hem er snel weer uit. Er wonen vast spinnen.'),
+     use:{lichtpot:()=>{if(SV.flags.holeLit)return;take('lichtpot');SV.flags.holeLit=1;points('licht',3);zs.visible=true;zl.intensity=2;sayN('Je zet de pot vuurvliegjes in de opening. Het licht danst door de holte en laat iets groens glanzen: een Droomzegel!');},potje:()=>sayN('Een leeg potje geeft geen licht. Eerst moet er iets in zitten dat gloeit.')}},
+   {id:'zegel',name:'groen zegel',obj:zs,ap:[-2.5,-1.1],face:fc([-2.5,-1.1],-2.5,-2.0),vis:()=>SV.flags.holeLit&&!SV.flags.z2,look:()=>sayN('Een rond, groen glanzend zegel met een slapende maan erin gegraveerd.'),
+     take:()=>{SV.flags.z2=1;zs.visible=false;zl.intensity=0;points('zegel2',4);zegel(2,'Droomzegel van het Woud');sayN('Je pakt het groene zegel. Het voelt warm aan en neuriet zachtjes een slaapliedje. Droomzegel nummer één!');fin(2);}},
+   {id:'potje',name:'potje',obj:jar,ap:[-5.6,2.6],face:fc([-5.6,2.6],-6.5,2.3),vis:()=>!SV.flags.potje,look:()=>sayN('Een leeg glazen potje met een deksel staat op de stronk.'),take:()=>{SV.flags.potje=1;jar.visible=false;give('potje');points('potje',2);sayN('Je pakt het potje. Er is vast iets dat daar graag in zit.');}},
+   {id:'vuurvliegjes',name:'vuurvliegjes',obj:swHit,ap:[-5,1.6],face:fc([-5,1.6],-6.2,-1.5),look:()=>sayN('Een zwerm vuurvliegjes danst als gele sterretjes tussen de takken. Het is een prachtig gezicht.'),
+     take:()=>sayN('Je graait ernaar met je blote handen, maar ze glippen er elk apart tussendoor.'),
+     use:{potje:()=>{take('potje');give('lichtpot');points('vang',3);sayN('Je houdt het potje open en wacht. Eén vuurvliegje komt nieuwsgierig kijken. Dan nog één, en nog één... Klap! Deksel dicht. Een pot vol licht!');},lichtpot:()=>sayN('Er zitten al genoeg vuurvliegjes in de pot.')}},
+   {id:'paddo',name:'blauwe paddenstoelen',obj:mush,ap:[5.8,2.4],face:fc([5.8,2.4],6.8,1.2),look:()=>sayN('Paddenstoelen die zacht blauw gloeien. Mooi, maar ze geven niet genoeg licht.'),take:()=>sayN('Je laat ze staan. Gloeiende paddenstoelen eet je liever niet.')}
+  ];
+  S.update=t=>{updMotes(sc,t);swarm.material.opacity=.8+.2*Math.sin(t*.07);owl.head.rotation.y=Math.sin(t*.01)*.5;owl.root.scale.y=.85+Math.sin(t*.03)*.01;jar.visible=!SV.flags.potje;zs.visible=!!SV.flags.holeLit&&!SV.flags.z2;if(SV.flags.holeLit&&!SV.flags.z2)zl.intensity=1.6+Math.sin(t*.1)*.5;else zl.intensity=0;zs.rotation.y=t*.03;};}
+
+ // ======================= 3. DE MOLEN VAN WIEBE =======================
+ {const {sc,S}=newScene('molen',{name:'De Molen van Wiebe',desc:'Een zonnig korenveld met een grote houten molen. De wieken staan stil. Naast de molen ligt een hooiberg.',
+   light:{sky:0xb0c8e8,ground:0x4a5a20,hemi:.68,sun:0xffd890,sunI:2.9,dir:[12,22,14],fog:0xd8d8c0,fogN:40,fogF:140},
+   bd:{sky:['#4a8ad8','#a6cdf0','#f6ecd0'],sun:[780,100],seed:51,clouds:[[200,90,1.2],[560,60,.9],[860,130,.7]],mBase:300,mH:120,mCol:'#8a9ab8',mHaze:'#c8d4e4',r1:['#a8b070','#b8c080'],r2:['#b0a860','#c0b870']},
+   g1:'#a0a838',g2:'#bcb04a',seed:50,paths:[[[-9.5,2],[-3,1.6],[-1.2,-4.8],[.4,-4.8],[1.4,1.3],[9.5,2.2],[9.5,4.4],[-9.5,4.4]]],pc1:'#b89a68',pc2:'#d8c090',birds:true,
+   blocked:[{x:-1,z:-6.2,r:2.2},{x:5.8,z:-2.6,r:1.5},{x:-5,z:-2,r:.4},{x:-3.6,z:-.4,r:.55}]});
+  const mill=makeWindmill();mill.position.set(-1,0,-7);sc.add(mill);
+  const hay=makeHay();hay.position.set(5.8,0,-2.6);sc.add(hay);const can=makeOilcan();can.position.set(7.2,0,-1.4);can.scale.setScalar(1.6);sc.add(can);
+  const crow=makeScarecrow();crow.position.set(-5,0,-2);crow.rotation.y=.4;sc.add(crow);
+  const zm=makeSeal(0xf2d070);zm.position.set(-2.1,1.2,-4.5);zm.scale.setScalar(1.5);zm.visible=false;sc.add(zm);
+  const gear=new THREE.Group();gear.position.set(1.7,1.1,-4.6);const gm=std({map:TX.wood,roughness:.8,color:0x8a5a30});const gd=M(CYL(.7,.7,.2,20),gm,0,0,0);gd.rotation.x=Math.PI/2;gear.add(gd);for(let i=0;i<12;i++){const a=i/12*6.28;gear.add(M(BOX(.2,.2,.24),gm,Math.cos(a)*.78,Math.sin(a)*.78,0));}gear.add(M(CYL(.12,.12,.4,10),std({color:0x5a3a20,roughness:.6,metalness:.6}),0,0,0)).rotation.x=Math.PI/2;sc.add(gear);
+  const sacks=new THREE.Group();[[0,0],[.7,.1],[.3,.6]].forEach((p,i)=>{const s=M(SPH(.36,14,10),std({map:clothTex('#d8c8a0','#c8b890',false,60+i,2),roughness:1}),p[0],.3+(i==2?.35:0),p[1]);s.scale.set(1,.9,.8);sacks.add(s);});sacks.position.set(3.4,0,-1.2);sc.add(sacks);
+  const wi=folk({c1:'#d8d0b8',c2:'#c8c0a8',apron:'#e8e0c8',fat:1.45,w:1.1,h:.98,hat:'muts',hc:'#e8e0c8',hair:0xc8c8c0,mus:0xd0d0c8,skin:'#f0c4a0',seed:62,eye:0x5a7a9a,beard:0xd8d8d0});wi.root.position.set(-3.6,0,-.4);wi.root.rotation.y=.5;sc.add(wi.root);S.npcs['Molenaar Wiebe']=wi;
+  grassOver(sc,{n:9000,seed:14,cols:[0xc8aa3a,0xd8bc4a,0xb89a2e,0xe0c85a],avoid:(x,z)=>(x>-4&&x<2&&z>-6.5&&z<1.6)||Math.hypot(x-5.8,z+2.6)<1.6});
+  scatterFlowers(sc,-9,9,-8,-3,200,6,[0xe04a3a,0x3a6ad8,0xffffff],null);
+  fill(sc,{seed:13,n:14,skip:(x,z)=>Math.abs(x+1)<6&&z>-12});addMotes(sc,{n:50,h:5,color:0xfff0c0,size:.14,op:.5,rise:.0015});
+  S.hot=[
+   {id:'wiebe',name:'molenaar',obj:wi.root,ap:[-2.5,.9],face:fc([-2.5,.9],-3.6,-.4),look:()=>sayN('Een dikke molenaar met een witte snor, helemaal bestoven met meel. Hij ziet er heel verdrietig uit.'),
+     talk:()=>{if(!SV.flags.wiebeTalk){SV.flags.wiebeTalk=1;points('wiebe',1);say('Molenaar Wiebe','"Dag jongen. Ik ben Wiebe. Mijn molen staat al drie dagen stil. Het raderwerk is vastgeroest en ik heb mijn oliekannetje nergens kunnen vinden."');say('Molenaar Wiebe','"Zonder wind-gezang kan ik niet slapen, en zonder slaap ben ik te sloom om het te zoeken. Zie je mijn kannetje ergens? Ik ben het vast bij de hooiberg kwijtgeraakt."');}
+       else if(!SV.flags.molen)say('Molenaar Wiebe','"Mijn oliekannetje... het ligt vast bij de hooiberg. Het raderwerk zit tegen de molen."');else say('Molenaar Wiebe','"Wat een muziek! Dank je wel, jongen."');}},
+   {id:'molen',name:'molen',obj:mill,ap:[-1,-2.6],face:fc([-1,-2.6],-1,-7),look:()=>sayN(SV.flags.molen?'De molen draait vrolijk rond. Wat een prachtig gezicht.':'Een grote houten molen. De wieken hangen stil in de lucht.'),take:()=>sayN('Die is een tikje te groot voor in je rugzak.')},
+   {id:'raderwerk',name:'raderwerk',obj:gear,ap:[1.0,-2.3],face:fc([1,-2.3],1.7,-4.6),look:()=>sayN(SV.flags.molen?'Het tandwiel draait soepel rond.':'Een groot houten tandwiel, helemaal roestig en vast. Dit moet gesmeerd worden.'),take:()=>sayN('Het tandwiel zit er stevig aan vast.'),
+     use:{oliekan:()=>{if(SV.flags.molen)return;SV.flags.molen=1;take('oliekan');give('meel');points('olie',5);SFX.thud&&SFX.thud();sayN('Je druppelt olie op het roestige tandwiel. Krrrr... kraak... en dan begint het te draaien! De wieken komen in beweging.');say('Molenaar Wiebe','"Ze draaien! Ze DRAAIEN! Wat een muziek!" Hij omhelst je zo hard dat je meel in je haar hebt.');say('Molenaar Wiebe','"Hier, een zak vers meel voor je moeite. En ik heb nog iets: ik heb nog iets voor je. Het Droomzegel zat al die tijd als windwijzer boven op mijn molen. Ik heb het net voor je naar beneden gehaald."');SV.flags.z3ready=1;zm.visible=true;}}},
+   {id:'hooiberg',name:'hooiberg',obj:hay,ap:[4.2,-.6],face:fc([4.2,-.6],5.8,-2.6),look:()=>sayN('Een grote, goudgele hooiberg. Er steekt iets rood tussenuit.'),take:()=>sayN('Je graait een handvol hooi. Prikt een beetje. Er steekt iets rood tussenuit...')},
+   {id:'oliekan',name:'oliekannetje',obj:can,ap:[6.2,.0],face:fc([6.2,0],7.2,-1.4),vis:()=>!SV.flags.oliekan,look:()=>sayN('Een rood oliekannetje, half verstopt in het hooi.'),take:()=>{SV.flags.oliekan=1;can.visible=false;give('oliekan');points('oliekan',2);sayN('Je pakt het oliekannetje. Het klotst nog flink.');}},
+   {id:'zegelmolen',name:'zegel',obj:zm,ap:[-2.1,-2.5],face:fc([-2.1,-2.5],-2.1,-4.5),vis:()=>SV.flags.z3ready&&!SV.flags.z3,look:()=>sayN('Een glanzend zegel met een windvaantje erop. Wiebe heeft het van zijn molen gehaald.'),take:()=>{SV.flags.z3=1;zm.visible=false;points('zegel3',4);zegel(3,'Droomzegel van de Wind');sayN('Je pakt het zegel. Het is zacht en een beetje meelachtig, en het ruikt naar vers brood.');fin(3);}},
+   {id:'vogelverschrikker',name:'vogelverschrikker',obj:crow,ap:[-4.1,-.7],face:fc([-4.1,-.7],-5,-2),look:()=>sayN('Een vogelverschrikker met een versleten hoed. Er zit een kraai op zijn schouder, en die lijkt helemaal niet bang.'),talk:()=>sayN('"Goeiedag," zeg je. Hij zegt niets terug. Niet verwonderlijk, het is een vogelverschrikker.'),take:()=>sayN('Hij houdt zijn hoed stevig vast. Dat geeft hij niet.')}
+  ];
+  S.update=t=>{updMotes(sc,t);idleFolk(wi,t,2);const run=!!SV.flags.molen;if(run){mill.userData.sails.rotation.z+=.012;gear.rotation.z-=.03;}can.visible=!SV.flags.oliekan;zm.visible=!!SV.flags.z3ready&&!SV.flags.z3;zm.rotation.y=t*.03;};}
+
+ // ======================= 4. DE MARKT VAN BEUKENHOUT =======================
+ {const {sc,S}=newScene('markt',{name:'Beukenhout, de Markt',desc:'Een druk marktplein met kleurrijke kraampjes. In het midden staat een fontein. Maar de marktlui lopen slaperig rond.',
+   light:{sky:0xb0c8e8,ground:0x4a5a30,hemi:.65,sun:0xffd8a0,sunI:2.8,dir:[-12,22,12],fog:0xd4d8dc,fogN:40,fogF:140},
+   bd:{sky:['#5a8ad0','#b0d0f0','#f2e8d6'],sun:[160,100],seed:61,clouds:[[300,80,1],[700,120,.8]],mBase:300,mH:100,mCol:'#8a9ab8',mHaze:'#c4d0e0',r1:['#7a9a68','#8aaa78'],r2:['#6a9058','#7aa068']},
+   g1:'#7a9a46',g2:'#92b25a',seed:60,paths:[[[-9.5,-4.6],[9.5,-4.6],[9.5,4.4],[-9.5,4.4]]],pc1:'#a09a8c',pc2:'#c8c0b0',peb:3000,
+   blocked:[{x:3.2,z:-.2,r:1.3},{x:-5.5,z:-3.6,r:1.6},{x:0.2,z:-4.5,r:1.6},{x:5.8,z:-3.6,r:1.6}]});
+  [[-6.5,-9,'#d8c4a0',71],[-1.5,-9.5,'#c8a888',72],[4,-9,'#d4b8a0',73],[9.5,-9.5,'#c0b090',74]].forEach(h=>{const hs=makeHouse(h[2],h[3],3.6+h[3]%3*.4,2.6+h[3]%2*.5);hs.position.set(h[0],0,h[1]);sc.add(hs);});
+  const fo=makeFountain();fo.position.set(3.2,0,-.2);fo.scale.setScalar(.75);sc.add(fo);
+  const st1=makeStall('#d84a3a','#f4e8d0',81);st1.position.set(-5.5,0,-4.2);sc.add(st1);const st2=makeStall('#3a7ad8','#f4e8d0',82);st2.position.set(.2,0,-5.1);sc.add(st2);const st3=makeStall('#4aa84a','#f4e8d0',83);st3.position.set(5.8,0,-4.2);sc.add(st3);
+  [[-4.2,0,-2.4],[1.6,0,-3.7],[7.5,0,-2.4],[8.4,0,-1.2]].forEach((p,i)=>{const c=i%2?makeCrate():makeBarrel();c.position.set(...p);sc.add(c);});
+  const fl=[];for(let i=0;i<6;i++){const b=M(SPH(.17,10,8),std({color:[0xd0763a,0xc8c040,0xe05a4a][i%3],roughness:.6}),-6.3+i*.35,1.1,-3.6,false);sc.add(b);}
+  const bt=folk({c1:'#8a4a5a',c2:'#6a3a4a',apron:'#f0ead8',dress:1,robe:1,fat:1.35,w:1.05,h:.96,hat:'muts',hc:'#f4f0e0',hair:0x8a5a3a,skin:'#f0c4a0',seed:64,blush:true});bt.root.position.set(-5.5,0,-3.4);sc.add(bt.root);S.npcs['Bakkersvrouw Bertha']=bt;
+  const ke=folk({c1:'#3a5a8a',c2:'#2a4a7a',apron:'#d8d8d0',fat:1.0,hat:'pet',hc:'#2a3a5a',hair:0x4a3a2a,skin:'#dca884',seed:65,mus:0x4a3a2a,eye:0x3a5a3a});ke.root.position.set(.2,0,-4.3);sc.add(ke.root);S.npcs['Viskoper Kees']=ke;
+  const zo=folk({c1:'#6a2a7a',c2:'#8a4a9a',robe:1,hat:'kap',hc:'#7a3a8a',hair:0xb0a0c0,skin:'#c89874',old:true,seed:66,eye:0x6a4a2a});zo.root.position.set(5.8,0,-3.4);sc.add(zo.root);S.npcs['Kruidenvrouw Zora']=zo;
+  const bn=bunting(sc,-8,3.6,8,3.7,-5.8,1);bunting(sc,-8,3.2,8,3.3,-7.5,3);
+  grassOver(sc,{n:2500,seed:15,cols:[0x7a9a3a,0x6a8a32],avoid:(x,z)=>z>-5&&z<5});addMotes(sc,{n:40,h:4,color:0xfff0d0,size:.12,op:.4});
+  fill(sc,{seed:17,n:10,skip:(x,z)=>z>-14&&Math.abs(x)<13});
+  S.hot=[
+   {id:'bertha',name:'bakkersvrouw',obj:bt.root,ap:[-4.0,-.9],face:fc([-4,-.9],-5.5,-3.4),look:()=>sayN('Een dikke, rozige bakkersvrouw met een grote muts. Haar kraampje ruikt naar verse broodjes, maar de schappen zijn leeg.'),
+     talk:()=>{if(SV.flags.brood)return say('Bakkersvrouw Bertha','"Smaakt het brood? Heerlijk, hè?"');if(!SV.flags.berthaTalk){SV.flags.berthaTalk=1;points('bertha',1);}say('Bakkersvrouw Bertha','"Ach jongen, ik heb geen meel meer. Ik sta al drie dagen met een lege kraam. Als ik meel had, bakte ik je het lekkerste brood van Daelenrijk."');},
+     use:{meel:()=>{if(SV.flags.brood)return;SV.flags.brood=1;take('meel');give('brood');points('brood',3);say('Bakkersvrouw Bertha','"MEEL! Wat een geschenk!" Ze begint te kneden, te rollen en te bakken, en vult de hele markt met broodgeur.');sayN('Je krijgt een warm, vers brood van Bertha. Dat ruikt zo lekker dat je bijna in slaap valt van tevredenheid.');}}},
+   {id:'kees',name:'viskoper',obj:ke.root,ap:[.2,-2.0],face:fc([.2,-2],.2,-4.3),look:()=>sayN('Een viskoper met een sikkelpet en een geurtje. Zijn kraam is gevuld met glimmende, ijskoude vis.'),
+     talk:()=>{if(SV.flags.vis)return say('Viskoper Kees','"Een goede ruil, jongen! Eet smakelijk."');say('Viskoper Kees','"Verse vis, voor wie brood heeft! Ik ben die harde visbrokjes zo zat. Ik ruil graag een vis voor een lekker vers broodje."');},
+     use:{brood:()=>{if(SV.flags.vis)return;SV.flags.vis=1;take('brood');give('vis');points('vis',3);SFX.munch&&SFX.munch();say('Viskoper Kees','"Heerlijk!" Hij happert het brood naar binnen en stopt je een glanzende vis in je handen.');}}},
+   {id:'zora',name:'kruidenvrouw',obj:zo.root,ap:[5.1,-1.6],face:fc([5.1,-1.6],5.8,-3.4),look:()=>sayN('Een oude kruidenvrouw in paars. Ze draagt een gloeiend zegel als hanger, en naast haar kraam zit een broodmagere poes.'),
+     talk:()=>{if(SV.flags.z4)return say('Kruidenvrouw Zora','"Slaap lekker, jongen."');say('Kruidenvrouw Zora','"Mijn poes Smul heeft al weken niet meer gegeten. Ze wil alleen verse vis. Ik heb dit zegel op mijn kruidenketting gevonden, maar ik ruil het graag voor een vis. Je ziet er wel uit als iemand die het kan gebruiken."');},
+     use:{vis:()=>{if(SV.flags.z4)return;SV.flags.z4=1;take('vis');points('zegel4',5);zegel(4,'Droomzegel van de Markt');say('Kruidenvrouw Zora','"Smul! Kijk eens, vis!" De poes gooit zich erop alsof het haar eerste maaltijd in jaren is.');say('Kruidenvrouw Zora','"Een eerlijke ruil, jongen. Hier is het zegel." Ze hangt het in je handpalm. Het is warm en ruikt naar pepermunt.');fin(4);},brood:()=>say('Kruidenvrouw Zora','"Brood? Nee, mijn poes wil alleen verse vis."')}},
+   {id:'fontein',name:'fontein',obj:fo,ap:[3.2,1.5],face:fc([3.2,1.5],3.2,-.2),look:()=>sayN('Een stenen fontein met sprankelend water. Op de rand zitten duiven.'),take:()=>sayN('Je laat het water door je vingers lopen. Koel en lekker.')},
+   {id:'huizen',name:'bunting',obj:bn,look:()=>sayN('Kleurige vlaggetjes hangen in lange slingers over het plein. Er wappert er een voor ieder dorp in Daelenrijk.')}
+  ];
+  S.update=t=>{updMotes(sc,t);idleFolk(bt,t,3);idleFolk(ke,t,4);idleFolk(zo,t,5);bn.userData.flags.forEach((f,i)=>{f.rotation.x=Math.sin(t*.06+i)*.15;});};}
+
+ // ======================= 5. HET MEER VAN SPIEGELWATER =======================
+ {const {sc,S}=newScene('meer',{name:'Het Meer van Spiegelwater',desc:'Een rimpelloos meer, glad als een spiegel. Een houten steiger loopt het water in, met een roeiboot eraan. Aan de overkant ligt een klein eiland.',
+   light:{sky:0xb0cce8,ground:0x4a6a30,hemi:.7,sun:0xffe8c0,sunI:2.9,dir:[10,24,10],fog:0xd0e0ec,fogN:40,fogF:150},
+   bd:{sky:['#5a9ae0','#b8dcf4','#f6f0e0'],sun:[720,100],seed:71,clouds:[[200,80,1.2],[520,50,.8],[860,120,.9]],mBase:290,mH:140,mCol:'#7a98c0',mHaze:'#c4d8e8',snow:true,r1:['#6a9a78','#7aaa88'],pines:['#3a6a54','#2a5a44'],r2:['#6a9a60','#7aaa70']},
+   g1:'#7aa048',g2:'#8ab458',seed:70,paths:[[[-9.5,2.4],[-3,2.0],[2.4,1.4],[2.4,-.6],[4.2,-.6],[4.2,1.6],[9.5,2.4],[9.5,4.4],[-9.5,4.4]]],pc1:'#d8c898',pc2:'#e8dcb0',peb:300,paint:(x,tc,CW,CH)=>{const a=tc(-40,-3.2),b=tc(40,1.4);const g=x.createLinearGradient(0,a[1],0,b[1]);g.addColorStop(0,'rgba(216,200,152,0)');g.addColorStop(.6,'rgba(220,204,156,.95)');g.addColorStop(1,'rgba(214,198,150,.95)');x.fillStyle=g;x.fillRect(0,a[1],CW,b[1]-a[1]);},
+   blocked:[{x:-4.5,z:.5,r:.7},{x:3.3,z:-4.3,r:1.2}]});
+  const lake=makeWater(40,13);lake.position.set(0,.05,-8.5);sc.add(lake);const lake2=makeWater(18,5);lake2.position.set(-12,.05,-1.5);sc.add(lake2);
+  const pier=new THREE.Group();const pm=std({map:TX.wood,roughness:.8,color:0xa88a60});for(let i=0;i<14;i++)pier.add(M(BOX(1.6,.08,.34),pm,0,.35,i*.38));[0,2.6,5.2].forEach(z=>[-.7,.7].forEach(x=>pier.add(M(CYL(.07,.07,1.1,8),pm,x,.0,z))));pier.position.set(3.3,0,-.3);pier.rotation.y=Math.PI;sc.add(pier);
+  pier.position.set(3.3,0,-.5);pier.rotation.y=Math.PI;
+  const boat=makeBoat();boat.position.set(4.9,.1,-4.6);boat.rotation.y=.25;boat.scale.setScalar(1.05);sc.add(boat);
+  const oar=makeOar();oar.position.set(-7.2,.15,3.1);oar.rotation.y=.7;sc.add(oar);
+  const wb=makeBarrel();wb.position.set(-4.5,0,.5);sc.add(wb);const kork=M(CYL(.1,.1,.18,14),std({color:0xc89a5a,roughness:.95}),-4.5,.9,.5);sc.add(kork);
+  const isl=new THREE.Group();isl.add(M(SPH(2.2,18,10,0,6.3,0,1.4),std({color:0xd8c898,roughness:1}),0,0,0)).scale.set(1.6,.5,1.2);const pt=makeTree(5,301,{leaf:[0x5c9a32,0x4a8a2a]});pt.scale.setScalar(.7);pt.position.set(-.5,.3,0);isl.add(pt);isl.position.set(-6.5,-.4,-10);sc.add(isl);
+  const iz=makeSeal(0x7ad8ff);iz.position.set(-5.5,1.2,-8.2);iz.scale.setScalar(1.5);iz.visible=false;sc.add(iz);
+  const kn=folk({c1:'#2a4a7a',c2:'#1a3a6a',stripes:true,hat:'pet',hc:'#1a2a4a',hair:0xc8c8c8,beard:0xd8d8d0,mus:0xd8d8d0,skin:'#d4986a',old:true,fat:1.2,seed:67,h:.96,eye:0x4a6a8a});kn.root.position.set(-4.5,.55,.5);kn.root.rotation.y=.4;kn.root.scale.set(1,.7,1);sc.add(kn.root);
+  kn.root.position.set(-5.2,0,.9);kn.root.scale.set(1,1,1);wb.position.set(-3.9,0,.7);kork.position.set(-3.9,.9,.7);
+  S.npcs['Kapitein Knor']=kn;S.blocked[0]={x:-5.2,z:.9,r:.55};S.blocked.push({x:-3.9,z:.7,r:.5});
+  scatterRocks(sc,16,8,-9,9,0,4.4,(x,z)=>Math.hypot(x-3.3,z)<1.5,.1,.3);grassOver(sc,{n:4000,seed:16,cols:[0x7aaa38,0x6a9a30],avoid:(x,z)=>z<1.5||inPoly(x,z,[[-9.5,2.4],[9.5,2.4],[9.5,4.4],[-9.5,4.4]])});
+  fill(sc,{seed:19,n:10,skip:(x,z)=>z>-12});addMotes(sc,{n:40,h:4,color:0xffffff,size:.12,op:.35});
+  S.hot=[
+   {id:'knor',name:'kapitein',obj:kn.root,ap:[-4.4,2.4],face:fc([-4.4,2.4],-5.2,.9),look:()=>sayN('Een oude zeebonk met een zeemanspet, een witte baard en een stinkpijp. Hij zit op een vat en kijkt naar zijn lekke boot.'),
+     talk:()=>{if(SV.flags.z5)return say('Kapitein Knor','"Dank je, jongen. Ik ga nu eindelijk een middagdutje doen."');if(!SV.flags.knorTalk){SV.flags.knorTalk=1;points('knor',1);}say('Kapitein Knor','"Ahoy! Mijn boot lekt als een zeef, en de roeiriem is verdwenen. Op dat eilandje ligt iets dat ik al jaren geleden had willen halen: een glanzend zegel. Maar zo kom ik er niet."');say('Kapitein Knor','"Er zit een gat in de romp, ongeveer zo groot als een wijnkurk. En mijn riem ligt vast ergens op het strand."');},
+     take:()=>sayN('Dat is geen goed idee, hij heeft een stevige houten poot.')},
+   {id:'boot',name:'roeiboot',obj:boat,ap:[3.4,-1.5],face:fc([3.4,-1.5],4.9,-4.6),look:()=>sayN(SV.flags.kurkIn?'Het gat in de romp zit dicht met een dikke kurk. De boot ligt stevig in het water.':'Een kleine roeiboot. Aan de zijkant zit een ronde opening waar langzaam water in sijpelt.'),take:()=>sayN('De boot ligt aan de steiger vastgebonden.'),
+     use:{kurk:()=>{if(SV.flags.kurkIn)return;SV.flags.kurkIn=1;take('kurk');points('gat',3);boat.userData.hole.visible=false;sayN('Je duwt de kurk in het gat. Precies de goede maat! De boot drijft nu zonder te lekken.');tryVaar();},roeiriem:()=>{if(SV.flags.riemIn)return;SV.flags.riemIn=1;take('roeiriem');points('riem',2);sayN('Je legt de roeiriem in de dol. Hij past perfect.');tryVaar();}}},
+   {id:'kurk',name:'wijnvat',obj:wb,ap:[-3.5,2.1],face:fc([-3.5,2.1],-3.9,.7),look:()=>sayN('Een groot houten vat. Boven op de bodem ligt een ronde kurk. Het ruikt naar wijn en zeewind.'),take:()=>sayN(SV.flags.kurk?'Het vat zit vol. Meer is er niet te halen.':'Je trekt aan de kurk die losjes in een opening zit...'),use:{}},
+   {id:'kurkje',name:'kurk',obj:kork,ap:[-3.5,2.1],face:fc([-3.5,2.1],-3.9,.7),vis:()=>!SV.flags.kurk,look:()=>sayN('Een kurk van een kleine wijnfles. Voor een groot gat is hij net groot genoeg.'),take:()=>{SV.flags.kurk=1;kork.visible=false;give('kurk');points('kurk',1);sayN('Je pakt de kurk. Je moet er een beetje voor schuren, maar dan zit hij in je handen.');}},
+   {id:'riem',name:'roeiriem',obj:oar,ap:[-6.5,2.6],face:fc([-6.5,2.6],-7.2,3.1),vis:()=>!SV.flags.riem,look:()=>sayN('Een roeiriem ligt half in het zand begraven.'),take:()=>{SV.flags.riem=1;oar.visible=false;give('roeiriem');points('riemvind',2);sayN('Je trekt de riem uit het zand. Een beetje scheef, maar prima te gebruiken.');}},
+   {id:'eiland',name:'eilandje',obj:isl,look:()=>sayN('Een zandeiland met één palmboom. Er glanst iets op het strand.'),take:()=>sayN('Dat ligt helaas een stuk te ver om te pakken.')},
+   {id:'zegel5',name:'blauw zegel',obj:iz,ap:[3.4,-1.5],face:fc([3.4,-1.5],-5.5,-8.2),vis:()=>SV.flags.vaar&&!SV.flags.z5,take:()=>{SV.flags.z5=1;iz.visible=false;points('zegel5',3);zegel(5,'Droomzegel van het Water');sayN('Het zegel ligt in je hand: koel, blauw en nat. Je hoort het water erin zachtjes zingen.');fin(5);}},
+   {id:'meer',name:'meer',obj:lake,ap:[2.2,1.6],face:Math.PI,look:()=>sayN('Het meer ligt er stil en spiegelglad bij. Je ziet de hele wereld op zijn kop erin.'),take:()=>sayN('Je laat het water door je vingers lopen. Koud!')}
+  ];
+  function tryVaar(){if(SV.flags.kurkIn&&SV.flags.riemIn&&!SV.flags.vaar){SV.flags.vaar=1;say('Kapitein Knor','"Aan boord, jongen! Ik roei jou naar het eiland!"');sayN('Samen varen jullie over het gladde water naar het eilandje. Kapitein Knor roeit krachtig en zingt een shantylied. Op het strand glanst een blauw zegel. Je pakt het en jullie keren terug naar de steiger.');iz.visible=true;iz.position.set(3.4,1.0,-1.6);}}
+  S.update=t=>{updMotes(sc,t);lake.userData.tex.offset.x=t*.0004;lake.userData.tex.offset.y=-t*.0008;lake2.userData.tex.offset.x=-t*.0005;kork.visible=!SV.flags.kurk;oar.visible=!SV.flags.riem;boat.userData.hole.visible=!SV.flags.kurkIn;iz.visible=!!SV.flags.vaar&&!SV.flags.z5;idleFolk(kn,t,6);boat.rotation.z=Math.sin(t*.03)*.03;boat.position.y=.1+Math.sin(t*.04)*.02;iz.rotation.y=t*.03;};}
+
+ // ======================= 6. DE DIEPE MIJN =======================
+ {const {sc,S}=newScene('mijn',{name:'De Diepe Mijn',desc:'Een steile rotswand met een mijningang. Een enorme rots versperrt de ingang. Naast de berg staat een karretje met gereedschap.',
+   light:{sky:0xa8b8d8,ground:0x4a4a4a,hemi:.7,sun:0xffe0b0,sunI:2.8,dir:[-12,20,12],fog:0xb8c0d0,fogN:24,fogF:100},
+   bd:{sky:['#3a6ab0','#8ab0d8','#d8e0e8'],sun:[150,110],seed:81,clouds:[[400,90,1],[780,60,.8]],mBase:260,mH:230,mCol:'#6a7a98',mHaze:'#a8b4c8',snow:true,r1:['#5a6a58','#6a7a68'],pines:['#2e4234','#243a2c'],r2:['#506048','#5a6a50']},
+   g1:'#6a7a5a',g2:'#7a8a68',seed:80,paths:[[[-9.5,2.2],[-2,1.6],[-1.2,-4.6],[1.2,-4.6],[2,1.4],[9.5,2.2],[9.5,4.4],[-9.5,4.4]]],pc1:'#8a7a6a',pc2:'#b0a090',peb:1500,
+   blocked:[{x:-4.5,z:-1,r:.5},{x:4.8,z:-2.4,r:1.1},{x:0,z:-4.7,r:1.8},{x:-7.2,z:-2.2,r:.3}]});
+  const rm=std({color:0x7a7a82,roughness:1,flatShading:true});const cliff=new THREE.Group();{const st=TX.stone.clone();st.repeat.set(8,3);st.needsUpdate=true;cliff.add(M(BOX(22,9,2),std({color:0x5e5e68,roughness:1}),0,4.5,-9.2));}
+  [[-9,3,-10,3.6,1.5,1.2],[9,3.4,-10,3.8,1.5,1.2],[-4.5,7.4,-11,4.2,1.7,1],[4.5,7.6,-11,4.4,1.7,1],[0,9.4,-12,4.4,1.8,1],[-12,5,-12,4.5,1.2,1],[12,5,-12,4.5,1.2,1]].forEach((c,i)=>{const r=rockSolid(c[3],i+7,1.1);r.scale.set(c[4],c[5],.8);r.position.set(c[0],c[1],c[2]);cliff.add(r);});sc.add(cliff);
+  const arch=new THREE.Shape();arch.moveTo(-1.5,0);arch.lineTo(-1.5,2.2);arch.absarc(0,2.2,1.5,Math.PI,0,true);arch.lineTo(1.5,0);arch.closePath();const hole=new THREE.Mesh(new THREE.ShapeGeometry(arch),new THREE.MeshBasicMaterial({color:0x020201}));hole.position.set(0,0,-8.17);hole.userData.noOutline=true;sc.add(hole);
+  const wd=std({map:TX.wood,roughness:.8});[-1.5,1.5].forEach(x=>sc.add(M(BOX(.3,4,.3),wd,x,2,-8.05)));sc.add(M(BOX(3.6,.3,.3),wd,0,4,-8.05));
+  const boul=rockSolid(1.7,301,.9);boul.scale.set(1.3,1.25,1.1);boul.position.set(0,1.5,-5.2);sc.add(boul);
+  const cart=new THREE.Group();cart.add(M(BOX(1.5,.5,.9),wd,0,.6,0));[-.5,.5].forEach(x=>{const w=M(CYL(.28,.28,.12,14),std({color:0x3a3a40,metalness:.6,roughness:.5}),x,.3,.5);w.rotation.x=Math.PI/2;cart.add(w);const w2=w.clone();w2.position.z=-.5;cart.add(w2);});cart.add(M(SPH(.4,10,8),mat(0x5a5a60,1),.2,.95,0));cart.position.set(4.8,0,-2.4);cart.rotation.y=-.3;sc.add(cart);
+  const pick=makePick();pick.position.set(4.9,.9,-2.3);pick.rotation.set(.0,.3,.15);sc.add(pick);
+  const post=M(CYL(.08,.08,2.4,8),wd,-7.2,1.2,-2.2);sc.add(post);sc.add(M(BOX(.7,.08,.08),wd,-6.9,2.4,-2.2));const lant=makeLantern();lant.position.set(-6.6,2.0,-2.2);lant.scale.setScalar(1.8);sc.add(lant);
+  const crys=makeCrystals();crys.position.set(0,.2,-7.9);crys.scale.setScalar(1.3);crys.visible=false;sc.add(crys);const cz=makeSeal(0x7ad8ff);cz.position.set(0,1.1,-7.6);cz.scale.setScalar(1.5);cz.visible=false;sc.add(cz);
+  const br=folk({c1:'#8a4a2a',c2:'#6a3a1a',apron:'#4a3a2a',hat:'pet',hc:'#d8b028',hair:0xc87a3a,beard:0xc87a3a,mus:0xc87a3a,skin:'#e8a888',h:.62,w:1.3,s:1.35,fat:1.1,seed:68,eye:0x4a8a4a,angry:true});br.root.position.set(-4.5,0,-1);br.root.rotation.y=.9;sc.add(br.root);S.npcs['Kabouter Brom']=br;
+  scatterRocks(sc,20,8,-9,9,-6,4.4,(x,z)=>Math.hypot(x,z+4)<2.4,.1,.4);grassOver(sc,{n:3500,seed:17,cols:[0x6a8a4a,0x5a7a3e],avoid:(x,z)=>Math.hypot(x,z+4)<3});
+  [[-9,-1,6],[9,-3,7]].forEach((p,i)=>{const t=makePine(p[2],i%2?0x2e4a3a:0x2a4a3a);t.position.set(p[0],0,p[1]);sc.add(t);});addMotes(sc,{n:40,h:4,color:0xd8d8e0,size:.12,op:.35});
+  S.hot=[
+   {id:'brom',name:'kabouter',obj:br.root,ap:[-3.6,.2],face:fc([-3.6,.2],-4.5,-1),look:()=>sayN('Een kleine kabouter met een enorme rode baard, een gele helm en een heel boze blik. Hij komt je net tot je middel.'),
+     talk:()=>{if(SV.flags.z6)return say('Kabouter Brom','"Dank je, jongen! De beste knecht die Daelenrijk ooit gehad heeft."');if(!SV.flags.bromTalk){SV.flags.bromTalk=1;points('brom',1);}say('Kabouter Brom','"Ik ben Brom! En ik ben BOOS. Een lawine heeft mijn mijn dichtgegooid. Mijn kristal, mijn kostbare slaapkristal zit er nog in."');say('Kabouter Brom','"Mijn houweel ligt in dat karretje. Maar ik kom er niet bij met mijn korte armpjes. En ik heb een lamp nodig: in de mijn is het pikdonker. Mijn lantaarn hangt aan de paal daar."');},take:()=>sayN('"Pas op!" zegt hij en tilt zijn houweel dreigend op. Je trekt je hand snel terug.')},
+   {id:'houweel',name:'houweel',obj:pick,ap:[3.7,-1.0],face:fc([3.7,-1],4.9,-2.3),vis:()=>!SV.flags.houweel,look:()=>sayN('Een zwaar houweel ligt in het karretje, tussen de steenbrokken.'),take:()=>{SV.flags.houweel=1;pick.visible=false;give('houweel');points('houweel',2);sayN('Je pakt het houweel. Hij is zwaarder dan hij eruitziet.');}},
+   {id:'lantaarn',name:'lantaarn',obj:lant,ap:[-6.2,-.6],face:fc([-6.2,-.6],-6.6,-2.2),vis:()=>!SV.flags.mijnlamp,look:()=>sayN('Een lantaarn hangt aan een haak, met een flakkerend vlammetje.'),take:()=>{SV.flags.mijnlamp=1;lant.visible=false;give('mijnlamp');points('mijnlamp',1);sayN('Je pakt de lantaarn van de haak. Het warme licht danst in je hand.');}},
+   {id:'rots',name:'enorme rots',obj:boul,ap:[0,-2.6],face:fc([0,-2.6],0,-5.2),look:()=>sayN(SV.flags.rots?'De rots ligt in stukken. De ingang is vrij.':'Een gigantische rots versperrt de ingang van de mijn. Met je blote handen verplaats je die nooit.'),take:()=>sayN('Je duwt zo hard als je kunt. De rots beweegt geen millimeter.'),
+     use:{houweel:()=>{if(SV.flags.rots)return;SV.flags.rots=1;boul.visible=false;points('rots',3);SFX.thud&&SFX.thud();G.shake=0;sayN('Je zwaait het houweel hoog boven je hoofd en slaat toe. KRAAK! Nog een keer: BONK! Dan splijt de rots in duizend stukjes. De mijningang is vrij, maar het is er pikdonker.');}}},
+   {id:'tunnel',name:'mijningang',obj:hole,ap:[0,-2.6],face:fc([0,-2.6],0,-8.2),look:()=>sayN(SV.flags.licht?'In het licht van je lantaarn schittert een grot vol blauwe kristallen.':SV.flags.rots?'De ingang is vrij, maar daarbinnen is het stikdonker. Je hebt licht nodig.':'De ingang is door een grote rots geblokkeerd.'),walk:()=>{if(!SV.flags.rots)sayN('De rots versperrt de weg.');else if(!SV.flags.licht)sayN('Het is er pikdonker. Zonder licht ga je daar niet in.');else sayN('In het licht van je lantaarn zie je kristallen. Een zegel ligt tussen de kristallen.');},
+     use:{mijnlamp:()=>{if(!SV.flags.rots)return sayN('De rots staat er nog voor.');if(SV.flags.licht)return;SV.flags.licht=1;crys.visible=true;cz.visible=true;points('licht6',2);sayN('Je houdt de lantaarn omhoog. Honderden blauwe kristallen fonkelen in het licht, als een sterrenhemel onder de grond. Een Droomzegel ligt midden ertussen!');}}},
+   {id:'zegel6',name:'blauw zegel',obj:cz,ap:[0,-2.6],face:fc([0,-2.6],0,-8.6),vis:()=>SV.flags.licht&&!SV.flags.z6,take:()=>{SV.flags.z6=1;cz.visible=false;crys.userData.pl.intensity=0;points('zegel6',3);zegel(6,'Droomzegel van de Aarde');sayN('Het kristallen zegel zingt zachtjes als je het pakt. Het geluid maakt je meteen slaperig.');fin(6);}},
+   {id:'kar',name:'karretje',obj:cart,ap:[3.7,-1.0],face:fc([3.7,-1],4.8,-2.4),look:()=>sayN('Een roestig mijnkarretje vol steenbrokken.'),take:()=>sayN('Veel te zwaar.')}
+  ];
+  S.update=t=>{updMotes(sc,t);idleFolk(br,t,7);pick.visible=!SV.flags.houweel;lant.visible=!SV.flags.mijnlamp;boul.visible=!SV.flags.rots;crys.visible=!!SV.flags.licht;cz.visible=!!SV.flags.licht&&!SV.flags.z6;crys.userData.pl.intensity=SV.flags.licht&&!SV.flags.z6?1.8+Math.sin(t*.07)*.4:0;cz.rotation.y=t*.03;};}
+
+ // ======================= 7. DE SPOOKRUÏNE =======================
+ {const {sc,S}=newScene('ruine',{name:'De Spookruïne',desc:'Een kerkhof in het maanlicht, met een ingestorte toren. Een dode boom staat bij een oude kist. Er zweeft iets bleeks tussen de graven.',
+   light:{sky:0x6a7aa8,ground:0x1a2430,hemi:.6,sun:0xaac0f0,sunI:1.5,dir:[-10,22,10],fog:0x202a40,fogN:8,fogF:42},
+   bd:{sky:['#04060f','#101a38','#2a3858'],stars:1,moon:[200,120],seed:91,clouds:[],mBase:300,mH:120,mCol:'#14203a',mHaze:'#1f2c4a',r1:['#1a2a2e','#223238'],r2:['#142222','#1c2c2c']},
+   g1:'#1e3020',g2:'#2a3e2c',seed:90,paths:[[[-9.5,.6],[-3,.4],[2,-3],[3.4,-3],[3.2,.6],[9.5,1.2],[9.5,3],[-9.5,3.2]]],pc1:'#4a443a',pc2:'#6a6458',peb:600,
+   blocked:[{x:-5.5,z:-2.4,r:.7},{x:-1.3,z:-2.2,r:.7},{x:3.4,z:-6.5,r:2.1},{x:-3,z:-5,r:.5},{x:4.5,z:-3.4,r:.4},{x:7,z:-4,r:.4}]});
+  const tw=new THREE.Group();const stm=TX.stone.clone();stm.repeat.set(2,3);stm.needsUpdate=true;const sm=std({map:stm,bumpMap:stm,bumpScale:2,roughness:.95,color:0x888a94});tw.add(M(CYL(1.8,2.1,6,22),sm,0,3,0));for(let i=0;i<8;i++){const a=i/8*6.28;if(i%3)tw.add(M(BOX(.55,.7+R()*.6,.5),sm,Math.cos(a)*1.9,6.3,Math.sin(a)*1.9));}const ad=new THREE.Shape();ad.moveTo(-.7,0);ad.lineTo(-.7,1.4);ad.absarc(0,1.4,.7,Math.PI,0,true);ad.lineTo(.7,0);ad.closePath();const dr=new THREE.Mesh(new THREE.ShapeGeometry(ad),new THREE.MeshBasicMaterial({color:0x030308}));dr.position.set(0,0,2.1);tw.add(dr);tw.position.set(3.4,0,-6.5);sc.add(tw);
+  const dt=makeDeadTree(4.5,4);dt.position.set(-5.5,0,-2.4);sc.add(dt);const key=M(new THREE.TorusGeometry(.1,.025,6,12),std({color:0x8a6a3a,metalness:.7,roughness:.5}),-4.6,2.5,-2.1);const kb=M(BOX(.04,.28,.03),std({color:0x8a6a3a,metalness:.7}),-4.6,2.3,-2.1);const kg=new THREE.Group();kg.add(key);kg.add(kb);{const hb=new THREE.Mesh(new THREE.SphereGeometry(.32,8,6),new THREE.MeshBasicMaterial({visible:false}));hb.position.set(-4.6,2.4,-2.1);hb.userData.noOutline=true;kg.add(hb);}sc.add(kg);
+  const chest=new THREE.Group();const wd=std({map:TX.wood,roughness:.8,color:0x5a3a22});chest.add(M(BOX(1.1,.6,.7),wd,0,.3,0));chest.add(M(CYL(.35,.35,1.1,12,1),wd,0,.6,0)).rotation.z=Math.PI/2;chest.add(M(BOX(.12,.2,.05),std({color:0xc8a040,metalness:.9,roughness:.3}),0,.45,.37));chest.position.set(-1.3,0,-2.2);chest.rotation.y=.3;sc.add(chest);
+  const vi=new THREE.Group();vi.add(M(SPH(.2,12,10),std({color:0x8a4a1a,roughness:.5}),0,0,0)).scale.set(1,1.4,.5);vi.add(M(BOX(.04,.4,.03),mat(0x2a1a0a,.8),0,.35,0));vi.visible=false;vi.position.set(-1.3,.9,-2.2);sc.add(vi);
+  [[-3,-5],[-1,-4.4],[1,-4],[4.5,-3.4],[7,-4],[-7,-5],[8,-2]].forEach((p,i)=>{const g=makeGrave(i);g.position.set(p[0],0,p[1]);g.rotation.y+=(i-3)*.12;sc.add(g);});
+  const gh=makeGhost();gh.root.position.set(1.8,.9,-.5);gh.root.scale.setScalar(1.1);sc.add(gh.root);S.npcs['Spook Spoetnik']=gh;
+  const sz=makeSeal(0xc8b8ff);sz.position.set(1.9,1.4,-.2);sz.scale.setScalar(1.4);sz.visible=false;sc.add(sz);
+  addMotes(sc,{n:60,h:3,color:0x9ab8ff,size:.2,op:.6,twinkle:true,rise:.0008,sway:1.2});addMotes(sc,{n:40,h:1.5,color:0xcad8ff,size:.5,op:.18,rise:.0003,sway:2,area:[-12,12,-9,5]});
+  fill(sc,{seed:21,n:16,dark:true,leaf:[0x1c2c20,0x142418],skip:(x,z)=>z>-12&&Math.abs(x)<10});grassOver(sc,{n:3500,seed:18,cols:[0x2a3e2c,0x1e3020,0x364a34],avoid:(x,z)=>false});
+  S.hot=[
+   {id:'spook',name:'spook',obj:gh.root,ap:[.2,.3],face:fc([.2,.3],1.8,-.5),look:()=>sayN('Een bleek, witgrijs spook met droevige oogjes zweeft tussen de grafstenen. Hij ziet eruit alsof hij al heel lang niet meer geslapen heeft.'),
+     talk:()=>{if(SV.flags.z7)return say('Spook Spoetnik','"Zzzz... dank je... zzzz."');if(!SV.flags.spookTalk){SV.flags.spookTalk=1;points('spook',1);say('Spook Spoetnik','"Boe! ...sorry, dat is mijn werk. Ik ben Spoetnik. Ik spook al honderd jaar, maar ik kan nooit slapen. Ik mis mijn viool. Die speelde ik altijd voor het slapengaan."');say('Spook Spoetnik','"Hij ligt in die kist bij de dode boom. De sleutel hangt aan een tak, maar mijn spookachtige handen glijden er dwars doorheen."');}else say('Spook Spoetnik','"De sleutel hangt aan de dode boom. De kist staat naast de grafsteen."');},take:()=>sayN('Je hand gaat dwars door hem heen. Brr, koud!'),
+     use:{viool:()=>{if(SV.flags.z7)return;SV.flags.z7=1;take('viool');points('viool',3);say('Spook Spoetnik','"Mijn viool! Mijn lieve viool!" Hij klemt hem onder zijn kin en begint te spelen: zacht, traag en zo mooi dat je ogen vanzelf dichtvallen.');sayN('Het spook zakt langzaam weg op een wolk van maanlicht. Zijn slaaplied galmt nog even door de nacht. Dan valt er een bleek, glanzend zegel uit zijn laken in het gras.');sz.visible=true;SV.flags.z7ready=1;}}},
+   {id:'dodeboom',name:'dode boom',obj:dt,ap:[-4.7,-.4],face:fc([-4.7,-.4],-5.5,-2.4),look:()=>sayN(SV.flags.sleutel?'Een dode, kale boom. Aan één van de takken heeft een sleutel gehangen.':'Een dode, kale boom. Aan een tak hangt een roestige sleutel.'),take:()=>sayN(SV.flags.sleutel?'Er hangt niets meer aan.':'De sleutel hangt aan een lage tak. Je kunt er net bij.')},
+   {id:'sleutel',name:'sleutel',obj:kg,ap:[-3.9,-.2],face:fc([-3.9,-.2],-4.6,-2.1),vis:()=>!SV.flags.sleutel,look:()=>sayN('Een grote roestige sleutel hangt aan een tak.'),take:()=>{SV.flags.sleutel=1;kg.visible=false;give('sleutel');points('sleutel',2);sayN('Je tilt de sleutel van de tak. Hij is koud en zwaar.');}},
+   {id:'kist',name:'kist',obj:chest,ap:[-1.0,-.4],face:fc([-1,-.4],-1.3,-2.2),look:()=>sayN(SV.flags.kist?'De kist staat open. Hij is helemaal leeg.':'Een oude houten kist met een slot. Er zit stof van honderd jaar op.'),take:()=>sayN('De kist zit op slot.'),use:{sleutel:()=>{if(SV.flags.kist)return;SV.flags.kist=1;take('sleutel');give('viool');points('kist',3);sayN('De sleutel draait krakend om en het deksel zwaait open. In de kist ligt een oude, stoffige viool met één snaar. Dat moet de viool van het spook zijn!');vi.visible=false;}}},
+   {id:'zegel7',name:'bleek zegel',obj:sz,ap:[1.0,.8],face:fc([1,.8],1.9,-.2),vis:()=>SV.flags.z7ready&&!SV.flags.z7got,take:()=>{SV.flags.z7got=1;sz.visible=false;points('zegel7',3);zegel(7,'Droomzegel van de Nacht');sayN('Je pakt het zegel. Het is licht als maanlicht en een tikje klam.');fin(7);}},
+   {id:'toren',name:'ingestorte toren',obj:tw,look:()=>sayN('Een ingestorte toren. De deur is dicht gemetseld. Beter niet naar binnen kijken.'),take:()=>sayN('Het is meer een ruïne dan een toren.')}
+  ];
+  S.update=t=>{updMotes(sc,t);kg.visible=!SV.flags.sleutel;sz.visible=!!SV.flags.z7ready&&!SV.flags.z7got;const rest=!!SV.flags.z7;gh.root.position.y=rest?lerp(gh.root.position.y,4,.02):.9+Math.sin(t*.04)*.12;gh.root.rotation.y=Math.sin(t*.01)*.3;gh.root.children[0].material.opacity=rest?Math.max(.0,gh.root.children[0].material.opacity-.002):.8;sz.rotation.y=t*.03;};}
+
+ // ======================= 8. DE WINTERBERG =======================
+ {const {sc,S}=newScene('berg',{name:'De Winterberg',desc:'Een besneeuwd berglandschap. Een kring stenen voor een kampvuur is leeg en koud. Een grote jeti zit er bibberend naast.',
+   light:{sky:0x9ab0d4,ground:0x6a7a98,hemi:.45,sun:0xffe8c8,sunI:1.15,dir:[-10,20,12],fog:0xa8b8d4,fogN:26,fogF:110},
+   bd:{sky:['#6a9ad8','#b8d4f2','#f0f4fa'],sun:[640,90],seed:101,clouds:[[200,80,1.1],[700,60,.9]],mBase:270,mH:230,mCol:'#9ab0d0',mHaze:'#d0dcec',snow:true,r1:['#c8d8ec','#dce8f6'],pines:['#6a8a88','#5a7a78'],r2:['#dce8f4','#eaf2fa']},
+   g1:'#9aaac4',g2:'#b4c4dc',seed:100,paths:[[[-9.5,2],[-3,1.6],[2,-.5],[6,-.8],[9.5,1],[9.5,3.4],[2,3.4],[-9.5,3.6]]],pc1:'#c4ccd8',pc2:'#dce2ec',peb:100,
+   blocked:[{x:0.8,z:-1.5,r:.9},{x:-3,z:-3,r:1.3},{x:6.2,z:-2.2,r:.9},{x:-7.2,z:1.5,r:.35}]});
+  const pits=makeCampfire();pits.position.set(.8,0,-1.5);sc.add(pits);
+  const ye=makeYeti();ye.root.position.set(-3,0,-3);ye.root.rotation.y=.4;sc.add(ye.root);S.npcs['Jeti Jorrit']=ye;
+  const wood=new THREE.Group();const bm=std({map:TX.bark,roughness:.95});for(let i=0;i<6;i++){const l=M(CYL(.1,.11,1.1,8),bm,(i%3-1)*.22,.14+Math.floor(i/3)*.2,0);l.rotation.z=Math.PI/2;l.rotation.y=i*.3;wood.add(l);}wood.position.set(6.2,0,-2.2);sc.add(wood);
+  const spark=new THREE.Group();spark.add(M(new THREE.DodecahedronGeometry(.1,0),std({color:0x5a5a66,roughness:.9,flatShading:true}),0,.02,0));spark.add(M(new THREE.DodecahedronGeometry(.08,0),std({color:0x3a3a46,roughness:.9,flatShading:true}),.14,.0,.05));spark.position.set(-7.2,0,1.5);spark.scale.setScalar(1.6);sc.add(spark);
+  const gz=makeSeal(0xbae8ff);gz.position.set(-2.4,1.0,-1.6);gz.scale.setScalar(1.4);gz.visible=false;sc.add(gz);
+  const ice=new THREE.Group();const im=new THREE.MeshStandardMaterial({color:0xa8d8f8,transparent:true,opacity:.7,roughness:.1,metalness:.2,emissive:0x2a5a88,emissiveIntensity:.3});for(let i=0;i<7;i++){const c=M(new THREE.ConeGeometry(.4+R()*.4,2+R()*2.5,6),im,(R()-.5)*7,1,-9-R()*2,false);c.userData.noOutline=true;ice.add(c);}sc.add(ice);
+  for(let i=0;i<18;i++){const x=-22+R()*44,z=-9-R()*20;if(Math.abs(x)<5&&z>-13)continue;const t=makeSnowPine(8+R()*6);t.position.set(x,0,z);sc.add(t);}[[-10,1,8],[10.5,-1,9]].forEach(p=>{const t=makeSnowPine(p[2]);t.position.set(p[0],0,p[1]);sc.add(t);});
+  scatterRocks(sc,10,9,-9,9,-6,4,null,.1,.3);
+  const snow=addMotes(sc,{n:180,h:8,color:0xffffff,size:.12,op:.9,rise:-.03,sway:3,area:[-14,14,-10,8]});
+  S.hot=[
+   {id:'jeti',name:'jeti',obj:ye.root,ap:[-1.4,-.2],face:fc([-1.4,-.2],-3,-3),look:()=>sayN(SV.flags.vuur?'De jeti zit bij het vuur en zucht tevreden. Alleen zijn nek heeft nog kou.':'Een reusachtige, harige witte jeti met een blauw gezicht. Hij rilt van top tot teen en zijn tanden klapperen.'),
+     talk:()=>{if(SV.flags.z8)return say('Jeti Jorrit','"Dank je wel, kleine mens. Slaap lekker."');if(!SV.flags.jetiTalk){SV.flags.jetiTalk=1;points('jeti',1);say('Jeti Jorrit','"B-b-brr! Ik ben J-J-Jorrit. Het is zo koud. Mijn v-v-vuur is uit en ik kan niet slapen van de kou."');say('Jeti Jorrit','"Er ligt brandhout bij de bomen daar, en ergens in de sneeuw moet mijn vuursteen liggen. Ik heb hem laatst laten vallen. En een warme sjaal zou ook niet slecht zijn..."');}else if(!SV.flags.vuur)say('Jeti Jorrit','"B-b-brr! Hout, v-vuursteen en dan alles in de vuurkring."');else say('Jeti Jorrit','"Mmm, lekker. Maar mijn nek is nog steeds zo koud..."');},
+     take:()=>sayN('Hij is veel te groot, en hij ruikt naar natte hond.'),
+     use:{sjaal:()=>{if(!SV.flags.vuur)return say('Jeti Jorrit','"Eerst een v-v-vuur, alsjeblieft. Daarna graag die sjaal."');if(SV.flags.z8ready)return;take('sjaal');SV.flags.z8ready=1;points('sjaal',3);say('Jeti Jorrit','"Oh... heerlijk! Wat een warme sjaal!" Hij wikkelt hem drie keer om zijn nek en begint te spinnen als een poes.');say('Jeti Jorrit','"Als dank krijg je mijn ijskristal. Het lag al eeuwen in mijn grot. Het is het Droomzegel dat jullie zoeken, zei die uil." Hij haalt een glanzend zegel uit zijn vacht en legt het in het gras.');gz.visible=true;}}},
+   {id:'vuurplaats',name:'vuurplaats',obj:pits,ap:[1.0,.7],face:fc([1,.7],.8,-1.5),look:()=>sayN(SV.flags.vuur?'Het vuur knispert vrolijk. Het geeft een heerlijke warmte.':SV.flags.hout?'Een stapeltje hout in de vuurkring. Nu nog een vonk.':'Een kring van stenen met as erin. Een kampvuur dat al lang uit is.'),take:()=>sayN('Het zijn gewoon stenen.'),
+     use:{brandhout:()=>{if(SV.flags.hout)return;SV.flags.hout=1;take('brandhout');pits.userData.logs.visible=true;points('hout',1);sayN('Je legt het brandhout in de vuurkring. Nu nog iets om het aan te steken.');},
+       vuursteen:()=>{if(!SV.flags.hout)return sayN('Er ligt nog niets in de vuurkring dat kan branden.');if(SV.flags.vuur)return;SV.flags.vuur=1;take('vuursteen');pits.userData.fire.visible=true;points('vuur',2);SFX.pick();sayN('Klik, klak, vonk! De vonken springen in het droge hout. Eerst een rookpluimpje, dan een vlam, dan een warm, knetterend kampvuur!');say('Jeti Jorrit','"Aaaah! Heerlijk! Maar mijn nek, mijn nek is nog steeds zo koud!"');}}},
+   {id:'hout',name:'brandhout',obj:wood,ap:[5.2,-.6],face:fc([5.2,-.6],6.2,-2.2),vis:()=>!SV.flags.houtp,look:()=>sayN('Een stapel droge blokken en takken. Perfect om een vuur mee te stoken.'),take:()=>{SV.flags.houtp=1;wood.visible=false;give('brandhout');points('houtp',1);sayN('Je tilt een flinke bundel brandhout op.');}},
+   {id:'vuursteen',name:'glinstering',obj:spark,ap:[-6.4,2.2],face:fc([-6.4,2.2],-7.2,1.5),vis:()=>!SV.flags.steenp,look:()=>sayN('In de sneeuw ligt iets donkers dat een beetje glinstert.'),take:()=>{SV.flags.steenp=1;spark.visible=false;give('vuursteen');points('steenp',1);sayN('Twee gladde stenen, een grijze en een zwarte. Als je ze tegen elkaar slaat, springen er vonkjes af.');}},
+   {id:'zegel8',name:'ijskristal-zegel',obj:gz,ap:[-1.4,.4],face:fc([-1.4,.4],-2.4,-1.6),vis:()=>SV.flags.z8ready&&!SV.flags.z8,take:()=>{SV.flags.z8=1;gz.visible=false;points('zegel8',3);zegel(8,'Droomzegel van het IJs');sayN('Het ijskristal is koud in je hand, maar je hart wordt er warm van.');fin(8);}},
+   {id:'ijs',name:'ijszuilen',obj:ice,look:()=>sayN('Hoge ijszuilen glinsteren in het licht. Het lijkt wel een kristalpaleis.'),take:()=>sayN('Veel te koud om aan te raken.')}
+  ];
+  S.update=t=>{updMotes(sc,t);const f=pits.userData.fire;if(f.visible){f.children[0].scale.set(1+Math.sin(t*.3)*.15,1+Math.sin(t*.4)*.25,1+Math.sin(t*.3)*.15);f.children[1].scale.set(1+Math.sin(t*.5)*.1,1+Math.sin(t*.6)*.2,1);pits.userData.pl.intensity=2.5+Math.sin(t*.4)*.5;}
+    wood.visible=!SV.flags.houtp;spark.visible=!SV.flags.steenp;gz.visible=!!SV.flags.z8ready&&!SV.flags.z8;pits.userData.logs.visible=!!SV.flags.hout;pits.userData.fire.visible=!!SV.flags.vuur;pits.userData.pl.intensity=SV.flags.vuur?pits.userData.pl.intensity:0;const warm=!!SV.flags.vuur;ye.root.position.x=-3+(warm?0:Math.sin(t*.9)*.01);ye.head.rotation.y=Math.sin(t*.01)*.3;ye.arms.forEach((a,i)=>{a.rotation.x=warm?Math.sin(t*.03+i)*.05:Math.sin(t*.7+i)*.06;});gz.rotation.y=t*.03;};}
+
+ // ======================= 9. DE ZONNETEMPEL =======================
+ {const {sc,S}=newScene('tempel',{name:'De Zonnetempel',desc:'Woestijnzand zo ver je kijkt, met een eeuwenoude tempel erin. Boven de dichte deur zit een stenen zon. Voor de tempel staat een zonnebeeld.',
+   light:{sky:0xe0c8a0,ground:0x886030,hemi:.42,sun:0xffe0a8,sunI:1.7,dir:[8,26,10],fog:0xd0b488,fogN:34,fogF:150},
+   bd:{sky:['#4a8ad8','#a8d0f0','#fcecc8'],sun:[480,120],seed:111,clouds:[[200,90,.8],[780,70,.6]],mBase:300,mH:70,mCol:'#c8a870',mHaze:'#e8d0a0',r1:['#d0b078','#e0c088'],r2:['#e0c488','#ecd098']},
+   g1:'#b08c54',g2:'#c8a468',seed:110,paths:[[[-9.5,.8],[-3,.2],[1,-3.4],[4,-3.4],[4,.2],[9.5,.8],[9.5,2.8],[-9.5,3]]],pc1:'#c8a870',pc2:'#e0c898',peb:300,
+   blocked:[{x:-4.6,z:-1.2,r:.55},{x:2.5,z:-2.4,r:.9},{x:-8,z:1.5,r:1.2},{x:7,z:-1,r:.4}]});
+  dunes(sc,5,0xe4c48a);const tm=makeTemple();tm.position.set(0,0,-8);tm.scale.setScalar(1.1);sc.add(tm);
+  const ss=makeSunStatue();ss.position.set(2.5,0,-2.4);ss.rotation.y=-.3;sc.add(ss);
+  const am=folk({c1:'#c8982a',c2:'#a87818',robe:1,hat:'kap',hc:'#d8a838',hair:0x2a1a0a,skin:'#a87a54',seed:69,eye:0x3a2a1a,sash:0xf2c22a,h:.98});am.root.position.set(-4.6,0,-1.2);am.root.rotation.y=.6;sc.add(am.root);S.npcs['Priesteres Amra']=am;
+  const cacs=[[-8,-4,1.2],[7.6,-3.2,1],[-6.6,-5.5,.9],[8.6,1.6,.8]];cacs.forEach(c=>{const k=makeCactus(c[2]);k.position.set(c[0],0,c[1]);sc.add(k);});
+  const oasis=makeWater(4,3);oasis.position.set(-8,.04,1.5);sc.add(oasis);const pt=makeTree(5.5,311,{leaf:[0x7ab838,0x5a9828],thick:.7,wide:.7});pt.position.set(-9.5,0,.4);sc.add(pt);
+  const wz=new THREE.Group();wz.add(M(SPH(.22,12,10),std({map:leatherTex('#8a5a2a',12),roughness:.7}),0,.2,0)).scale.set(1,1.2,.8);wz.add(M(CYL(.04,.05,.18,8),mat(0x6a4a2a,.7),0,.48,0));wz.position.set(-6.6,0,2.9);sc.add(wz);
+  const sp=new THREE.Group();sp.add(M(CYL(.2,.2,.03,16),std({color:0xc87a3a,metalness:.95,roughness:.12,emissive:0x331a08}),0,0,0)).rotation.x=Math.PI/2;sp.add(M(BOX(.04,.2,.03),std({color:0x8a5a2a,metalness:.6}),0,-.22,0));sp.position.set(6.8,.15,-.9);sp.rotation.x=-.4;sc.add(sp);const sgl=new THREE.Sprite(new THREE.SpriteMaterial({map:TX.glow,color:0xffe6a0,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,opacity:.8}));sgl.scale.set(1.2,1.2,1);sgl.position.set(6.8,.35,-.9);sc.add(sgl);
+  const bm=M(CYL(.02,.02,7,6),new THREE.MeshBasicMaterial({color:0xfff0a0,transparent:true,opacity:.7,blending:THREE.AdditiveBlending,depthWrite:false}),0,0,0,false);bm.userData.noOutline=true;bm.visible=false;sc.add(bm);
+  const tz=makeSeal(0xffd060);tz.position.set(0,1.5,-6.8);tz.scale.setScalar(1.5);tz.visible=false;sc.add(tz);
+  scatterRocks(sc,14,10,-9,9,-5,4,null,.1,.3);addMotes(sc,{n:70,h:3.5,color:0xffe8b0,size:.14,op:.5,rise:.001,sway:2.5});
+  S.hot=[
+   {id:'amra',name:'priesteres',obj:am.root,ap:[-3.4,.4],face:fc([-3.4,.4],-4.6,-1.2),look:()=>sayN('Een lange, statige priesteres in goudkleurige gewaden. Haar lippen zijn gebarsten van de dorst.'),
+     talk:()=>{if(SV.flags.z9)return say('Priesteres Amra','"De zon gaat zachtjes onder, dank je."');if(SV.flags.amraDrink)return say('Priesteres Amra','"Het oog van de Zon moet het licht vangen. Er glinstert iets op het zand."');if(!SV.flags.amraTalk){SV.flags.amraTalk=1;points('amra',1);}say('Priesteres Amra','"Welkom, reiziger. De tempeldeur gaat pas open als het oog van de Zon wakker wordt. Maar ik ben al drie dagen op zoek naar water. Mijn keel is zo droog als zand."');say('Priesteres Amra','"Bij de oase ligt een waterzak. Brengt u die voor mij, dan vertel ik u hoe de deur opent."');},
+     use:{waterzak:()=>{if(SV.flags.amraDrink)return;SV.flags.amraDrink=1;take('waterzak');points('amraDrink',2);say('Priesteres Amra','"Ah! Heerlijk!" Ze drinkt in grote slokken. "Nu kan ik weer spreken, jongen."');say('Priesteres Amra','"Het oog van de Zon is dat ronde ding op het zonnebeeld. Als je er zonlicht in vangt met een spiegel, wordt de poort wakker. Ergens op het zand glinstert iets, dat lijkt me ideaal."');}}},
+   {id:'waterzak',name:'waterzak',obj:wz,ap:[-5.8,2.1],face:fc([-5.8,2.1],-6.6,2.9),vis:()=>!SV.flags.wzp,look:()=>sayN('Een leren waterzak ligt bij de oase, vol met helder water.'),take:()=>{SV.flags.wzp=1;wz.visible=false;give('waterzak');points('wzp',1);sayN('Je pakt de waterzak. Hij is koud en zwaar van het water.');}},
+   {id:'spiegelp',name:'glinstering',obj:sp,ap:[6.0,.2],face:fc([6,.2],6.8,-.9),vis:()=>!SV.flags.spp,look:()=>sayN('Iets glimt fel in het zand. Het doet pijn aan je ogen.'),take:()=>{SV.flags.spp=1;sp.visible=false;sgl.visible=false;give('spiegel');points('spiegel',2);sayN('Het is een oude koperen spiegel, gepolijst door eeuwen zand. Hij vangt het zonlicht glansrijk.');}},
+   {id:'zonnebeeld',name:'zonnebeeld',obj:ss,ap:[1.4,-.4],face:fc([1.4,-.4],2.5,-2.4),look:()=>sayN(SV.flags.poort?'Het oog van de Zon straalt als een tweede zon.':'Een stenen zonnebeeld met een groot, rond oog. Het oog is donker en dof.'),take:()=>sayN('Dat staat zo vast als een huis.'),
+     use:{spiegel:()=>{if(SV.flags.poort)return;SV.flags.poort=1;points('poort',3);SFX.thud&&SFX.thud();bm.visible=true;{const a=V3(2.5,2.0,-2.3),b=V3(0,5.3,-6.9);bm.position.copy(a).lerp(b,.5);bm.scale.y=a.distanceTo(b)/7;bm.quaternion.setFromUnitVectors(V3(0,1,0),b.clone().sub(a).normalize());}
+       sayN('Je houdt de spiegel schuin in het zonlicht en richt de straal op het oog van het beeld. Het oog begint te gloeien en stuurt een bundel gouden licht naar de zon boven de tempeldeur. KRAAK! De deur zakt langzaam in de grond.');tz.visible=true;}}},
+   {id:'tempel',name:'tempel',obj:tm,look:()=>sayN(SV.flags.poort?'De deur staat open. In het donker glanst een zegel op een altaar.':'Een eeuwenoude zandstenen tempel. De deur zit potdicht. Boven de deur zit een grote stenen zon.'),take:()=>sayN('Dit gebouw is zwaarder dan je rugzak.')},
+   {id:'zegel9',name:'gouden zegel',obj:tz,ap:[0,-4.7],face:0,vis:()=>SV.flags.poort&&!SV.flags.z9,take:()=>{SV.flags.z9=1;tz.visible=false;points('zegel9',3);zegel(9,'Droomzegel van de Zon');sayN('Je pakt het gouden zegel van het altaar. Het straalt een heerlijke warmte uit.');fin(9);}},
+   {id:'oase',name:'oase',obj:oasis,ap:[-6.6,2.9],face:Math.PI,look:()=>sayN('Een kleine oase met helder water en een lommerrijke palm. Een paradijsje in het zand.'),take:()=>sayN('Je laat het koele water over je vingers lopen.')}
+  ];
+  S.update=t=>{updMotes(sc,t);idleFolk(am,t,8);tz.rotation.y=t*.03;sgl.material.opacity=.5+.3*Math.sin(t*.08);wz.visible=!SV.flags.wzp;sp.visible=sgl.visible=!SV.flags.spp;tz.visible=!!SV.flags.poort&&!SV.flags.z9;if(SV.flags.poort){bm.visible=true;tm.userData.door.position.y=Math.max(-3,tm.userData.door.position.y-.04);tm.userData.sun.rotation.z=t*.01;}};}
+
+ // ======================= 10. DE STERRENWACHT =======================
+ {const {sc,S}=newScene('sterrenwacht',{name:'De Sterrenwacht',desc:'Een heuvel onder een stralende sterrenhemel, met een grote koepel. Naast de koepel staat een telescoop op een driepoot. Rechts glinstert een vijver.',
+   light:{sky:0x5a6aa8,ground:0x1a2a30,hemi:.65,sun:0xa8c0ff,sunI:1.6,dir:[10,22,10],fog:0x141c3a,fogN:10,fogF:60},
+   bd:{sky:['#030614','#0e1a44','#2a3a74'],stars:1,moon:[660,110],seed:121,clouds:[],mBase:310,mH:90,mCol:'#10183a',mHaze:'#1c2850',r1:['#12202c','#1a2c38'],pines:['#10201c','#0c1814'],r2:['#102018','#18301e']},
+   g1:'#1e3624',g2:'#2c4a30',seed:120,paths:[[[-9.5,.4],[-2,.2],[.6,-3.2],[3,-3.2],[2.4,.2],[9.5,.6],[9.5,2.8],[-9.5,3]]],pc1:'#5a5444',pc2:'#7a7464',peb:300,
+   blocked:[{x:0.8,z:-6.4,r:2.8},{x:-2.2,z:-2.2,r:.65},{x:-5.2,z:-1,r:.5},{x:6.5,z:-1.2,r:1.5},{x:-8,z:-3,r:1}]});
+  const dm=makeDome();dm.position.set(.8,0,-6.4);sc.add(dm);const te=makeTelescope();te.position.set(-2.2,0,-2.2);sc.add(te);
+  const pf=folk({c1:'#4a4a8a',c2:'#3a3a7a',robe:1,hat:'muts',hc:'#8a2a5a',hair:0xe8e8f0,beard:0xe8e8f0,mus:0xe8e8f0,skin:'#f0c4a0',seed:70,w:.9,eye:0x4a6aa8,s:1.05,old:true});pf.root.position.set(-5.2,0,-1);pf.root.rotation.y=.7;sc.add(pf.root);S.npcs['Professor Hoeksma']=pf;
+  const sh=new THREE.Group();const wd=std({map:TX.wood,roughness:.8});sh.add(M(BOX(1.6,1.6,1.4),wd,0,.8,0));const rf=TX.roof.clone();rf.repeat.set(2,1);rf.needsUpdate=true;[-1,1].forEach(s=>{const p=M(new THREE.PlaneGeometry(1.9,1.1),std({map:rf,roughness:.8,side:THREE.DoubleSide}),0,1.8,s*.4);p.rotation.x=s*-.9;sh.add(p);});sh.position.set(-8,0,-3);sc.add(sh);
+  const net=new THREE.Group();net.add(M(CYL(.025,.025,1.7,6),wd,0,.85,0));const rim=M(new THREE.TorusGeometry(.18,.02,6,14),mat(0x8a8a90,.4),0,1.75,0);net.add(rim);const nm=M(SPH(.17,10,8,0,6.3,Math.PI/2,Math.PI/2),std({color:0xd8c8a0,roughness:1,transparent:true,opacity:.7}),0,1.72,0,false);net.add(nm);net.position.set(-6.7,0,-2.6);net.rotation.z=.25;sc.add(net);
+  const pond=makeWater(4.4,3);pond.position.set(6.5,.04,-1.2);sc.add(pond);const lens=new THREE.Mesh(new THREE.CircleGeometry(.12,16),new THREE.MeshBasicMaterial({color:0x9ad0ff,transparent:true,opacity:.9}));lens.rotation.x=-Math.PI/2;lens.position.set(6.8,.07,-1.0);sc.add(lens);const lgl=new THREE.Sprite(new THREE.SpriteMaterial({map:TX.glow,color:0x9ad0ff,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,opacity:.8}));lgl.scale.set(1,1,1);lgl.position.set(6.8,.2,-1.0);sc.add(lgl);
+  const sz=makeSeal(0xffe890);sz.position.set(-1.4,6,-3.4);sz.scale.setScalar(1.6);sz.visible=false;sc.add(sz);
+  scatterRocks(sc,12,11,-9,9,-5,4,null,.1,.3);grassOver(sc,{n:4000,seed:19,cols:[0x2c4a30,0x203c24,0x385a38],avoid:(x,z)=>false});fill(sc,{seed:23,n:14,dark:true,leaf:[0x1c3420,0x142818],skip:(x,z)=>z>-12});
+  addMotes(sc,{n:60,h:4,color:0xffe0a0,size:.14,op:.5,twinkle:true,rise:.0006});
+  S.hot=[
+   {id:'prof',name:'professor',obj:pf.root,ap:[-4.1,.2],face:fc([-4.1,.2],-5.2,-1),look:()=>sayN('Een verstrooide professor met wild wit haar en een muts die hij verkeerd om draagt. Hij ruikt naar koffie.'),
+     talk:()=>{if(SV.flags.z10)return say('Professor Hoeksma','"Prachtig! Prachtig! Nu kan ik eindelijk een tukkie doen."');if(!SV.flags.profTalk){SV.flags.profTalk=1;points('prof',1);say('Professor Hoeksma','"Ha, de schildknaap! Ik ben Hoeksma. Mijn telescoop mist de lens, die is in de vijver gevallen toen ik me liet meeslepen door een vallende ster."');say('Professor Hoeksma','"Het laatste Droomzegel, dat zit boven in de sterrenkoepel, daar waar het beste zicht is. Maar zonder lens zie ik niets. Er hangt een net in mijn schuurtje."');}else say('Professor Hoeksma','"Het net hangt bij het schuurtje. De lens ligt in de vijver. En dan de lens in de telescoop."');}},
+   {id:'net',name:'visnet',obj:net,ap:[-5.9,-1.2],face:fc([-5.9,-1.2],-6.7,-2.6),vis:()=>!SV.flags.netp,look:()=>sayN('Een visnet aan een lange stok. Zo te zien perfect om iets uit het water te vissen.'),take:()=>{SV.flags.netp=1;net.visible=false;give('net');points('net',2);sayN('Je pakt het visnet. Eens kijken wat je daarmee kunt vangen.');}},
+   {id:'vijver',name:'vijver',obj:pond,ap:[5.1,1.2],face:fc([5.1,1.2],6.5,-1.2),look:()=>sayN(SV.flags.lens?'De vijver ligt stil. Het sterrenlicht spiegelt erin.':'Een vijver vol kikkers en waterlelies. Op de bodem glinstert iets rond en blauw.'),take:()=>sayN('Je hand is te kort om op de bodem iets te pakken.'),
+     use:{net:()=>{if(SV.flags.lens)return;SV.flags.lens=1;lens.visible=false;lgl.visible=false;give('lens');points('lens',3);sayN('Je duikt het net in het water en schept langzaam over de bodem. Plons! Een boze kikker springt eruit en onder die kikker ligt... een grote, ronde glazen lens!');}}},
+   {id:'telescoop',name:'telescoop',obj:te,ap:[-1.2,.2],face:fc([-1.2,.2],-2.2,-2.2),look:()=>sayN(SV.flags.telescoop?'De telescoop wijst naar een stralende ster boven de koepel.':'Een koperen telescoop op een driepoot. Aan de voorkant zit een lege ring, de lens ontbreekt.'),take:()=>sayN('Wel erg onhandig voor in je rugzak.'),
+     use:{lens:()=>{if(SV.flags.telescoop)return;SV.flags.telescoop=1;take('lens');te.userData.lens.visible=true;points('tel',3);sayN('Je schroeft de lens in de ring. Dan kijk je door de kijker: duizenden sterren, en één die steeds groter wordt. Het is een vallende ster! Hij suist recht omlaag en landt met een zacht plofje in het gras, vlak naast de koepel.');sz.visible=true;sz.position.set(-1.4,.5,-3.4);}}},
+   {id:'zegel10',name:'ster-zegel',obj:sz,ap:[-1.2,-1.3],face:fc([-1.2,-1.3],-1.4,-3.4),vis:()=>SV.flags.telescoop&&!SV.flags.z10,take:()=>{SV.flags.z10=1;sz.visible=false;points('zegel10',3);zegel(10,'Droomzegel van de Sterren');sayN('Het zegel is warm als een kleine zon. Het zingt zachtjes een slaapliedje over de sterrenhemel.');fin(10);}},
+   {id:'koepel',name:'koepel',obj:dm,look:()=>sayN('De koepel van de sterrenwacht. Door de spleet in het dak kijkt de maan naar buiten.'),take:()=>sayN('Dat is een gebouw, geen souvenir.')}
+  ];
+  S.update=t=>{updMotes(sc,t);idleFolk(pf,t,9);net.visible=!SV.flags.netp;lens.visible=lgl.visible=!SV.flags.lens;te.userData.lens.visible=!!SV.flags.telescoop;sz.visible=!!SV.flags.telescoop&&!SV.flags.z10;sz.rotation.y=t*.03;if(sz.position.y>.5)sz.position.y-=.05;lens.material.opacity=.7+.2*Math.sin(t*.07);};}
+
+ // ======================= 11. DE DROOMTOREN (finale) =======================
+ {const {sc,S}=newScene('toren',{name:'De Droomtoren',desc:'Een hoge, paarse toren aan de rand van het rijk, met een grote deur. Op de deur zitten negen ronde gaten voor de zegels. Er loopt een grijze, slaperige man in een nachthemd te ijsberen.',
+   light:{sky:0xb8a8e0,ground:0x4a3a5a,hemi:.7,sun:0xffb890,sunI:2.2,dir:[-10,16,12],fog:0x8a6aa8,fogN:14,fogF:70},
+   bd:{sky:['#2a1a5a','#8a4a8a','#f0a878'],sun:[480,330],seed:131,clouds:[[260,120,1],[720,90,1.1]],mBase:300,mH:150,mCol:'#4a3a7a',mHaze:'#8a6aa0',r1:['#4a3a5a','#5a4a6a'],pines:['#2a2040','#201838'],r2:['#3a3050','#4a4060']},
+   g1:'#4a5a3a',g2:'#5a6a46',seed:130,paths:[[[-9.5,.4],[-2,.2],[-1,-4],[1.2,-4],[2,.2],[9.5,.6],[9.5,2.8],[-9.5,3]]],pc1:'#8a7a8a',pc2:'#b0a0b0',peb:600,
+   blocked:[{x:0,z:-8.4,r:3},{x:-3.5,z:-1.6,r:.5},{x:6,z:-1.8,r:1.1},{x:-7.4,z:.6,r:.4},{x:8.8,z:-4,r:.3},{x:3.3,z:-.2,r:.8}]});
+  const wt=makeWizTower();wt.position.set(0,0,-8.4);sc.add(wt);
+  const mo=folk({c1:'#b8c0d8',c2:'#a0a8c8',robe:1,stripes:true,hat:'punt',hc:'#8a7ab0',hair:0xa0a0b0,beard:0xc8c8d0,mus:0xc8c8d0,skin:'#e8c8a8',old:true,w:.95,h:1.05,seed:71,eye:0x5a5a9a,angry:true});mo.root.position.set(-3.5,0,-1.6);mo.root.rotation.y=.6;sc.add(mo.root);S.npcs['Morvan']=mo;
+  const cw=makeCow();cw.position.set(6,0,-1.8);cw.rotation.y=-.6;cw.scale.setScalar(1.15);sc.add(cw);
+  const pole=M(CYL(.05,.05,3.2,8),std({map:TX.wood,roughness:.8}),9,1.6,-3.8);sc.add(pole);const line=new THREE.Group();const nm=new THREE.Group();nm.add(M(SPH(.14,12,10,0,6.3,0,1.8),std({map:clothTex('#6a4a9a','#5a3a8a',true,141,3),roughness:.9}),0,0,0));nm.add(M(CYL(.2,.2,.03,16),mat(0xf4f0e0,.9),0,-.02,0));nm.add(M(SPH(.04,8,6),mat(0xf4f0e0,.9),0,.17,0));nm.position.set(8.2,2.7,-3.8);nm.rotation.z=.15;nm.scale.setScalar(2);sc.add(nm);sc.add(M(BOX(1.6,.04,.04),mat(0x6a4a2a,.8),8.2,3.1,-3.8));
+  const wd=std({map:TX.wood,roughness:.8});const kan=new THREE.Group();kan.add(M(CYL(.15,.18,.35,12),std({color:0xc8c8d0,metalness:.8,roughness:.3}),0,.18,0));const kh=M(new THREE.TorusGeometry(.1,.02,6,12,Math.PI),std({color:0xc8c8d0,metalness:.8}),.17,.2,0);kan.add(kh);kan.position.set(-7.4,.0,.6);kan.scale.setScalar(1.7);sc.add(kan);
+  const cf=makeCampfire();cf.position.set(3.3,0,-.2);cf.scale.setScalar(.9);cf.userData.logs.visible=true;sc.add(cf);cf.userData.fire.visible=true;cf.userData.pl.intensity=1.6;
+  const stkm=makeStump();stkm.position.set(-3.5,0,.5);stkm.scale.setScalar(.8);sc.add(stkm);
+  fill(sc,{seed:27,n:12,leaf:[0x5a6a4a,0x4a5a3a],skip:(x,z)=>z>-12&&Math.abs(x)<14});addMotes(sc,{n:60,h:5,color:0xd8b0ff,size:.18,op:.6,twinkle:true,rise:.001,sway:2});
+  scatterFlowers(sc,-9,9,-3,3,80,7,[0xc890ff,0xffffff],null);
+  function checkEnd(){if(SV.flags.morvanSleeps)return;}
+  S.hot=[
+   {id:'morvan',name:'tovenaar',obj:mo.root,ap:[-2.4,.1],face:fc([-2.4,.1],-3.5,-1.6),look:()=>sayN(SV.flags.morvanSleeps?'Morvan ligt zachtjes te snurken met een stralende glimlach op zijn gezicht.':'Een oude tovenaar met een lange baard, een nachthemd en gigantische wallen onder zijn ogen. Hij geeuwt zonder ophouden.'),
+     talk:()=>{if(SV.flags.morvanSleeps)return say('Morvan','"Zzzzz... zzz..."');if(!SV.flags.mordTalk){SV.flags.mordTalk=1;points('mord',1);say('Morvan','"Wie... wie is daar? O, de schildknaap van de koning. Ik ben Morvan. Ik kan al honderd jaar niet slapen, en dat is helemaal mijn eigen schuld."');say('Morvan','"Ik legde in mijn wanhoop een slaapspreuk op de kroon, bedoeld voor mezelf. Hij sloeg af op de koning. Toen ik zo moe werd dat mijn toverkracht brak, vlogen de negen Droomzegels van mijn toren over het land."');say('Morvan','"Heb je ze? Alle negen? Dan mogen ze terug in de deur. En ik zou zo graag... gewoon... even... slapen. Een kan warme melk met honing helpt altijd. En mijn slaapmuts, die heeft mijn waslijn gestolen."');}
+       else if(!SV.flags.poort11)say('Morvan','"De zegels moeten eerst in de deur. Dan kunnen we verder."');else say('Morvan','"Warme melk en mijn muts, alsjeblieft. Daarna kan ik misschien slapen..."');},
+     use:{warmemelk:()=>{if(!SV.flags.poort11)return say('Morvan','"Eerst de zegels, jongen. Anders kan ik toch niet rusten."');if(SV.flags.dronk)return;SV.flags.dronk=1;take('warmemelk');points('dronk',1);say('Morvan','"Ahhh... warme melk met honing. Het eerste lekkers in honderd jaar." Hij drinkt het kannetje leeg.');sayN('Morvan geeuwt zo wijd dat je zijn amandelen kunt zien.');if(SV.flags.muts)finish11();},
+       slaapmuts:()=>{if(!SV.flags.poort11)return say('Morvan','"Eerst de zegels, jongen."');if(SV.flags.mutsOp)return;SV.flags.mutsOp=1;take('slaapmuts');points('mutsOp',1);sayN('Je zet de slaapmuts voorzichtig op zijn hoofd. Hij zucht van tevredenheid.');if(SV.flags.dronk)finish11();}}},
+   {id:'poort',name:'toreningang',obj:wt,ap:[0,-1.8],face:fc([0,-1.8],0,-8.4),look:()=>sayN(SV.flags.poort11?'De negen zegels gloeien in de deur en de toren is vol zacht licht.':'Op de deur zitten negen ronde gaten. Je rugzak gloeit. Je hebt negen zegels bij je. Tik op "Praten" of "Pakken" bij de deur om ze erin te zetten.'),
+     talk:()=>openPoort(),take:()=>openPoort(),walk:()=>openPoort()},
+   {id:'kannetje',name:'melkkan',obj:kan,ap:[-6.5,1.6],face:fc([-6.5,1.6],-7.4,.6),vis:()=>!SV.flags.kanp,look:()=>sayN('Een lege melkkan staat tegen de heg.'),take:()=>{SV.flags.kanp=1;kan.visible=false;give('kan');points('kanp',1);sayN('Je pakt de blikken melkkan.');}},
+   {id:'koe',name:'koe',obj:cw,ap:[5.0,.2],face:fc([5,.2],6,-1.8),look:()=>sayN('Een vrolijke zwart-witte koe die rustig herkauwt. Ze lijkt de enige in Daelenrijk die altijd slaapt.'),talk:()=>sayN('"Boe!" zegt de koe. Dat is alles wat ze zegt.'),take:()=>sayN('Een hele koe? Dat is een beetje veel gevraagd.'),
+     use:{kan:()=>{if(SV.flags.melkp)return;SV.flags.melkp=1;take('kan');give('melk');points('melk',1);sayN('Je zet de kan onder de koe en melkt met rustige, regelmatige bewegingen. Sjuuuf, sjuuuf. Binnen een minuutje is de kan vol verse melk. De koe kijkt je dankbaar aan.');}}},
+   {id:'kampvuur',name:'kampvuur',obj:cf,ap:[2.5,.6],face:fc([2.5,.6],3.3,-.2),look:()=>sayN('Een knisperend kampvuur met een flinke pit. Perfect om iets op te warmen.'),take:()=>sayN('Auw! Heet!'),
+     use:{melk:()=>{if(SV.flags.warm)return;SV.flags.warm=1;take('melk');give('warmemelk');points('warm',1);sayN('Je houdt de kan boven het vuur en schudt hem zachtjes heen en weer. Er stijgt een zoete geur van warme melk op. Een scheutje honing uit je rugzak erbij... klaar!');}}},
+   {id:'slaapmuts',name:'slaapmuts',obj:nm,ap:[7.3,-1.2],face:fc([7.3,-1.2],8.2,-3.8),vis:()=>!SV.flags.muts,look:()=>sayN('Een paarse slaapmuts met een kwastje wappert aan de waslijn.'),take:()=>{SV.flags.muts=1;nm.visible=false;give('slaapmuts');points('muts',1);sayN('Je pakt de slaapmuts van de lijn. Hij is gloednieuw en ruikt naar lavendel.');}}
+  ];
+  function openPoort(){if(SV.flags.poort11)return sayN('De deur staat al open. De negen zegels gloeien zacht.');if(SV.zegels.length<9)return sayN('Op de deur zitten negen gaten, maar jij hebt er maar '+SV.zegels.length+'. Zoek de ontbrekende Droomzegels.');SV.flags.poort11=1;points('poort11',3);wt.userData.disks.forEach((d,i)=>{d.material.emissive.setHex(0xffc060);d.material.emissiveIntensity=1.2;d.material.color.setHex(0xffd060);});SFX.win();sayN('Je drukt de negen zegels één voor één in de gaten van de deur. Klik, klik, klik... De deur gloeit goudgeel op en de hele toren zucht tevreden. Het is net alsof het gebouw zijn adem inhoudt en hem weer loslaat.');say('Morvan','"Eindelijk. De Droomzegels zitten weer op hun plek. Nu mijn melk en mijn muts nog, dan ga ik slapen."');}
+  function finish11(){SV.flags.morvanSleeps=1;points('slaap',2);SFX.win();say('Morvan','"Dank je, schildknaap Gijs. Honderd jaar heb ik niet meer geslapen. Slaap... slaap lekker... Daelenrijk..." Hij zakt langzaam in het zachte gras en begint tevreden te snurken.');sayN('Het is stil. Dan, heel langzaam, gloeit de toren op en vliegen er negen lichtjes de hemel in: de Droomzegels. Over heel Daelenrijk, van het woud tot de zandstreek, doet iedereen tegelijk zijn ogen dicht en slaapt in. Voor het eerst sinds eeuwen heerst er een diepe, zachte, rustgevende nacht.');fin(11);}
+  S.update=t=>{updMotes(sc,t);idleFolk(mo,t,11);kan.visible=!SV.flags.kanp;nm.visible=!SV.flags.muts;const sl=!!SV.flags.morvanSleeps;if(sl){mo.root.rotation.x=Math.min(Math.PI/2.2,mo.root.rotation.x+.02);mo.root.position.y=Math.max(-.12,mo.root.position.y-.004);mo.root.position.z+=(-1.2-mo.root.position.z)*.01;}const f=cf.userData.fire;f.children[0].scale.set(1+Math.sin(t*.3)*.15,1+Math.sin(t*.4)*.25,1);f.children[1].scale.set(1+Math.sin(t*.5)*.1,1+Math.sin(t*.6)*.2,1);cf.userData.pl.intensity=1.6+Math.sin(t*.4)*.4;nm.rotation.z=.15+Math.sin(t*.05)*.06;if(SV.flags.poort11)wt.userData.disks.forEach((d,i)=>{d.material.emissiveIntensity=1+Math.sin(t*.06+i)*.4;});cw.userData.head.rotation.z=Math.sin(t*.02)*.04;};}
+}
+
+// ===================== HOOFDSTUK-OVERGANG, EINDKAART EN ECHTE 3D-FIGUREN VOOR HOOFDSTUK 3 T/M 12 =====================
+function startChapter(n){SV.ch=n;const c=CHX[n];SV.inv=SV.inv.filter(i=>PERSIST.includes(i));if(n===5&&!has('meel'))give('meel');if(n===9)give('sjaal');
+  G.end=false;G.endPending=false;G.msgs=[];G.sel=null;G.mode='walk';G.fade=0;G.pending=null;enterScene(c.scene,c.start[0],c.start[1],true);window.__cp=null;
+  (c.intro||[]).forEach(t=>sayN(t));if(n===9)sayN('Je haalt je warme sjaal uit je rugzak, voor het geval iemand het koud heeft.');sayN(SCN.desc);SV.done['seen_'+c.scene]=1;saveGame();}
+function drawEndX(){const n=SV.ch,c=CHX[n];drawCrownShape(ctx,W/2,160,2.4);
+  txt('HOOFDSTUK '+n+' VOLTOOID',W/2,240,30,'#7a2a10','center',FT);c.end.forEach((l,i)=>txt(l,W/2,285+i*27,19,'#2a1808','center',FB));
+  txt('Score: '+SV.score+' van '+MAXSCORE,W/2,385,22,'#7a2a10','center',FT);txt('Droomzegels: '+SV.zegels.length+' van 9',W/2,413,17,'#5a3a1a','center',FB);
+  if(n<12){txt(c.next,W/2,440,17,'#5a3a1a','center',FB);btn(W/2-160,462,320,46,'VERDER NAAR HOOFDSTUK '+(n+1),()=>startChapter(n+1),{main:true,size:15});}
+  else{txt('EINDE. Bedankt voor het spelen!',W/2,440,19,'#5a3a1a','center',FB);btn(W/2-110,462,220,46,'NAAR HET MENU',()=>{G.state='title';try{localStorage.removeItem('daelen3d_save')}catch(e){}},{main:true,size:16});}}
+// echte 3D-karakters (Quaternius) voor de nieuwe bewoners; de getekende figuren blijven als reserve
+const NPC2=[
+ ['molen','Molenaar Wiebe',{base:'Superhero_Male_FullBody',outfit:'Male_Peasant',extra:['Hair_Beard']},{hair:0xe0e0d8,wide:1.22,scale:1.0}],
+ ['markt','Bakkersvrouw Bertha',{base:'Superhero_Female_FullBody',outfit:'Female_Peasant',extra:['Hair_Buns']},{hair:0x9a5a30,wide:1.2}],
+ ['markt','Viskoper Kees',{base:'Superhero_Male_FullBody',outfit:'Male_Ranger',extra:['Hair_SimpleParted']},{hair:0x4a3220}],
+ ['markt','Kruidenvrouw Zora',{base:'Superhero_Female_FullBody',outfit:'Female_Ranger',extra:['Hair_Long']},{hair:0xb8a8c8}],
+ ['meer','Kapitein Knor',{base:'Superhero_Male_FullBody',outfit:'Male_Ranger',extra:['Hair_Beard']},{hair:0xd8d8d8}],
+ ['mijn','Kabouter Brom',{base:'Superhero_Male_FullBody',outfit:'Male_Peasant',extra:['Hair_Beard']},{hair:0xc8601e,scale:.62,wide:1.15}],
+ ['tempel','Priesteres Amra',{base:'Superhero_Female_FullBody',outfit:'Female_Ranger',extra:['Hair_Long']},{hair:0x1e140c}],
+ ['sterrenwacht','Professor Hoeksma',{base:'Superhero_Male_FullBody',outfit:'Male_Peasant',extra:['Hair_Beard']},{hair:0xf0f0f4}],
+ ['toren','Morvan',{base:'Superhero_Male_FullBody',outfit:'Male_Ranger',extra:['Hair_Beard']},{hair:0xb8b8c8}]
+];
+async function loadRealChars2(){for(const [sid,name,spec,o] of NPC2){try{const sc=SCENES[sid];const n=sc&&sc.npcs&&sc.npcs[name];if(!n)continue;
+  const C=await buildChar(spec);if(o.hair!=null)tintHair(C,o.hair);markReal(C);if(o.scale)C.root.scale.setScalar(o.scale);if(o.wide){C.root.scale.x*=o.wide;C.root.scale.z*=o.wide;}
+  n.root.add(C.root);hideProc(n.root);n.real=C;n.head=C.head;n.talkClip='Idle_Talking_Loop';n.idleClip='Idle_Loop';C.play('Idle_Loop',0);RC.list.push(C);}catch(e){console.error('npc2',name,e);}}}
+
+const MAXSCORE=210;let SV=null;
+function newState(){return{ch:1,scene:'plein',hx:0,hz:3,inv:[],score:0,flags:{},done:{},zegels:[]};}
 function saveGame(){try{localStorage.setItem('daelen3d_save',JSON.stringify(SV));}catch(e){}}
-function loadGame(){try{const s=JSON.parse(localStorage.getItem('daelen3d_save')||'null');if(s&&s.scene){if(!s.ch)s.ch=1;return s;}}catch(e){}return null;}
+function loadGame(){try{const s=JSON.parse(localStorage.getItem('daelen3d_save')||'null');if(s&&s.scene){if(!s.ch)s.ch=1;if(!s.zegels)s.zegels=[];return s;}}catch(e){}return null;}
 function has(i){return SV.inv.includes(i);}function give(i){if(!has(i))SV.inv.push(i);SFX.pick();}function take(i){SV.inv=SV.inv.filter(x=>x!==i);if(G.sel===i)G.sel=null;}
 function points(key,n){if(SV.done[key])return;SV.done[key]=1;SV.score+=n;SFX.point();G.flashScore=60;saveGame();}
 const G={state:'title',t:0,mode:'walk',sel:null,msgs:[],ui:[],mouse:{x:-100,y:-100,in:false},flashScore:0,fade:0,anims:[],end:false,keys:{L:0,R:0,U:0,D:0}};
@@ -898,7 +1450,7 @@ function sceneDo(hs,m,sx,sy){
   if(m==='look'||!hs.ap){act();return;}walkTo(hs.ap[0],hs.ap[1],{fn:act,face:hs.face});}
 
 // ===================== UPDATE & RENDER =====================
-function update(){G.t++;if(G.flashScore>0)G.flashScore--;if(G.state!=='play')return;
+function update(){G.t++;if(G.flashScore>0)G.flashScore--;if(G.zegelT>0)G.zegelT--;if(G.state!=='play')return;
   G.anims.forEach(a=>a.t++);G.anims=G.anims.filter(a=>a.t<45);
   if(G.fade>0){G.fade+=.05;if(G.fade>=1&&G.pending){const p=G.pending;G.pending=null;enterScene(p.id,p.x,p.z);}if(G.fade>=2)G.fade=0;return;}
   if(!G.msgs.length&&!G.end)updHero();else HERO.moving=false;
@@ -921,19 +1473,20 @@ function sync3D(){const sc=G.state==='title'?SCENES.plein:SCN;const t=G.t;updRea
   renderPass.scene=sc.three;}
 function project(obj,dy){obj.getWorldPosition(_hit);_hit.y+=dy||0;_hit.project(camera);return{x:(_hit.x+1)/2*W,y:(1-_hit.y)/2*SH};}
 function drawOverlay(){if(G.state!=='play')return;
+  if(G.zegelT>0){const a=Math.min(1,G.zegelT/30,(220-G.zegelT)/18);ctx.save();ctx.globalAlpha=a;ctx.translate(W/2,86);const g=ctx.createLinearGradient(-300,0,300,0);g.addColorStop(0,'rgba(30,15,60,0)');g.addColorStop(.5,'rgba(40,20,80,.88)');g.addColorStop(1,'rgba(30,15,60,0)');ctx.fillStyle=g;ctx.fillRect(-320,-36,640,84);txt('DROOMZEGEL GEVONDEN',0,-6,22,'#ffe27a','center',FT,'rgba(0,0,0,.7)',4);txt(G.zegelNaam||'',0,26,19,'#fff','center',FB,'rgba(0,0,0,.6)',3);ctx.restore();}
   if(SCN===SCENES.brug&&SV.flags.trolSlaapt){const T=SCN.npcs.Trol;const p=project(T.head,.5);const z=(G.t*.6)%80;ctx.save();ctx.globalAlpha=1-z/80;ctx.font='bold '+(16+z*.2)+'px '+FB;ctx.lineWidth=3;ctx.strokeStyle='#2a2a4a';ctx.fillStyle='#fff';ctx.strokeText('Z',p.x+20+z*.4,p.y-z);ctx.fillText('Z',p.x+20+z*.4,p.y-z);ctx.restore();}
   const v=ctx.createRadialGradient(W/2,SH/2,SH*.45,W/2,SH/2,SH*1.05);v.addColorStop(0,'rgba(0,0,0,0)');v.addColorStop(1,'rgba(20,10,0,.32)');ctx.fillStyle=v;ctx.fillRect(0,0,W,SH);}
 function drawTitle3(){ctx.fillStyle='rgba(15,8,2,.4)';ctx.fillRect(0,0,W,H);const g=ctx.createLinearGradient(0,H-220,0,H);g.addColorStop(0,'rgba(20,10,2,0)');g.addColorStop(1,'rgba(20,10,2,.92)');ctx.fillStyle=g;ctx.fillRect(0,H-220,W,220);
   ctx.save();ctx.translate(W/2,150);ctx.font='26px '+FT;ctx.textAlign='center';ctx.fillStyle='#f4e6c4';ctx.shadowColor='rgba(0,0,0,.8)';ctx.shadowBlur=10;ctx.fillText('DE KROON VAN',0,-22);
   const tg=ctx.createLinearGradient(0,-10,0,60);tg.addColorStop(0,'#fff6c0');tg.addColorStop(.5,'#f2c22a');tg.addColorStop(1,'#b07a10');ctx.font='800 76px '+FT;ctx.lineWidth=8;ctx.strokeStyle='#2a1404';ctx.lineJoin='round';ctx.strokeText('DAELENRIJK',0,52);ctx.fillStyle=tg;ctx.fillText('DAELENRIJK',0,52);ctx.shadowBlur=0;ctx.restore();
-  drawCrownShape(ctx,W/2,72,1.8);const _sv=loadGame();txt(_sv&&_sv.ch>=2?'Hoofdstuk 2: Het Donkere Woud':'Hoofdstuk 1: De gestolen kroon',W/2,240,22,'#f4e6c4','center',FB,'rgba(0,0,0,.7)',4);
+  drawCrownShape(ctx,W/2,72,1.8);const _sv=loadGame();txt(_sv&&_sv.ch>=3&&CHX[_sv.ch]?('Verder bij hoofdstuk '+_sv.ch+': '+CHX[_sv.ch].title):(_sv&&_sv.ch>=2?'Hoofdstuk 2: Het Donkere Woud':'Hoofdstuk 1: De gestolen kroon'),W/2,240,22,'#f4e6c4','center',FB,'rgba(0,0,0,.7)',4);
   if(!RC.ready&&!window.__charErr){txt('De bewoners van Daelenrijk worden wakker...',W/2,330,20,'#f4e6c4','center',FB,'rgba(0,0,0,.7)',4);return;}
   const sv=loadGame();btn(W/2-150,290,300,58,'NIEUW AVONTUUR',()=>{SV=newState();startPlay(true);},{main:!sv,size:20});if(sv)btn(W/2-150,362,300,58,'VERDER SPELEN',()=>{SV=sv;startPlay(false);},{main:true,size:20});
   txt('Klik met de muis om te lopen, kijken, pakken en praten.',W/2,470,16,'rgba(244,230,196,.85)','center',FB);txt('Rechtermuisknop of spatie wisselt van actie · pijltjestoetsen om te lopen · M = geluid',W/2,494,14,'rgba(244,230,196,.65)','center',FB);}
 function startPlay(isNew){G.state='play';G.mode='walk';G.sel=null;G.msgs=[];G.end=false;G.endPending=false;G.fade=0;const sc=SCENES[SV.scene];
   ['emmer'].forEach(()=>{});SCENES.plein.hot.find(h=>h.id==='emmer').obj.visible=!SV.flags.emmer;
   enterScene(SV.scene,isNew?SCENES.plein.start[0]:SV.hx,isNew?SCENES.plein.start[1]:SV.hz,!isNew);
-  if(!isNew&&((SV.ch===1&&SV.flags.endDone)||(SV.ch===2&&SV.flags.ch2Done)))G.end=true;
+  if(!isNew&&((SV.ch===1&&SV.flags.endDone)||(SV.ch===2&&SV.flags.ch2Done)||(SV.ch>=3&&SV.flags['chDone'+SV.ch])))G.end=true;
   if(isNew){sayN('Lang geleden, in het vredige koninkrijk Daelenrijk, werd op een zonnige ochtend een vreselijke ontdekking gedaan...');sayN('De gouden kroon van de goede koning Edwijn was gestolen! Het hele kasteel was in rep en roer.');sayN('Jij bent Gijs, een jonge knecht met grote dromen. Vandaag is de dag dat je een held kunt worden. Vind de kroon en breng hem terug!');sayN(SCN.desc);SV.done.seen_plein=1;}}
 function startChapter2(){SV.ch=2;SV.inv=SV.inv.filter(i=>i==='emmer');if(!SV.inv.includes('emmer'))SV.inv.push('emmer');SV.flags.trolSlaapt=1;SV.flags.kroon=1;G.end=false;G.endPending=false;G.msgs=[];G.sel=null;G.mode='walk';
   enterScene('brug',-2.5,1.6,true);SV.done.seen_brug=1;
@@ -943,15 +1496,16 @@ function startChapter2(){SV.ch=2;SV.inv=SV.inv.filter(i=>i==='emmer');if(!SV.inv
   say('Vrouw Mechteld','"Er is maar één die zo\'n vloek kan breken: de heks Grimelda, diep in het Donkere Woud. Ga, Gijs! Over de oude brug, nu de trol slaapt."');
   sayN('Met alleen je oude houten emmer trek je opnieuw de wereld in. De zon gaat al onder als je bij de oude brug aankomt.');saveGame();}
 function drawEnd(){ctx.fillStyle='rgba(10,5,0,.6)';ctx.fillRect(0,0,W,H);parchment(W/2-300,80,600,440);
+  if(SV.ch>=3){drawEndX();return;}
   if(SV.ch===1){drawCrownShape(ctx,W/2,160,2.4);
   txt('HOOFDSTUK 1 VOLTOOID',W/2,240,30,'#7a2a10','center',FT);txt('De valpoort gaat knarsend omhoog. Koning Edwijn',W/2,285,19,'#2a1808','center',FB);txt('ontvangt zijn kroon met tranen in zijn ogen',W/2,312,19,'#2a1808','center',FB);txt('en benoemt jou tot schildknaap van Daelenrijk!',W/2,339,19,'#2a1808','center',FB);
   txt('Score: '+SV.score+' van '+MAXSCORE,W/2,383,22,'#7a2a10','center',FT);txt('Maar het avontuur is nog niet voorbij...',W/2,413,18,'#5a3a1a','center',FB);
   btn(W/2-200,440,240,50,'NAAR HOOFDSTUK 2',()=>startChapter2(),{main:true,size:17});btn(W/2+55,440,145,50,'MENU',()=>{G.state='title';},{size:15});return;}
   txt('HOOFDSTUK 2 VOLTOOID',W/2,170,30,'#7a2a10','center',FT);
   ['Met het gouden drankje in je rugzak sta je voor het','huisje van Grimelda. De koning kan gered worden,','maar eerst heb je een schub van de draak nodig...'].forEach((l,i)=>txt(l,W/2,225+i*27,19,'#2a1808','center',FB));
-  txt('Score: '+SV.score+' van '+MAXSCORE,W/2,340,22,'#7a2a10','center',FT);txt('Wordt vervolgd: Hoofdstuk 3, De Grot van de Draak',W/2,378,18,'#5a3a1a','center',FB);
+  txt('Score: '+SV.score+' van '+MAXSCORE,W/2,340,22,'#7a2a10','center',FT);txt('Hoofdstuk 3: '+CHX[3].title,W/2,378,18,'#5a3a1a','center',FB);
   txt('Je voortgang is bewaard.',W/2,406,15,'#5a3a1a','center',FB);
-  btn(W/2-110,440,220,50,'NAAR HET MENU',()=>{G.state='title';},{main:true,size:16});}
+  btn(W/2-200,440,240,50,'NAAR HOOFDSTUK 3',()=>startChapter(3),{main:true,size:17});btn(W/2+55,440,145,50,'MENU',()=>{G.state='title';},{size:15});}
 function render(){G.ui=[];const d=view.dpr,s=view.s*d;
   try{sync3D();composer.render();}catch(e){if(!window.__err){window.__err=e;console.error(e);}}
   ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle='#0c0906';ctx.fillRect(0,0,cv.width,cv.height);ctx.clearRect(Math.floor(view.ox*d),Math.floor(view.oy*d),Math.ceil(W*s)+1,Math.ceil(SH*s)+1);
@@ -991,10 +1545,11 @@ function drawUI(){const y0=SH;const g=ctx.createLinearGradient(0,y0,0,H);g.addCo
   // score/menu
   ctx.fillStyle='rgba(0,0,0,.35)';rr(ctx,800,y0+18,142,48,8);ctx.fill();txt('SCORE',812,y0+36,11,'#e8c880','left',FT);const f=G.flashScore>0&&Math.floor(G.flashScore/6)%2;txt(S.score+' van '+MAXSCORE,812,y0+58,18,f?'#fff27a':'#fff','left',FT);
   btn(800,y0+74,66,30,muted?'Geluid uit':'Geluid',()=>setMute(!muted),{size:11,font:FB});btn(874,y0+74,68,30,'Menu',()=>{G.state='title';},{size:13});
+  {const zx=612,zy=y0+112;txt('DROOMZEGELS',zx,zy-6,11,'#e8c880','left',FT);for(let i=0;i<9;i++){const got=(SV.zegels||[]).includes(i+2);ctx.save();ctx.translate(zx+10+i*26,zy+13);ctx.beginPath();for(let k=0;k<6;k++){const a=k/6*6.283;ctx.lineTo(Math.cos(a)*9,Math.sin(a)*9);}ctx.closePath();ctx.fillStyle=got?'#ffd85a':'rgba(0,0,0,.4)';ctx.fill();ctx.strokeStyle=got?'#fff2b0':'rgba(232,200,128,.35)';ctx.lineWidth=1.5;ctx.stroke();ctx.restore();}}
   // status / actie
   const m=G.sel?'Gebruik '+ITEMS[G.sel].name+' met...':(VERBS.find(v=>v.id===G.mode).name);const hv=G.mouse.in&&G.mouse.y<SH?hotAt(G.mouse.x,G.mouse.y):null;
   txt(m+(hv?' '+hv.name:''),ix,y0+125,15,'#f0dcaa','left',FB);}
-function drawTop(){const g=ctx.createLinearGradient(0,0,0,26);g.addColorStop(0,'rgba(20,10,0,.65)');g.addColorStop(1,'rgba(20,10,0,0)');ctx.fillStyle=g;ctx.fillRect(0,0,W,26);txt(SCN.name,14,18,14,'#f4e6c4','left',FT,'rgba(0,0,0,.6)',3);txt('De Kroon van Daelenrijk',W-14,18,13,'rgba(244,230,196,.8)','right',FT,'rgba(0,0,0,.5)',3);}
+function drawTop(){const g=ctx.createLinearGradient(0,0,0,26);g.addColorStop(0,'rgba(20,10,0,.65)');g.addColorStop(1,'rgba(20,10,0,0)');ctx.fillStyle=g;ctx.fillRect(0,0,W,26);txt(SCN.name,14,18,14,'#f4e6c4','left',FT,'rgba(0,0,0,.6)',3);txt(SV.ch>=3&&CHX[SV.ch]?('Hoofdstuk '+SV.ch+': '+CHX[SV.ch].title):'De Kroon van Daelenrijk',W-14,18,13,'rgba(244,230,196,.8)','right',FT,'rgba(0,0,0,.5)',3);}
 function drawMsg(){const m=G.msgs[0];const lines=wrap(m.t,560,20);const h=lines.length*27+(m.who?40:24)+34;const x=W/2-310,y=SH-h-14;parchment(x,y,620,h);let ty=y+30;
   if(m.who){txt(m.who,W/2,ty+4,19,'#7a2a10','center',FT);ty+=32;}lines.forEach(l=>{txt(l,x+30,ty+6,20,'#2a1808','left',FB);ty+=27;});
   if(Math.floor(G.t/30)%2)txt('▼ klik om verder te gaan',x+620-26,y+h-14,12,'#8a5a24','right',FB);}
@@ -1031,7 +1586,8 @@ document.addEventListener('touchmove',e=>e.preventDefault(),{passive:false});
 let acc=0,last=performance.now();function loop(now){acc+=Math.min(100,now-last);last=now;let n=0;while(acc>=1000/60&&n<5){update();acc-=1000/60;n++;}if(n>=5)acc=0;render();requestAnimationFrame(loop);}
 init3D();SV=newState();loadRealChars();
 try{document.getElementById('load').remove();}catch(e){}
-window.__RC=RC;window.__dbg={startChapter2,get SCENES(){return SCENES},actHot,G,get S(){return SV},get H(){return HERO},sceneClick,enterScene,startPlay,newState,hotAt,set SV(v){SV=v}};
+function runHot(id,mode,sel){const hs=SCN.hot.find(h=>h.id===id);if(!hs)throw new Error('geen hotspot '+id+' in '+SV.scene);G.sel=sel||null;const m=sel?'use':mode;if(m==='use'){const f=hs.use&&hs.use[sel];G.sel=null;if(f)f();else sayN('(niets gebeurt)');}else{const f=hs[m];if(f)f();else sayN('(niets gebeurt)');}}
+window.__RC=RC;window.__dbg={runHot,startChapter,CHX,has,give,take,walkable,findPath,getHERO:()=>HERO,getSCN:()=>SCN,startChapter2,get SCENES(){return SCENES},actHot,G,get S(){return SV},get H(){return HERO},sceneClick,enterScene,startPlay,newState,hotAt,set SV(v){SV=v}};
 requestAnimationFrame(loop);
 </script>
 </body>
