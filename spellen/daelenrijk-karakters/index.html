@@ -466,7 +466,7 @@ async function loadRealChars(){try{
   RC.ready=true;loadWitch();loadTroll();loadRealChars2();}catch(e){console.error('figuren',e);window.__charErr=String(e);}}
 function updRealChars(){const dt=Math.min(.05,_clk.getDelta());if(!RC.ready)return;
   const who=G.msgs.length?G.msgs[0].who:null;
-  if(HM.real){const h=HM.real;const walking=G.state==='play'&&HERO&&HERO.moving;const talking=who==='Gijs';h.play(walking?'Walk_Loop':(talking?'Idle_Talking_Loop':'Idle_Loop'),.2);if(h.acts.Walk_Loop)h.acts.Walk_Loop.timeScale=1.15;}
+  if(HM.real){const h=HM.real;const vv=(G.state==='play'&&HERO&&HERO.v)||0;const walking=vv>.008;const talking=who==='Gijs';h.play(walking?'Walk_Loop':(talking?'Idle_Talking_Loop':'Idle_Loop'),walking?.22:.32);if(h.acts.Walk_Loop)h.acts.Walk_Loop.timeScale=clamp(vv/.03*1.12,.5,1.4);}
   const sc=G.state==='title'?SCENES.plein:SCN;if(sc&&sc.npcs)Object.entries(sc.npcs).forEach(([n,npc])=>{if(npc.real)npc.real.play(n===who?npc.talkClip:npc.idleClip,.35);});
   RC.list.forEach(c=>c.tick(dt));}
 
@@ -814,7 +814,7 @@ function buildCh2(){
     cfl.children.forEach((s,i)=>{if(s.isSprite)s.scale.y=.24+Math.sin(t*.3+i)*.04;});cpl.intensity=1.5+Math.sin(t*.2)*.2;
     hut.userData.smoke.children.forEach(s=>{const k=(s.userData.k+t*.003)%1;s.position.set(Math.sin(k*6)*.3,k*3,0);s.scale.setScalar(.6+k*1.6);s.material.opacity=.3*(1-k);});cat.userData.tail.rotation.z=Math.sin(t*.04)*.4;};}
  ['woud','vijver','heks'].forEach(k=>outlineScene(SCENES[k].three));
- buildChapters();Object.keys(SCENES).forEach(k=>outlineScene(SCENES[k].three));
+ buildChapters();buildChapters2();Object.keys(SCENES).forEach(k=>outlineScene(SCENES[k].three));
  // ---- aanpassingen aan hoofdstuk 1-plekken voor hoofdstuk 2 ----
  const T=SCENES.brug;const kh=T.hot.find(h=>h.id==='ketel');kh.use={lantaarn:()=>{if(has('lantaarnaan'))return;take('lantaarn');give('lantaarnaan');points('lantaarnaan',5);sayN('Je houdt het kaarsje van de lantaarn bij het vuurtje onder de ketel van de trol. Het vat vlam! De lantaarn geeft nu een warm, geel licht.');},lantaarnaan:()=>sayN('Je lantaarn brandt al.'),emmer:()=>sayN('Je gaat die vieze trollensoep echt niet in je emmer scheppen.')};
  const coins=T.three.children.find(c=>c.isGroup&&Math.abs(c.position.x+.5)<.01&&Math.abs(c.position.z+4.9)<.01);
@@ -849,6 +849,7 @@ async function loadWitch(){try{const sc=SCENES.heks;const w=sc.npcs.Grimelda;con
   w.root.add(m.root);w.real=m;w.head=m.head;w.talkClip='Idle_Talking_Loop';w.idleClip='Idle_Loop';m.play('Idle_Loop',0);RC.list.push(m);}catch(e){console.error('heks',e);}}
 
 // ===================== SPELSTATUS =====================
+const A=(p,m)=>{p.add(m);return m;};
 // ===================== EXTRA: WIND, DEELTJES, FIGUREN, VOORWERPEN =====================
 const WIND={value:0};
 function addMotes(sc,o){const n=o.n||60,pos=new Float32Array(n*3),ph=[];const ar=o.area||[-10,10,-9,6];for(let i=0;i<n;i++){pos[i*3]=lerp(ar[0],ar[1],R());pos[i*3+1]=lerp(.3,o.h||4,R());pos[i*3+2]=lerp(ar[2],ar[3],R());ph.push(R()*6.28);}
@@ -921,7 +922,7 @@ function makeWindmill(){const g=new THREE.Group();const pt=plaster('#cdbd9a','rg
   g.add(M(CYL(1.5,2.1,6.2,24),wall,0,3.1,0));const rf=TX.roof.clone();rf.repeat.set(6,3);rf.needsUpdate=true;g.add(M(new THREE.ConeGeometry(1.85,2.2,24),std({map:rf,roughness:.75}),0,7.3,0));
   g.add(M(BOX(1.0,1.9,.15),std({map:TX.wood,roughness:.8,color:0x8a6a4a}),0,.95,2.08));[2.4,4.0].forEach((y,i)=>{const rz=2.1-.6*y/6.2;g.add(M(BOX(.4,.6,.12),std({color:0x1a120a,emissive:0x442a10,emissiveIntensity:.5}),0,y,rz+.02));});const shf=M(CYL(.2,.2,1.1,10),wd,0,5.6,1.6);shf.rotation.x=Math.PI/2;g.add(shf);
   const sails=new THREE.Group();sails.position.set(0,5.6,2.1);for(let k=0;k<4;k++){const arm=new THREE.Group();arm.rotation.z=k*Math.PI/2;arm.add(M(BOX(.2,5.2,.16),std({color:0x5a3a20,roughness:.8}),0,2.6,0));const cl=M(BOX(1.1,3.4,.04),std({map:clothTex('#c0442e','#f0e2c4',true,83,3),roughness:.95,side:THREE.DoubleSide}),.62,2.8,.03);arm.add(cl);for(let j=0;j<6;j++)arm.add(M(BOX(1.2,.07,.06),std({color:0x5a3a20,roughness:.8}),.6,1.2+j*.55,.02));sails.add(arm);}
-  sails.add(M(CYL(.22,.22,.4,12),wd,0,0,0)).rotation.x=Math.PI/2;g.add(sails);g.userData.sails=sails;return g;}
+  A(sails,M(CYL(.22,.22,.4,12),wd,0,0,0)).rotation.x=Math.PI/2;g.add(sails);g.userData.sails=sails;return g;}
 function makeStall(c1,c2,seed){const g=new THREE.Group();const wd=std({map:TX.wood,roughness:.8});[[-1.3,-.7],[1.3,-.7],[-1.3,.7],[1.3,.7]].forEach(p=>g.add(M(CYL(.06,.06,2.3,8),wd,p[0],1.15,p[1])));
   g.add(M(BOX(2.8,.9,.9),wd,0,.45,.15));g.add(M(BOX(3.0,.08,1.1),std({map:TX.wood,roughness:.8,color:0xb89870}),0,.94,.15));
   const cn=std({map:clothTex(c1,c2,true,seed,6),roughness:.9,side:THREE.DoubleSide});const ca=M(new THREE.PlaneGeometry(3.2,1.5),cn,0,2.55,.1);ca.rotation.x=-.45+Math.PI;ca.rotation.y=Math.PI;ca.scale.set(1,1,1);g.add(ca);
@@ -936,7 +937,7 @@ function makeCactus(s){const g=new THREE.Group();const m=std({color:0x4a8a3a,rou
 function makeBoat(){const g=new THREE.Group();const wd=std({map:TX.wood,roughness:.8,color:0xa07a50});const hull=M(SPH(1.3,20,12,0,6.3,Math.PI/2,Math.PI/2),wd,0,.45,0);hull.scale.set(1.5,.55,.65);g.add(hull);const hole=M(new THREE.CircleGeometry(.1,12),new THREE.MeshBasicMaterial({color:0x050403}),.5,.2,.8,false);hole.userData.noOutline=true;g.add(hole);g.userData.hole=hole;
   g.add(M(BOX(.1,.08,1.2),wd,.7,.55,0));g.add(M(BOX(.1,.08,1.2),wd,-.7,.55,0));g.add(M(BOX(1.9,.06,.1),wd,0,.5,.55));return g;}
 function makeOar(){const g=new THREE.Group();const wd=std({map:TX.wood,roughness:.8});const s=M(CYL(.03,.03,1.8,8),wd,0,.05,0);s.rotation.z=Math.PI/2;g.add(s);const b=M(BOX(.5,.04,.2),wd,.95,.05,0);g.add(b);return g;}
-function makeGrave(sd){const g=new THREE.Group();const st=std({color:0x8a8e96,roughness:.95,flatShading:true});const b=M(BOX(.6,.9,.14),st,0,.45,0);g.add(b);g.add(M(CYL(.3,.3,.14,14,1),st,0,.9,0)).rotation.x=Math.PI/2;g.rotation.set((sd%3-1)*.08,0,((sd%5)-2)*.05);return g;}
+function makeGrave(sd){const g=new THREE.Group();const st=std({color:0x8a8e96,roughness:.95,flatShading:true});const b=M(BOX(.6,.9,.14),st,0,.45,0);g.add(b);A(g,M(CYL(.3,.3,.14,14,1),st,0,.9,0)).rotation.x=Math.PI/2;g.rotation.set((sd%3-1)*.08,0,((sd%5)-2)*.05);return g;}
 function makeDeadTree(h,seed){const g=new THREE.Group();const bm=std({map:TX.bark,roughness:.95,color:0x8a8078});const r=mulberry(seed);const tr=M(CYL(.12,.3,h,10),bm,0,h/2,0);g.add(tr);for(let i=0;i<7;i++){const a=r()*6.28,len=1.2+r()*1.6;const b=M(CYL(.025,.07,len,6),bm,Math.cos(a)*.1,h*(.5+r()*.45),Math.sin(a)*.1);b.rotation.z=Math.cos(a)*(.8+r()*.5);b.rotation.x=Math.sin(a)*(.8+r()*.5);g.add(b);}return g;}
 function makeSnowPine(h){const g=new THREE.Group();const m=std({color:0x2e4a3e,roughness:.9,flatShading:true}),sn=std({color:0xf4f8ff,roughness:1,flatShading:true});for(let i=0;i<4;i++){const r0=h*(.32-i*.06);g.add(M(new THREE.ConeGeometry(r0,h*.42,9),m,0,h*.3+i*h*.17,0));const c2=M(new THREE.ConeGeometry(r0*.85,h*.3,9),sn,0,h*.36+i*h*.17,0);c2.scale.set(1.02,.9,1.02);g.add(c2);}g.add(M(CYL(h*.03,h*.04,h*.3),std({color:0x3a2a1a}),0,h*.15,0));return g;}
 function makeCampfire(){const g=new THREE.Group();const st=std({color:0x7a7a80,roughness:1,flatShading:true});for(let i=0;i<9;i++){const a=i/9*6.28;const r2=M(new THREE.DodecahedronGeometry(.18,0),st,Math.cos(a)*.55,.1,Math.sin(a)*.55);g.add(r2);}
@@ -953,7 +954,7 @@ function makeWizTower(){const g=new THREE.Group();const st=TX.stone.clone();st.r
 function makeTemple(){const g=new THREE.Group();const sd=std({color:0xd8b878,roughness:.95,flatShading:true});const tx=ctex(256,256,(x,w,h)=>{x.fillStyle='#d8bc84';x.fillRect(0,0,w,h);const r=mulberry(95);for(let i=0;i<600;i++){x.fillStyle=r()<.5?'rgba(120,80,30,'+(r()*.1)+')':'rgba(255,240,200,'+(r()*.1)+')';x.beginPath();x.arc(r()*w,r()*h,1+r()*6,0,7);x.fill();}for(let y=0;y<h;y+=48){x.strokeStyle='rgba(110,80,40,.4)';x.lineWidth=2;x.beginPath();x.moveTo(0,y);x.lineTo(w,y);x.stroke();}},true);tx.repeat.set(2,2);const sm=std({map:tx,roughness:.95});
   [0,1,2].forEach(i=>g.add(M(BOX(9-i*.4,.3,5-i*.3),sm,0,.15+i*.3,0)));[-3.2,-1.1,1.1,3.2].forEach(x=>{g.add(M(CYL(.4,.45,4.2,16),sm,x,3.0,1.2));g.add(M(BOX(1.1,.25,1.1),sm,x,5.2,1.2));});g.add(M(BOX(9.2,.8,1.6),sm,0,5.7,1.2));g.add(M(BOX(9.6,.3,2),sm,0,6.2,1.2));
   g.add(M(BOX(7.6,4.8,.5),sm,0,3.3,-.8));const door=M(BOX(2.2,3.4,.3),std({color:0x8a7a60,roughness:1}),0,2.2,-.45);g.add(door);g.userData.door=door;
-  const sun=new THREE.Group();sun.add(M(CYL(.9,.9,.12,28),std({color:0xe8b830,metalness:.8,roughness:.3,emissive:0x442a00}),0,0,0)).rotation.x=Math.PI/2;for(let i=0;i<12;i++){const a=i/12*6.28;const r2=M(new THREE.ConeGeometry(.12,.7,6),std({color:0xe8b830,metalness:.8,roughness:.3}),Math.cos(a)*1.25,Math.sin(a)*1.25,0);r2.rotation.z=a-Math.PI/2;sun.add(r2);}sun.position.set(0,5.0,.72);sun.scale.setScalar(.8);g.add(sun);g.userData.sun=sun;return g;}
+  const sun=new THREE.Group();A(sun,M(CYL(.9,.9,.12,28),std({color:0xe8b830,metalness:.8,roughness:.3,emissive:0x442a00}),0,0,0)).rotation.x=Math.PI/2;for(let i=0;i<12;i++){const a=i/12*6.28;const r2=M(new THREE.ConeGeometry(.12,.7,6),std({color:0xe8b830,metalness:.8,roughness:.3}),Math.cos(a)*1.25,Math.sin(a)*1.25,0);r2.rotation.z=a-Math.PI/2;sun.add(r2);}sun.position.set(0,5.0,.72);sun.scale.setScalar(.8);g.add(sun);g.userData.sun=sun;return g;}
 function makeSunStatue(){const g=new THREE.Group();const sm=std({color:0xc8a868,roughness:.95,flatShading:true});g.add(M(BOX(1.2,1.1,1.2),sm,0,.55,0));g.add(M(CYL(.5,.6,.5,16),sm,0,1.35,0));const eye=M(CYL(.42,.42,.1,24),std({color:0x4a3a28,roughness:.5,metalness:.5}),0,2.0,.0);eye.rotation.x=Math.PI/2;g.add(eye);for(let i=0;i<10;i++){const a=i/10*6.28;const r2=M(new THREE.ConeGeometry(.08,.4,5),sm,Math.cos(a)*.62,2.0+Math.sin(a)*.62,0);r2.rotation.z=a-Math.PI/2;g.add(r2);}g.userData.eye=eye;return g;}
 function makeHay(){const g=new THREE.Group();const hm=std({color:0xd8b848,roughness:1});const h=M(SPH(1.1,16,12,0,6.3,0,1.6),hm,0,0,0);h.scale.set(1.2,1,1);g.add(h);for(let i=0;i<30;i++){const a=R()*6.28,y=R()*.8;const s=M(CYL(.01,.01,.6,3),mat(0xe8c858,1),Math.cos(a)*(1.2-y*.6),y,Math.sin(a)*(1.0-y*.6),false);s.rotation.set(R()*2,R()*3,R()*2);g.add(s);}return g;}
 function makeOilcan(){const g=new THREE.Group();const m=std({color:0xb83a2a,metalness:.5,roughness:.4});g.add(M(CYL(.1,.12,.2,14),m,0,.1,0));const sp=M(CYL(.015,.02,.2,6),std({color:0x8a8a90,metalness:.8,roughness:.3}),.12,.22,0);sp.rotation.z=-.9;g.add(sp);return g;}
@@ -1042,7 +1043,7 @@ const CHX={
 
 // ---------- hulpjes ----------
 const fc=(ap,tx,tz)=>Math.atan2(tx-ap[0],tz-ap[1]);
-function zegel(n,naam){if(!SV.zegels.includes(n))SV.zegels.push(n);G.zegelT=220;G.zegelNaam=naam;SFX.point();saveGame();}
+function zegel(n,naam){if(!SV.zegels.includes(n))SV.zegels.push(n);G.zegelTitel='DROOMZEGEL GEVONDEN';G.zegelT=220;G.zegelNaam=naam;SFX.point();saveGame();}
 function fin(n){G.endPending=true;if(SV&&SV.ch)SV.flags['chDone'+SV.ch]=1;saveGame();}
 function newScene(id,o){const sc=new THREE.Scene();const S={name:o.name,three:sc,birds:!!o.birds,water:o.water||0,cam:{pos:[0,3.1,11.5],look:[0,2.6,0]},anim:[],hot:[],blocked:o.blocked||[],npcs:{},walk:o.walk||[[-9.2,-5],[9.2,-5],[9.2,4.2],[-9.2,4.2]],start:o.start||[0,2.6],exits:o.exits||{},desc:o.desc};SCENES[id]=S;
   lights(sc,o.light);addBackdrop(sc,backdrop(o.bd),o.bdDist||90,o.bdY==null?15:o.bdY);
@@ -1102,7 +1103,7 @@ function buildChapters(){
   const hay=makeHay();hay.position.set(5.8,0,-2.6);sc.add(hay);const can=makeOilcan();can.position.set(7.2,0,-1.4);can.scale.setScalar(1.6);sc.add(can);
   const crow=makeScarecrow();crow.position.set(-5,0,-2);crow.rotation.y=.4;sc.add(crow);
   const zm=makeSeal(0xf2d070);zm.position.set(-2.1,1.2,-4.5);zm.scale.setScalar(1.5);zm.visible=false;sc.add(zm);
-  const gear=new THREE.Group();gear.position.set(1.7,1.1,-4.6);const gm=std({map:TX.wood,roughness:.8,color:0x8a5a30});const gd=M(CYL(.7,.7,.2,20),gm,0,0,0);gd.rotation.x=Math.PI/2;gear.add(gd);for(let i=0;i<12;i++){const a=i/12*6.28;gear.add(M(BOX(.2,.2,.24),gm,Math.cos(a)*.78,Math.sin(a)*.78,0));}gear.add(M(CYL(.12,.12,.4,10),std({color:0x5a3a20,roughness:.6,metalness:.6}),0,0,0)).rotation.x=Math.PI/2;sc.add(gear);
+  const gear=new THREE.Group();gear.position.set(1.7,1.1,-4.6);const gm=std({map:TX.wood,roughness:.8,color:0x8a5a30});const gd=M(CYL(.7,.7,.2,20),gm,0,0,0);gd.rotation.x=Math.PI/2;gear.add(gd);for(let i=0;i<12;i++){const a=i/12*6.28;gear.add(M(BOX(.2,.2,.24),gm,Math.cos(a)*.78,Math.sin(a)*.78,0));}A(gear,M(CYL(.12,.12,.4,10),std({color:0x5a3a20,roughness:.6,metalness:.6}),0,0,0)).rotation.x=Math.PI/2;sc.add(gear);
   const sacks=new THREE.Group();[[0,0],[.7,.1],[.3,.6]].forEach((p,i)=>{const s=M(SPH(.36,14,10),std({map:clothTex('#d8c8a0','#c8b890',false,60+i,2),roughness:1}),p[0],.3+(i==2?.35:0),p[1]);s.scale.set(1,.9,.8);sacks.add(s);});sacks.position.set(3.4,0,-1.2);sc.add(sacks);
   const wi=folk({c1:'#d8d0b8',c2:'#c8c0a8',apron:'#e8e0c8',fat:1.45,w:1.1,h:.98,hat:'muts',hc:'#e8e0c8',hair:0xc8c8c0,mus:0xd0d0c8,skin:'#f0c4a0',seed:62,eye:0x5a7a9a,beard:0xd8d8d0});wi.root.position.set(-3.6,0,-.4);wi.root.rotation.y=.5;sc.add(wi.root);S.npcs['Molenaar Wiebe']=wi;
   grassOver(sc,{n:9000,seed:14,cols:[0xc8aa3a,0xd8bc4a,0xb89a2e,0xe0c85a],avoid:(x,z)=>(x>-4&&x<2&&z>-6.5&&z<1.6)||Math.hypot(x-5.8,z+2.6)<1.6});
@@ -1166,7 +1167,7 @@ function buildChapters(){
   const boat=makeBoat();boat.position.set(4.9,.1,-4.6);boat.rotation.y=.25;boat.scale.setScalar(1.05);sc.add(boat);
   const oar=makeOar();oar.position.set(-7.2,.15,3.1);oar.rotation.y=.7;sc.add(oar);
   const wb=makeBarrel();wb.position.set(-4.5,0,.5);sc.add(wb);const kork=M(CYL(.1,.1,.18,14),std({color:0xc89a5a,roughness:.95}),-4.5,.9,.5);sc.add(kork);
-  const isl=new THREE.Group();isl.add(M(SPH(2.2,18,10,0,6.3,0,1.4),std({color:0xd8c898,roughness:1}),0,0,0)).scale.set(1.6,.5,1.2);const pt=makeTree(5,301,{leaf:[0x5c9a32,0x4a8a2a]});pt.scale.setScalar(.7);pt.position.set(-.5,.3,0);isl.add(pt);isl.position.set(-6.5,-.4,-10);sc.add(isl);
+  const isl=new THREE.Group();A(isl,M(SPH(2.2,18,10,0,6.3,0,1.4),std({color:0xd8c898,roughness:1}),0,0,0)).scale.set(1.6,.5,1.2);const pt=makeTree(5,301,{leaf:[0x5c9a32,0x4a8a2a]});pt.scale.setScalar(.7);pt.position.set(-.5,.3,0);isl.add(pt);isl.position.set(-6.5,-.4,-10);sc.add(isl);
   const iz=makeSeal(0x7ad8ff);iz.position.set(-5.5,1.2,-8.2);iz.scale.setScalar(1.5);iz.visible=false;sc.add(iz);
   const kn=folk({c1:'#2a4a7a',c2:'#1a3a6a',stripes:true,hat:'pet',hc:'#1a2a4a',hair:0xc8c8c8,beard:0xd8d8d0,mus:0xd8d8d0,skin:'#d4986a',old:true,fat:1.2,seed:67,h:.96,eye:0x4a6a8a});kn.root.position.set(-4.5,.55,.5);kn.root.rotation.y=.4;kn.root.scale.set(1,.7,1);sc.add(kn.root);
   kn.root.position.set(-5.2,0,.9);kn.root.scale.set(1,1,1);wb.position.set(-3.9,0,.7);kork.position.set(-3.9,.9,.7);
@@ -1229,8 +1230,8 @@ function buildChapters(){
    blocked:[{x:-5.5,z:-2.4,r:.7},{x:-1.3,z:-2.2,r:.7},{x:3.4,z:-6.5,r:2.1},{x:-3,z:-5,r:.5},{x:4.5,z:-3.4,r:.4},{x:7,z:-4,r:.4}]});
   const tw=new THREE.Group();const stm=TX.stone.clone();stm.repeat.set(2,3);stm.needsUpdate=true;const sm=std({map:stm,bumpMap:stm,bumpScale:2,roughness:.95,color:0x888a94});tw.add(M(CYL(1.8,2.1,6,22),sm,0,3,0));for(let i=0;i<8;i++){const a=i/8*6.28;if(i%3)tw.add(M(BOX(.55,.7+R()*.6,.5),sm,Math.cos(a)*1.9,6.3,Math.sin(a)*1.9));}const ad=new THREE.Shape();ad.moveTo(-.7,0);ad.lineTo(-.7,1.4);ad.absarc(0,1.4,.7,Math.PI,0,true);ad.lineTo(.7,0);ad.closePath();const dr=new THREE.Mesh(new THREE.ShapeGeometry(ad),new THREE.MeshBasicMaterial({color:0x030308}));dr.position.set(0,0,2.1);tw.add(dr);tw.position.set(3.4,0,-6.5);sc.add(tw);
   const dt=makeDeadTree(4.5,4);dt.position.set(-5.5,0,-2.4);sc.add(dt);const key=M(new THREE.TorusGeometry(.1,.025,6,12),std({color:0x8a6a3a,metalness:.7,roughness:.5}),-4.6,2.5,-2.1);const kb=M(BOX(.04,.28,.03),std({color:0x8a6a3a,metalness:.7}),-4.6,2.3,-2.1);const kg=new THREE.Group();kg.add(key);kg.add(kb);{const hb=new THREE.Mesh(new THREE.SphereGeometry(.32,8,6),new THREE.MeshBasicMaterial({visible:false}));hb.position.set(-4.6,2.4,-2.1);hb.userData.noOutline=true;kg.add(hb);}sc.add(kg);
-  const chest=new THREE.Group();const wd=std({map:TX.wood,roughness:.8,color:0x5a3a22});chest.add(M(BOX(1.1,.6,.7),wd,0,.3,0));chest.add(M(CYL(.35,.35,1.1,12,1),wd,0,.6,0)).rotation.z=Math.PI/2;chest.add(M(BOX(.12,.2,.05),std({color:0xc8a040,metalness:.9,roughness:.3}),0,.45,.37));chest.position.set(-1.3,0,-2.2);chest.rotation.y=.3;sc.add(chest);
-  const vi=new THREE.Group();vi.add(M(SPH(.2,12,10),std({color:0x8a4a1a,roughness:.5}),0,0,0)).scale.set(1,1.4,.5);vi.add(M(BOX(.04,.4,.03),mat(0x2a1a0a,.8),0,.35,0));vi.visible=false;vi.position.set(-1.3,.9,-2.2);sc.add(vi);
+  const chest=new THREE.Group();const wd=std({map:TX.wood,roughness:.8,color:0x5a3a22});chest.add(M(BOX(1.1,.6,.7),wd,0,.3,0));A(chest,M(CYL(.35,.35,1.1,12,1),wd,0,.6,0)).rotation.z=Math.PI/2;chest.add(M(BOX(.12,.2,.05),std({color:0xc8a040,metalness:.9,roughness:.3}),0,.45,.37));chest.position.set(-1.3,0,-2.2);chest.rotation.y=.3;sc.add(chest);
+  const vi=new THREE.Group();A(vi,M(SPH(.2,12,10),std({color:0x8a4a1a,roughness:.5}),0,0,0)).scale.set(1,1.4,.5);vi.add(M(BOX(.04,.4,.03),mat(0x2a1a0a,.8),0,.35,0));vi.visible=false;vi.position.set(-1.3,.9,-2.2);sc.add(vi);
   [[-3,-5],[-1,-4.4],[1,-4],[4.5,-3.4],[7,-4],[-7,-5],[8,-2]].forEach((p,i)=>{const g=makeGrave(i);g.position.set(p[0],0,p[1]);g.rotation.y+=(i-3)*.12;sc.add(g);});
   const gh=makeGhost();gh.root.position.set(1.8,.9,-.5);gh.root.scale.setScalar(1.1);sc.add(gh.root);S.npcs['Spook Spoetnik']=gh;
   const sz=makeSeal(0xc8b8ff);sz.position.set(1.9,1.4,-.2);sz.scale.setScalar(1.4);sz.visible=false;sc.add(sz);
@@ -1290,8 +1291,8 @@ function buildChapters(){
   const am=folk({c1:'#c8982a',c2:'#a87818',robe:1,hat:'kap',hc:'#d8a838',hair:0x2a1a0a,skin:'#a87a54',seed:69,eye:0x3a2a1a,sash:0xf2c22a,h:.98});am.root.position.set(-4.6,0,-1.2);am.root.rotation.y=.6;sc.add(am.root);S.npcs['Priesteres Amra']=am;
   const cacs=[[-8,-4,1.2],[7.6,-3.2,1],[-6.6,-5.5,.9],[8.6,1.6,.8]];cacs.forEach(c=>{const k=makeCactus(c[2]);k.position.set(c[0],0,c[1]);sc.add(k);});
   const oasis=makeWater(4,3);oasis.position.set(-8,.04,1.5);sc.add(oasis);const pt=makeTree(5.5,311,{leaf:[0x7ab838,0x5a9828],thick:.7,wide:.7});pt.position.set(-9.5,0,.4);sc.add(pt);
-  const wz=new THREE.Group();wz.add(M(SPH(.22,12,10),std({map:leatherTex('#8a5a2a',12),roughness:.7}),0,.2,0)).scale.set(1,1.2,.8);wz.add(M(CYL(.04,.05,.18,8),mat(0x6a4a2a,.7),0,.48,0));wz.position.set(-6.6,0,2.9);sc.add(wz);
-  const sp=new THREE.Group();sp.add(M(CYL(.2,.2,.03,16),std({color:0xc87a3a,metalness:.95,roughness:.12,emissive:0x331a08}),0,0,0)).rotation.x=Math.PI/2;sp.add(M(BOX(.04,.2,.03),std({color:0x8a5a2a,metalness:.6}),0,-.22,0));sp.position.set(6.8,.15,-.9);sp.rotation.x=-.4;sc.add(sp);const sgl=new THREE.Sprite(new THREE.SpriteMaterial({map:TX.glow,color:0xffe6a0,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,opacity:.8}));sgl.scale.set(1.2,1.2,1);sgl.position.set(6.8,.35,-.9);sc.add(sgl);
+  const wz=new THREE.Group();A(wz,M(SPH(.22,12,10),std({map:leatherTex('#8a5a2a',12),roughness:.7}),0,.2,0)).scale.set(1,1.2,.8);wz.add(M(CYL(.04,.05,.18,8),mat(0x6a4a2a,.7),0,.48,0));wz.position.set(-6.6,0,2.9);sc.add(wz);
+  const sp=new THREE.Group();A(sp,M(CYL(.2,.2,.03,16),std({color:0xc87a3a,metalness:.95,roughness:.12,emissive:0x331a08}),0,0,0)).rotation.x=Math.PI/2;sp.add(M(BOX(.04,.2,.03),std({color:0x8a5a2a,metalness:.6}),0,-.22,0));sp.position.set(6.8,.15,-.9);sp.rotation.x=-.4;sc.add(sp);const sgl=new THREE.Sprite(new THREE.SpriteMaterial({map:TX.glow,color:0xffe6a0,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,opacity:.8}));sgl.scale.set(1.2,1.2,1);sgl.position.set(6.8,.35,-.9);sc.add(sgl);
   const bm=M(CYL(.02,.02,7,6),new THREE.MeshBasicMaterial({color:0xfff0a0,transparent:true,opacity:.7,blending:THREE.AdditiveBlending,depthWrite:false}),0,0,0,false);bm.userData.noOutline=true;bm.visible=false;sc.add(bm);
   const tz=makeSeal(0xffd060);tz.position.set(0,1.5,-6.8);tz.scale.setScalar(1.5);tz.visible=false;sc.add(tz);
   scatterRocks(sc,14,10,-9,9,-5,4,null,.1,.3);addMotes(sc,{n:70,h:3.5,color:0xffe8b0,size:.14,op:.5,rise:.001,sway:2.5});
@@ -1379,8 +1380,8 @@ function startChapter(n){SV.ch=n;const c=CHX[n];SV.inv=SV.inv.filter(i=>PERSIST.
   (c.intro||[]).forEach(t=>sayN(t));if(n===9)sayN('Je haalt je warme sjaal uit je rugzak, voor het geval iemand het koud heeft.');sayN(SCN.desc);SV.done['seen_'+c.scene]=1;saveGame();}
 function drawEndX(){const n=SV.ch,c=CHX[n];drawCrownShape(ctx,W/2,160,2.4);
   txt('HOOFDSTUK '+n+' VOLTOOID',W/2,240,30,'#7a2a10','center',FT);c.end.forEach((l,i)=>txt(l,W/2,285+i*27,19,'#2a1808','center',FB));
-  txt('Score: '+SV.score+' van '+MAXSCORE,W/2,385,22,'#7a2a10','center',FT);txt('Droomzegels: '+SV.zegels.length+' van 9',W/2,413,17,'#5a3a1a','center',FB);
-  if(n<12){txt(c.next,W/2,440,17,'#5a3a1a','center',FB);btn(W/2-160,462,320,46,'VERDER NAAR HOOFDSTUK '+(n+1),()=>startChapter(n+1),{main:true,size:15});}
+  txt('Score: '+SV.score+' van '+MAXSCORE,W/2,385,22,'#7a2a10','center',FT);txt(n>=13?('Gerechten voor het banket: '+SV.gerechten.length+' van 10'):('Droomzegels: '+SV.zegels.length+' van 9'),W/2,413,17,'#5a3a1a','center',FB);
+  if(n<22){txt(c.next,W/2,440,17,'#5a3a1a','center',FB);btn(W/2-160,462,320,46,'VERDER NAAR HOOFDSTUK '+(n+1),()=>startChapter(n+1),{main:true,size:15});}
   else{txt('EINDE. Bedankt voor het spelen!',W/2,440,19,'#5a3a1a','center',FB);btn(W/2-110,462,220,46,'NAAR HET MENU',()=>{G.state='title';try{localStorage.removeItem('daelen3d_save')}catch(e){}},{main:true,size:16});}}
 // echte 3D-karakters (Quaternius) voor de nieuwe bewoners; de getekende figuren blijven als reserve
 const NPC2=[
@@ -1396,12 +1397,392 @@ const NPC2=[
 ];
 async function loadRealChars2(){for(const [sid,name,spec,o] of NPC2){try{const sc=SCENES[sid];const n=sc&&sc.npcs&&sc.npcs[name];if(!n)continue;
   const C=await buildChar(spec);if(o.hair!=null)tintHair(C,o.hair);markReal(C);if(o.scale)C.root.scale.setScalar(o.scale);if(o.wide){C.root.scale.x*=o.wide;C.root.scale.z*=o.wide;}
-  n.root.add(C.root);hideProc(n.root);n.real=C;n.head=C.head;n.talkClip='Idle_Talking_Loop';n.idleClip='Idle_Loop';C.play('Idle_Loop',0);RC.list.push(C);}catch(e){console.error('npc2',name,e);}}}
+  n.root.add(C.root);if(o.crown){const cr=makeCrown();cr.scale.setScalar(.95);cr.position.set(0,1.98,.02);cr.traverse(q=>{q.userData.real=true;});cr.userData.real=true;n.root.add(cr);}hideProc(n.root);n.real=C;n.head=C.head;n.talkClip='Idle_Talking_Loop';n.idleClip='Idle_Loop';C.play('Idle_Loop',0);RC.list.push(C);}catch(e){console.error('npc2',name,e);}}}
 
-const MAXSCORE=210;let SV=null;
-function newState(){return{ch:1,scene:'plein',hx:0,hz:3,inv:[],score:0,flags:{},done:{},zegels:[]};}
+// ===================== HOOFDSTUK 13 T/M 22: HET KONINKLIJK BANKET =====================
+Object.assign(ITEMS,{
+  ladder:{name:'houten ladder',desc:'Een lange houten ladder. Net hoog genoeg voor een appelboom.'},
+  mand:{name:'lege mand',desc:'Een grote rieten mand. Daar passen een hoop appels in.'},
+  volmand:{name:'mand appels',desc:'Een mand tot de rand gevuld met glanzende rode appels.'},
+  sluier:{name:'imkerssluier',desc:'Een hoed met een net eromheen. Tegen angry bijen.'},
+  rookpot:{name:'rookpot',desc:'Een blikken pot waar zachte, grijze rook uit komt. Bijen worden er slaperig van.'},
+  honingraat:{name:'honingraat',desc:'Een druipende honingraat, goudgeel en kleverig.'},
+  staak:{name:'lange staak',desc:'Een stevige houten staak. Een goede hefboom.'},
+  kaas:{name:'kaaswiel',desc:'Een zwaar, geel kaaswiel. Je mond loopt vol water.'},
+  tang:{name:'grote tang',desc:'Een enorme smidstang. Hij is zo groot als jijzelf.'},
+  kip:{name:'kip',desc:'Een verontwaardigde kip. Ze kakelt in je armen.'},
+  breekijzer:{name:'breekijzer',desc:'Een zwaar breekijzer, gemaakt om kisten open te wrikken.'},
+  oesters:{name:'verse oesters',desc:'Een zakje glibberige verse oesters. Ze ruiken naar de zee.'},
+  ijsbijl:{name:'ijsbijl',desc:'Een zware bijl om gaten in het ijs te hakken.'},
+  hengel:{name:'hengel',desc:'Een hengel met een lijn en een haakje.'},
+  forel:{name:'verse forel',desc:'Een spartelende, zilveren forel.'},
+  wortel:{name:'wortel',desc:'Een dikke oranje wortel met nog wat aarde eraan.'},
+  ui:{name:'ui',desc:'Een grote gele ui. Je ogen tranen al.'},
+  aardappel:{name:'aardappel',desc:'Een knobbelige aardappel.'},
+  poetsdoek:{name:'poetsdoek',desc:'Een zachte doek om glas mee te poetsen.'},
+  ei:{name:'gouden ei',desc:'Een groot, glanzend ei. Het voelt warm aan.'},
+  zak:{name:'grote zak',desc:'Een grote linnen zak, ruim genoeg voor een wolk.'},
+  pluis:{name:'wolkenpluis',desc:'Een zak vol zachte, witte wolkenpluis. Het is lichter dan lucht.'},
+  puddingvorm:{name:'puddingvorm',desc:'Een koperen puddingvorm met een mooi patroon.'},
+  pudding:{name:'warme pudding',desc:'Een gladde, gele pudding, nog warm uit de oven.'}
+});
+Object.assign(ICONS,{
+ ladder:c=>{c.strokeStyle='#8a5a2a';c.lineWidth=3.2;c.beginPath();c.moveTo(-8,16);c.lineTo(-4,-16);c.moveTo(8,16);c.lineTo(4,-16);c.stroke();c.lineWidth=2.4;[10,2,-6,-13].forEach(y=>{c.beginPath();c.moveTo(-7+(10-y)*.1+(y<0?0:0),y);c.lineTo(7-(10-y)*.1,y);c.stroke();});},
+ mand:c=>{c.fillStyle='#b88a4a';c.beginPath();c.moveTo(-14,-2);c.lineTo(14,-2);c.lineTo(10,14);c.lineTo(-10,14);c.closePath();c.fill();c.strokeStyle='#8a6030';c.lineWidth=1.4;for(let i=-9;i<=9;i+=6){c.beginPath();c.moveTo(i,-2);c.lineTo(i*.8,14);c.stroke();}c.beginPath();c.moveTo(-12,5);c.lineTo(12,5);c.stroke();c.strokeStyle='#8a6030';c.lineWidth=2.4;c.beginPath();c.arc(0,-2,12,Math.PI,0);c.stroke();},
+ volmand:c=>{ICONS.mand(c);[[-6,-5],[2,-7],[7,-3],[-1,-2]].forEach(p=>{c.fillStyle='#d8302a';c.beginPath();c.arc(p[0],p[1],4,0,7);c.fill();c.fillStyle='rgba(255,255,255,.5)';c.beginPath();c.arc(p[0]-1,p[1]-1.5,1,0,7);c.fill();});},
+ sluier:c=>{c.fillStyle='#d8c898';c.beginPath();c.ellipse(0,-4,15,5,0,0,7);c.fill();c.fillStyle='#c8b080';c.beginPath();c.ellipse(0,-8,8,6,0,Math.PI,0);c.fill();c.strokeStyle='rgba(60,60,60,.7)';c.lineWidth=.8;for(let i=-12;i<=12;i+=3){c.beginPath();c.moveTo(i,-2);c.lineTo(i*.9,14);c.stroke();}for(let y=2;y<14;y+=3){c.beginPath();c.moveTo(-12,y);c.lineTo(12,y);c.stroke();}},
+ rookpot:c=>{c.fillStyle='#8a8a92';rr(c,-8,-2,16,14,3);c.fill();c.fillStyle='#6a6a72';c.beginPath();c.moveTo(-6,-2);c.lineTo(0,-10);c.lineTo(6,-2);c.fill();c.strokeStyle='rgba(220,220,230,.75)';c.lineWidth=1.6;[-3,2].forEach((x,i)=>{c.beginPath();c.moveTo(x,-10);c.quadraticCurveTo(x+4,-14-i*2,x,-18);c.stroke();});},
+ honingraat:c=>{c.fillStyle='#e8b030';for(let r=0;r<3;r++)for(let q=0;q<3;q++){const x=-12+q*9+(r%2?4.5:0),y=-10+r*9;c.beginPath();for(let k=0;k<6;k++){const a=k/6*6.28;c.lineTo(x+Math.cos(a)*5,y+Math.sin(a)*5);}c.closePath();c.fill();c.strokeStyle='#a87818';c.lineWidth=1;c.stroke();}c.fillStyle='#f0c850';c.beginPath();c.ellipse(0,12,8,3,0,0,7);c.fill();},
+ staak:c=>{c.rotate(-.9);c.fillStyle='#8a5a2a';rr(c,-20,-3,40,6,3);c.fill();c.fillStyle='rgba(255,230,190,.4)';c.fillRect(-18,-2,34,1.5);},
+ kaas:c=>{c.fillStyle='#e8b830';c.beginPath();c.ellipse(0,4,14,7,0,0,7);c.fill();c.fillStyle='#f4d050';c.beginPath();c.ellipse(0,-2,14,7,0,0,7);c.fill();c.fillStyle='#e8b830';c.fillRect(-14,-2,28,6);c.fillStyle='#f4d050';c.beginPath();c.ellipse(0,-2,14,7,0,0,7);c.fill();c.fillStyle='#b88a18';[[-6,-3],[4,-1],[1,-5]].forEach(p=>{c.beginPath();c.arc(p[0],p[1],2,0,7);c.fill();});},
+ tang:c=>{c.strokeStyle='#5a5a62';c.lineWidth=3.4;c.beginPath();c.moveTo(-12,14);c.lineTo(2,-6);c.moveTo(12,14);c.lineTo(-2,-6);c.stroke();c.fillStyle='#8a8a92';c.beginPath();c.arc(0,-9,5,0,7);c.fill();c.strokeStyle='#8a5a2a';c.lineWidth=2;c.beginPath();c.moveTo(-12,14);c.lineTo(-15,18);c.moveTo(12,14);c.lineTo(15,18);c.stroke();},
+ kip:c=>{c.fillStyle='#f4f0e4';c.beginPath();c.ellipse(0,4,11,9,0,0,7);c.fill();c.beginPath();c.arc(8,-6,6,0,7);c.fill();c.fillStyle='#e0402a';c.beginPath();c.arc(7,-12,2.6,0,7);c.fill();c.fillStyle='#f0a820';c.beginPath();c.moveTo(13,-6);c.lineTo(18,-5);c.lineTo(13,-3);c.fill();c.fillStyle='#111';c.beginPath();c.arc(9,-7,1,0,7);c.fill();c.strokeStyle='#e8a020';c.lineWidth=1.6;c.beginPath();c.moveTo(-3,12);c.lineTo(-3,17);c.moveTo(3,12);c.lineTo(3,17);c.stroke();},
+ breekijzer:c=>{c.strokeStyle='#4a4a52';c.lineWidth=4;c.lineCap='round';c.beginPath();c.moveTo(-14,12);c.lineTo(8,-10);c.quadraticCurveTo(12,-14,16,-8);c.stroke();c.lineWidth=2;c.strokeStyle='#8a8a92';c.beginPath();c.moveTo(-14,12);c.lineTo(8,-10);c.stroke();},
+ oesters:c=>{c.fillStyle='#8a8478';c.beginPath();c.ellipse(-4,4,11,8,.3,0,7);c.fill();c.beginPath();c.ellipse(7,-3,9,7,-.4,0,7);c.fill();c.fillStyle='#d8d4c8';c.beginPath();c.ellipse(-4,3,7,4,.3,0,7);c.fill();c.fillStyle='#f4f0e8';c.beginPath();c.ellipse(7,-3,5,3.4,-.4,0,7);c.fill();},
+ ijsbijl:c=>{c.rotate(-.6);c.fillStyle='#8a5a2a';rr(c,-2,-14,4,30,2);c.fill();c.fillStyle='#8aa8c8';c.beginPath();c.moveTo(2,-14);c.quadraticCurveTo(14,-14,14,-4);c.quadraticCurveTo(8,-8,2,-6);c.closePath();c.fill();c.fillStyle='rgba(255,255,255,.6)';c.fillRect(5,-12,6,2);},
+ hengel:c=>{c.strokeStyle='#8a5a2a';c.lineWidth=2.4;c.beginPath();c.moveTo(-14,14);c.lineTo(10,-14);c.stroke();c.strokeStyle='rgba(60,60,60,.8)';c.lineWidth=.9;c.beginPath();c.moveTo(10,-14);c.quadraticCurveTo(16,-4,12,8);c.stroke();c.fillStyle='#b8b8c0';c.beginPath();c.arc(12,10,2.4,0,7);c.fill();},
+ forel:c=>{c.fillStyle='#a8b8c8';c.beginPath();c.ellipse(-1,0,14,6,.15,0,7);c.fill();c.beginPath();c.moveTo(12,0);c.lineTo(19,-6);c.lineTo(19,6);c.closePath();c.fill();c.fillStyle='#d8e4ee';c.beginPath();c.ellipse(-2,2,11,3,.15,0,7);c.fill();c.fillStyle='#e0603a';[[-6,-1],[-1,-2],[4,-1]].forEach(p=>{c.beginPath();c.arc(p[0],p[1],1.4,0,7);c.fill();});c.fillStyle='#111';c.beginPath();c.arc(-9,-1,1.1,0,7);c.fill();},
+ wortel:c=>{c.fillStyle='#e87a1a';c.beginPath();c.moveTo(-7,-8);c.lineTo(7,-8);c.lineTo(0,16);c.closePath();c.fill();c.strokeStyle='#b85a0a';c.lineWidth=1;[-4,0,4].forEach(y=>{c.beginPath();c.moveTo(-5+y*.2,y);c.lineTo(5-y*.2,y);c.stroke();});c.fillStyle='#4a9a2a';[[-4,-10],[0,-13],[4,-10]].forEach(p=>{c.beginPath();c.ellipse(p[0],p[1],2,5,0,0,7);c.fill();});},
+ ui:c=>{c.fillStyle='#e0b040';c.beginPath();c.ellipse(0,4,10,10,0,0,7);c.fill();c.fillStyle='#f0cc60';c.beginPath();c.ellipse(-3,1,4,6,0,0,7);c.fill();c.strokeStyle='#8a6a18';c.lineWidth=1.4;c.beginPath();c.moveTo(0,-5);c.lineTo(0,-13);c.stroke();c.strokeStyle='#a88a28';c.beginPath();c.moveTo(0,-5);c.quadraticCurveTo(6,6,0,14);c.stroke();},
+ aardappel:c=>{c.fillStyle='#b88a58';c.beginPath();c.ellipse(0,2,14,9,.3,0,7);c.fill();c.fillStyle='#8a6030';[[-6,0],[3,4],[7,-2],[-2,6]].forEach(p=>{c.beginPath();c.arc(p[0],p[1],1.2,0,7);c.fill();});},
+ poetsdoek:c=>{c.fillStyle='#e8e0c8';c.beginPath();c.moveTo(-14,-8);c.quadraticCurveTo(0,-14,14,-8);c.lineTo(12,10);c.quadraticCurveTo(0,16,-12,10);c.closePath();c.fill();c.strokeStyle='#b8a878';c.lineWidth=1;c.stroke();c.fillStyle='#8ac8e8';c.beginPath();c.arc(6,0,3,0,7);c.fill();},
+ ei:c=>{const g=c.createRadialGradient(-3,-4,1,0,0,14);g.addColorStop(0,'#fff6b0');g.addColorStop(.6,'#f0c030');g.addColorStop(1,'#a87810');c.fillStyle=g;c.beginPath();c.ellipse(0,0,10,14,0,0,7);c.fill();c.fillStyle='rgba(255,255,255,.6)';c.beginPath();c.ellipse(-4,-6,2.4,4.6,.3,0,7);c.fill();},
+ zak:c=>{c.fillStyle='#d8c8a0';c.beginPath();c.moveTo(-10,-6);c.quadraticCurveTo(-16,10,-8,15);c.lineTo(8,15);c.quadraticCurveTo(16,10,10,-6);c.quadraticCurveTo(0,-10,-10,-6);c.fill();c.strokeStyle='#8a7a5a';c.lineWidth=1.4;c.stroke();c.fillStyle='#8a5a2a';c.fillRect(-4,-10,8,5);},
+ pluis:c=>{ICONS.zak(c);c.fillStyle='#fff';[[-6,-8],[0,-12],[6,-8],[0,-6]].forEach(p=>{c.beginPath();c.arc(p[0],p[1],5,0,7);c.fill();});},
+ puddingvorm:c=>{c.fillStyle='#c87a3a';c.beginPath();c.moveTo(-12,-8);c.lineTo(12,-8);c.lineTo(8,12);c.lineTo(-8,12);c.closePath();c.fill();c.fillStyle='#e8a050';c.beginPath();c.ellipse(0,-8,12,4,0,0,7);c.fill();c.fillStyle='#4a2a10';c.beginPath();c.ellipse(0,-8,9,2.6,0,0,7);c.fill();c.strokeStyle='#f0c070';c.lineWidth=1;[-6,0,6].forEach(x=>{c.beginPath();c.moveTo(x*.9,-4);c.lineTo(x*.7,10);c.stroke();});},
+ pudding:c=>{c.fillStyle='#f0c850';c.beginPath();c.moveTo(-11,12);c.quadraticCurveTo(-13,-4,-6,-10);c.lineTo(6,-10);c.quadraticCurveTo(13,-4,11,12);c.closePath();c.fill();c.fillStyle='#6a3a18';c.beginPath();c.ellipse(0,-10,7,3,0,0,7);c.fill();c.fillStyle='rgba(255,255,255,.4)';c.fillRect(-8,-4,3,12);}
+});
+
+// ---------- extra voorwerpen ----------
+function gerecht(n,naam){if(!SV.gerechten.includes(n))SV.gerechten.push(n);G.zegelT=220;G.zegelTitel='GERECHT VOOR HET BANKET';G.zegelNaam=naam;SFX.point();saveGame();}
+function makeDragon(){const N={root:new THREE.Group()},Rt=N.root;const gm=std({color:0x4a8a3a,roughness:.6}),gl=std({color:0x78b04a,roughness:.55}),bl=std({color:0xe8d8a0,roughness:.7});
+  const bd=M(SPH(1.5,26,18),gm,0,1.5,0);bd.scale.set(1.45,.95,1);Rt.add(bd);const bel=M(SPH(1.2,22,16),bl,.1,1.1,.5);bel.scale.set(1.35,.8,.7);Rt.add(bel);
+  for(let i=0;i<7;i++){const sp=M(new THREE.ConeGeometry(.2,.5,6),gl,-1.7+i*.55,2.7-Math.abs(i-3)*.12,0);Rt.add(sp);}
+  [-1,1].forEach(s=>{const wsh=new THREE.Shape();[[0,0],[1.4,1.9],[1.9,.7],[2.7,1.1],[2.2,-.1],[3.0,-.6],[1.7,-.7],[.9,-1.3]].forEach((p,i)=>i?wsh.lineTo(p[0],p[1]):wsh.moveTo(p[0],p[1]));wsh.closePath();const wg=M(new THREE.ShapeGeometry(wsh),std({color:0x3a6a30,roughness:.8,side:THREE.DoubleSide}),-.4,2.7,s*.9);wg.rotation.set(0,s*(Math.PI/2+.35),.35);wg.scale.setScalar(.9);Rt.add(wg);Rt.add(M(CAP(.5,.9),gm,.8,.55,s*.8));A(Rt,M(SPH(.55,12,10),gl,1.3,.3,s*.9)).scale.set(1.2,.5,1);});
+  let px=-2.6,py=.9,pr=.55;for(let i=0;i<7;i++){Rt.add(M(SPH(pr,12,10),gm,px,py,0));px-=.55;py+=.04*i-.12;pr*=.82;}
+  const neck=new THREE.Group();neck.position.set(2.2,1.9,0);Rt.add(neck);A(neck,M(CAP(.55,1.1),gm,.3,.6,0)).rotation.z=-.8;
+  const head=new THREE.Group();head.position.set(3.1,2.65,0);Rt.add(head);A(head,M(SPH(.75,18,14),gm,0,0,0)).scale.set(1.35,1,1);const jaw=M(SPH(.55,14,10),gl,.55,-.35,0);jaw.scale.set(1.5,.5,1);head.add(jaw);
+  [-1,1].forEach(s=>{head.add(M(SPH(.18,10,8),mat(0xfff0a0,.2),.4,.3,s*.45,false));head.add(M(SPH(.08,8,6),mat(0x111111,.1),.55,.3,s*.5,false));const h=M(new THREE.ConeGeometry(.15,.7,6),bl,-.1,.7,s*.4);h.rotation.z=.4;head.add(h);head.add(M(SPH(.08,8,6),mat(0x2a4a20,.6),1.15,.05,s*.2,false));});
+  const cheek=M(SPH(.42,12,10),std({color:0xc87a6a,roughness:.6}),.35,-.1,.62);head.add(cheek);N.cheek=cheek;N.head=head;N.face={mouth:jaw,eyes:[]};
+  Rt.traverse(q=>{if(q.isMesh)q.castShadow=true;});addOutline(Rt,.014);Rt.userData.outlined=true;return N;}
+function makeHive(){const g=new THREE.Group();const wd=std({map:TX.wood,roughness:.8,color:0xd8b060});for(let i=0;i<4;i++)g.add(M(BOX(.9,.28,.9),wd,0,.14+i*.29,0));g.add(M(BOX(1.0,.1,1.0),std({color:0x8a4a2a,roughness:.8}),0,1.2,0));g.add(M(BOX(.2,.1,.05),std({color:0x1a120a}),0,.3,.46));g.add(M(CYL(.04,.05,.5,6),wd,-.4,-.25,-.4));g.add(M(CYL(.04,.05,.5,6),wd,.4,-.25,.4));g.position.y=.35;const w=new THREE.Group();w.add(g);return w;}
+function makeCheeseStack(){const g=new THREE.Group();const m=std({color:0xe8b830,roughness:.65}),m2=std({color:0xf4d050,roughness:.6});for(let i=0;i<3;i++){g.add(M(CYL(.55-i*.06,.55-i*.06,.34,24),i%2?m:m2,0,.17+i*.34,0));}return g;}
+function makeShip(){const g=new THREE.Group();const hm=std({map:TX.wood,roughness:.8,color:0x8a5a30});const hull=M(SPH(3,24,14,0,6.3,Math.PI/2,Math.PI/2),hm,0,1.2,0);hull.scale.set(1.9,.8,.8);g.add(hull);g.add(M(BOX(8,.12,1.6),hm,0,1.35,0));g.add(M(CYL(.12,.14,7,8),hm,0,4.6,0));const sail=M(new THREE.PlaneGeometry(3.4,3.4),std({color:0xcdbf9e,roughness:.95,side:THREE.DoubleSide}),0,4.8,.1);g.add(sail);g.userData.sail=sail;g.add(M(BOX(3.6,.1,.1),hm,0,6.5,.1));
+  const fl=M(new THREE.PlaneGeometry(.9,.55),std({color:0x2a2a2a,side:THREE.DoubleSide,roughness:.9}),.5,8,0);g.add(fl);return g;}
+function makeMirrorFrame(w,h){const g=new THREE.Group();const fm=std({color:0xc8a040,metalness:.8,roughness:.3});g.add(M(BOX(w+.3,h+.3,.12),fm,0,0,0));const gl=M(BOX(w,h,.06),new THREE.MeshStandardMaterial({color:0xb8c8d8,metalness:1,roughness:.06,envMapIntensity:1.6}),0,0,.07,false);g.add(gl);g.userData.glass=gl;return g;}
+function makeCauldron2(){const g=new THREE.Group();const m=std({color:0x2a2a30,metalness:.7,roughness:.4});const pr=[[.6,0],[.9,.25],[1.0,.7],[.95,1.0],[.85,1.05]].map(p=>new THREE.Vector2(p[0],p[1]));g.add(M(new THREE.LatheGeometry(pr,24),m,0,.35,0));[0,2.1,4.2].forEach(a=>g.add(M(CYL(.08,.1,.4,6),m,Math.cos(a)*.6,.18,Math.sin(a)*.6)));const soup=M(CYL(.85,.85,.02,22),std({color:0x5a8a30,roughness:.2,emissive:0x1a3a08,emissiveIntensity:.5}),0,1.28,0,false);g.add(soup);g.userData.soup=soup;return g;}
+function makeCloudBank(){const g=new THREE.Group();const m=std({color:0xffffff,roughness:1,emissive:0x8a98b8,emissiveIntensity:.25});for(let i=0;i<8;i++){const b=M(SPH(.5+R()*.5,14,10),m,(R()-.5)*2,.4+R()*.5,(R()-.5)*1.2);g.add(b);}return g;}
+function makeLadderMesh(){const g=new THREE.Group();const wd=std({map:TX.wood,roughness:.8,color:0xa87a4a});[-.3,.3].forEach(x=>g.add(M(BOX(.08,3.8,.1),wd,x,1.9,0)));for(let i=0;i<8;i++)g.add(M(BOX(.6,.07,.09),wd,0,.4+i*.46,0));return g;}
+function makeBasketMesh(){const g=new THREE.Group();const wd=std({color:0xb88a4a,roughness:.9});const pr=[[.3,0],[.42,.3],[.45,.4]].map(p=>new THREE.Vector2(p[0],p[1]));g.add(M(new THREE.LatheGeometry(pr,18),wd,0,0,0));const h=M(new THREE.TorusGeometry(.4,.03,6,18,Math.PI),wd,0,.4,0);g.add(h);return g;}
+function makeTable(w,l){const g=new THREE.Group();const wd=std({map:TX.wood,roughness:.8,color:0x8a5a30});g.add(M(BOX(w,.12,l),wd,0,.95,0));g.add(M(BOX(w+.1,.03,l+.1),std({map:clothTex('#c8c0a0','#e8e0c8',false,150,3),roughness:.95}),0,1.02,0));[[-w/2+.1,-l/2+.1],[w/2-.1,-l/2+.1],[-w/2+.1,l/2-.1],[w/2-.1,l/2-.1]].forEach(p=>g.add(M(BOX(.14,.9,.14),wd,p[0],.45,p[1])));return g;}
+function checker(c1,c2){return (x,tc,CW,CH)=>{x.fillStyle=c1;x.fillRect(0,0,CW,CH);const n=40,w=CW/n,h=CH/(n*.75);for(let i=0;i<n;i++)for(let j=0;j<n*.75;j++){if((i+j)%2){x.fillStyle=c2;x.fillRect(i*w,j*h,w,h);}}};}
+function wall(sc,col,z){const pt=plaster(col,'rgba(80,60,40,.25)',160);pt.repeat.set(10,3);const w=M(BOX(34,11,.6),std({map:pt,roughness:.9}),0,5.5,z||-9.4);sc.add(w);return w;}
+function torch(sc,x,y,z){const g=new THREE.Group();g.add(M(CYL(.05,.06,.5,6),std({color:0x4a3a2a}),0,0,0));const f=new THREE.Sprite(new THREE.SpriteMaterial({map:TX.glow,color:0xffa840,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false}));f.scale.set(1.1,1.1,1);f.position.y=.4;g.add(f);const l=new THREE.PointLight(0xff9a40,1.4,10,2);l.position.y=.5;g.add(l);g.position.set(x,y,z);g.userData.noOutline=true;sc.add(g);return g;}
+
+function buildChapters2(){
+ // ======================= 13. DE APPELBOOMGAARD =======================
+ {const {sc,S}=newScene('boomgaard',{name:'De Appelboomgaard',desc:'Rijen appelbomen vol rode appels. Alles hangt te hoog om bij te kunnen. Links staat een grote schuur.',
+   light:{sky:0xb8d0f0,ground:0x4a6a28,hemi:.7,sun:0xffe0a8,sunI:2.8,dir:[12,22,12],fog:0xd8e4d0,fogN:40,fogF:140},
+   bd:{sky:['#4a8ad8','#a8cff0','#f4ecd0'],sun:[760,100],seed:141,clouds:[[200,80,1.1],[620,60,.9]],mBase:300,mH:110,mCol:'#8a9ab8',mHaze:'#c8d4e4',r1:['#7aa05a','#8ab06a'],r2:['#6a9450','#7aa460']},
+   g1:'#6a9a3a',g2:'#82b24c',seed:140,paths:[[[-9.5,2],[0,1.4],[9.5,2.2],[9.5,4.4],[-9.5,4.4]]],pc1:'#a98a62',pc2:'#c8b090',blocked:[{x:2.8,z:-3.6,r:1.4},{x:-6.5,z:-5.6,r:2.2},{x:-4.5,z:-1,r:.5}]});
+  const barn=makeHouse('#a05a3a',171,5.2,3.4);barn.position.set(-6.5,0,-6.2);sc.add(barn);
+  const appleTree=makeTree(7,501,{leaf:[0x4e8e2a,0x5c9a32,0x3e7a24]});appleTree.position.set(2.8,0,-3.6);sc.add(appleTree);const apples=[];
+  for(let i=0;i<30;i++){const a=Math.PI/2+(R()-.5)*3.2,d=appleTree.userData.crownR*(.7+R()*.55);const ap=M(SPH(.2,10,8),std({color:0xd8302a,roughness:.35}),Math.cos(a)*d,appleTree.userData.crownY+(R()-.35)*2.2,Math.sin(a)*d*.9,false);ap.userData.noOutline=true;appleTree.add(ap);apples.push(ap);}
+  [[-1,-6],[7.5,-6],[-9,-1],[10,-2],[0,-8],[5,-9]].forEach((p,i)=>{const t=makeTree(6+i%2,510+i,{leaf:[0x4e8e2a,0x5c9a32]});t.position.set(p[0],0,p[1]);sc.add(t);});
+  const lad=makeLadderMesh();lad.position.set(-3.4,0,-3.2);lad.rotation.set(-.12,.4,.1);sc.add(lad);
+  const bas=makeBasketMesh();bas.position.set(6.6,0,-1.4);bas.scale.setScalar(1.3);sc.add(bas);
+  const pile=new THREE.Group();for(let i=0;i<14;i++)pile.add(M(SPH(.14,8,6),std({color:0xd8302a,roughness:.35}),(R()-.5)*1.2,.12+R()*.1,(R()-.5)*.8));pile.position.set(2.8,0,-1.8);pile.visible=false;sc.add(pile);
+  const fl=folk({c1:'#8a5a3a',c2:'#6a4a2a',robe:1,apron:'#e8e0c8',hat:'muts',hc:'#d8c898',hair:0x8a4a1e,skin:'#f0c4a0',seed:130,blush:true});fl.root.position.set(-4.5,0,-1);fl.root.rotation.y=.6;sc.add(fl.root);S.npcs['Boerin Floor']=fl;
+  grassOver(sc,{n:7000,seed:25,cols:[0x6a9a32,0x7aaa3a,0x5a8a2a],avoid:(x,z)=>Math.hypot(x-2.8,z+3.6)<1.2});scatterFlowers(sc,-9,9,-8,0,160,5,[0xffffff,0xffe25a,0xff7aa0],null);addMotes(sc,{n:40,h:4,color:0xfff0c0,size:.12,op:.4});
+  S.hot=[
+   {id:'floor',name:'boerin',obj:fl.root,ap:[-3.5,.3],face:fc([-3.5,.3],-4.5,-1),look:()=>sayN('Een stevige boerin met een strohoed en een bezorgde frons. Ze kijkt telkens omhoog naar de appelbomen.'),
+     talk:()=>{if(SV.flags.taart)return say('Boerin Floor','"Smaakt het? Mijn grootmoeder maakte hem precies zo."');if(!SV.flags.floorTalk){SV.flags.floorTalk=1;points('floor',1);}say('Boerin Floor','"Een banket voor de koning? Ik heb de beste appels van Daelenrijk, maar ze hangen veel te hoog. Mijn ladder ligt achter de schuur en mijn mand staat bij het hek."');say('Boerin Floor','"Haal de appels naar beneden, en ik bak jou de lekkerste appeltaart die je ooit geproefd hebt."');},
+     use:{volmand:()=>{if(SV.flags.taart)return;SV.flags.taart=1;take('volmand');points('taart',3);gerecht(13,'Appeltaart van Floor');say('Boerin Floor','"Wat een prachtige appels!" Ze rolt haar mouwen op en kneedt, snijdt en bakt. Binnen een uur komt de geur van warme kaneel over de hele boomgaard.');sayN('Je krijgt een grote, gouden appeltaart. Dit is het eerste gerecht voor het koninklijk banket!');fin(13);},mand:()=>say('Boerin Floor','"Die mand is nog leeg, jongen. Vul hem eerst met appels."')}},
+   {id:'boom',name:'appelboom',obj:appleTree,ap:[1.4,-1.0],face:fc([1.4,-1],2.8,-3.6),look:()=>sayN(SV.flags.boomLeeg?'De boom is bijna leeg. Alle appels liggen op de grond.':'Een appelboom boordevol rode appels. Veel te hoog om bij te komen.'),take:()=>sayN(SV.flags.boomLeeg?'Er zijn geen appels meer.':'Je springt, je rekt je uit, maar je hand komt er niet bij. Je hebt iets nodig om hoger te komen.'),
+     use:{ladder:()=>{if(SV.flags.boomLeeg)return;SV.flags.boomLeeg=1;take('ladder');points('boom',3);apples.forEach(a=>a.visible=false);pile.visible=true;SFX.thud&&SFX.thud();sayN('Je zet de ladder tegen de stam, klimt omhoog en schudt aan een tak. Het regent appels! Plof, plof, plof. Binnen een minuut ligt er een grote hoop onder de boom.');}}},
+   {id:'ladder',name:'ladder',obj:lad,ap:[-2.6,-1.5],face:fc([-2.6,-1.5],-3.4,-3.2),vis:()=>!SV.flags.ladderp,look:()=>sayN('Een lange houten ladder staat tegen de schuur.'),take:()=>{SV.flags.ladderp=1;lad.visible=false;give('ladder');points('ladder',2);sayN('Je tilt de ladder op. Hij is lang, maar niet te zwaar.');}},
+   {id:'mand',name:'mand',obj:bas,ap:[5.6,-.4],face:fc([5.6,-.4],6.6,-1.4),vis:()=>!SV.flags.mandp,look:()=>sayN('Een grote rieten mand bij het hek.'),take:()=>{SV.flags.mandp=1;bas.visible=false;give('mand');points('mandp',1);sayN('Je pakt de mand. Er past een hoop in.');}},
+   {id:'appelhoop',name:'hoop appels',obj:pile,ap:[2.8,-.4],face:fc([2.8,-.4],2.8,-1.8),vis:()=>!!SV.flags.boomLeeg&&!SV.flags.vol,look:()=>sayN('Een grote hoop glanzende rode appels onder de boom.'),take:()=>sayN('Ze zijn te veel om met je handen te dragen. Je hebt iets nodig om ze in te doen.'),
+     use:{mand:()=>{if(SV.flags.vol)return;SV.flags.vol=1;take('mand');give('volmand');points('vol',2);sayN('Je schept de appels een voor een in de mand tot hij bijna overloopt. Wat een oogst!');}}},
+   {id:'schuur',name:'schuur',obj:barn,look:()=>sayN('Een rode schuur met een hooizolder. Er ligt een kat op het dak te slapen.'),take:()=>sayN('Een hele schuur? Nee.')}
+  ];
+  S.update=t=>{updMotes(sc,t);idleFolk(fl,t,12);lad.visible=!SV.flags.ladderp;bas.visible=!SV.flags.mandp;apples.forEach(a=>a.visible=!SV.flags.boomLeeg);pile.visible=!!SV.flags.boomLeeg&&!SV.flags.vol;};}
+
+ // ======================= 14. DE BIJENKORF =======================
+ {const {sc,S}=newScene('bijen',{name:'De Bijenweide',desc:'Een bloemenweide vol gonzende bijen. Aan de rand staan drie bijenkorven. Eén ervan staat precies op een boomstronk, vol met honing.',
+   light:{sky:0xc0d8f4,ground:0x5a7a30,hemi:.75,sun:0xfff0c0,sunI:3.0,dir:[8,24,12],fog:0xe4ecd8,fogN:40,fogF:140},
+   bd:{sky:['#5a9ae0','#b0d4f4','#f8f0d8'],sun:[520,90],seed:151,clouds:[[260,80,1],[700,60,.9]],mBase:300,mH:100,mCol:'#8aa0b8',mHaze:'#cad8e4',r1:['#8ab060','#9ac070'],r2:['#7aa458','#8ab468']},
+   g1:'#7aaa3a',g2:'#92bc4a',seed:150,paths:[[[-9.5,2.4],[0,1.8],[9.5,2.6],[9.5,4.4],[-9.5,4.4]]],pc1:'#b0966a',pc2:'#d0b88a',blocked:[{x:3,z:-3,r:1},{x:-4,z:-1.5,r:.5},{x:-6.6,z:-2,r:.6},{x:6.8,z:-2,r:.3}]});
+  const hv=[[3,-3],[6,-4.4],[-1.4,-4.8]].map((p,i)=>{const h=makeHive();h.position.set(p[0],0,p[1]);h.rotation.y=-.2+i*.2;sc.add(h);return h;});const korf=hv[0];
+  const im=folk({c1:'#d8d0b0',c2:'#c8c0a0',robe:1,hat:'hoed',hc:'#e0d8b8',hair:0xb8a878,beard:0xc8c0a0,skin:'#f0c8a0',old:true,seed:131,eye:0x4a6a3a});im.root.position.set(-4,0,-1.5);im.root.rotation.y=.6;sc.add(im.root);S.npcs['Imker Bert']=im;
+  const tb=makeCrate();tb.position.set(-6.6,0,-2);tb.scale.setScalar(1.3);sc.add(tb);const slr=M(SPH(.3,14,10,0,6.3,0,1.7),std({color:0xd8c898,roughness:.9}),-6.6,1.05,-2);slr.scale.set(1.2,.8,1.2);sc.add(slr);
+  const rkp=M(CYL(.18,.22,.4,12),std({color:0x8a8a92,metalness:.6,roughness:.4}),6.8,1.3,-2);sc.add(rkp);const post=M(CYL(.07,.07,2,6),std({map:TX.wood,roughness:.8}),6.8,1,-2.1);sc.add(post);
+  const rraat=new THREE.Group();rraat.add(M(BOX(.5,.4,.12),std({color:0xe8b030,roughness:.4,emissive:0x442a00,emissiveIntensity:.4}),0,0,0));rraat.position.set(3,1.5,-2.4);rraat.visible=false;sc.add(rraat);
+  const bees=addMotes(sc,{n:36,h:2.8,area:[1.5,7,-5.5,-2],color:0xffd820,size:.2,op:.95,twinkle:true,rise:0,sway:6});addMotes(sc,{n:24,h:3,color:0xffffff,size:.1,op:.4});
+  const smoke=addMotes(sc,{n:14,h:2.6,area:[2.4,3.6,-3.4,-2.6],color:0xcccccc,size:.7,op:0,rise:.012,sway:1.6});
+  scatterFlowers(sc,-9,9,-8,3,420,8,[0xffd447,0xffffff,0xff5d8a,0xa86cf0,0xff8a3d],null);grassOver(sc,{n:6000,seed:26,cols:[0x7aaa3a,0x8ab84a,0x6a9a32],avoid:(x,z)=>false});fill(sc,{seed:29,n:12,skip:(x,z)=>z>-13&&Math.abs(x)<14});
+  S.hot=[
+   {id:'bert',name:'imker',obj:im.root,ap:[-3,.3],face:fc([-3,.3],-4,-1.5),look:()=>sayN('Een oude imker in een wit pak met een hoed, vol bijenplakkers.'),
+     talk:()=>{if(SV.flags.honing)return say('Imker Bert','"Mijn bijen en ik danken je. De beste honing van Daelenrijk!"');if(!SV.flags.bertTalk){SV.flags.bertTalk=1;points('bert',1);}say('Imker Bert','"Honing voor het banket van de koning? Mijn bijen zijn vandaag chagrijnig. Ze steken iedereen die in de buurt komt."');say('Imker Bert','"Je hebt een sluier nodig, op de kist daar. En een rookpot, aan de paal rechts. Rook maakt bijen rustig. Dan kun je een honingraat uit de korf halen."');},
+     use:{honingraat:()=>{if(SV.flags.honing)return;SV.flags.honing=1;take('honingraat');points('honing',3);gerecht(14,'Honingpot van Bert');say('Imker Bert','"Wat een prachtige raat!" Hij perst hem uit boven een pot en draait er een deksel op.');sayN('Je krijgt een glanzende pot honing. Gerecht nummer twee voor het banket!');fin(14);}}},
+   {id:'sluier',name:'sluier',obj:slr,ap:[-5.8,-.6],face:fc([-5.8,-.6],-6.6,-2),vis:()=>!SV.flags.sluierp,look:()=>sayN('Een imkershoed met een net eromheen.'),take:()=>{SV.flags.sluierp=1;slr.visible=false;give('sluier');points('sluier',2);sayN('Je zet de hoed op. Het net hangt over je gezicht. Zo zie je er wel een beetje belachelijk uit.');}},
+   {id:'rookpot',name:'rookpot',obj:rkp,ap:[6,-.6],face:fc([6,-.6],6.8,-2),vis:()=>!SV.flags.rookp,look:()=>sayN('Een blikken pot met een zacht gloeiend sintelkoolje erin.'),take:()=>{SV.flags.rookp=1;rkp.visible=false;give('rookpot');points('rookp',2);sayN('Je pakt de rookpot van de paal. Er kringelt een dun rookpluimpje uit.');}},
+   {id:'korf',name:'bijenkorf',obj:korf,ap:[3,-1.2],face:fc([3,-1.2],3,-3),look:()=>sayN(SV.flags.rook?'De bijen zijn bijna slaperig geworden. Ze kruipen traag over de korf.':'Een bijenkorf waar het gonst als een vliegtuig. De bijen vliegen woedend rond.'),
+     take:()=>{if(!SV.flags.rook)return sayN('AU! Een bij steekt je in je neus. Je trekt je hand snel terug. Eerst iets doen aan die bijen.');if(!has('sluier'))return sayN('De bijen zijn rustig, maar toch voel je je zonder sluier niet veilig. Pak eerst de hoed bij de kist.');if(SV.flags.raatp)return sayN('Er hangt geen raat meer.');SV.flags.raatp=1;give('honingraat');points('raat',2);sayN('Met je hoed op en de rook in de buurt til je het deksel op en trek je een prachtige, druipende honingraat omhoog. De bijen blijven slaperig dobberen.');},
+     use:{rookpot:()=>{if(SV.flags.rook)return;SV.flags.rook=1;points('rook',2);sayN('Je zwaait de rookpot langzaam voor de korf heen en weer. De bijen worden stiller en stiller, tot ze zachtjes zoemen als een slaapliedje.');}}}
+  ];
+  S.update=t=>{updMotes(sc,t);idleFolk(im,t,13);slr.visible=!SV.flags.sluierp;rkp.visible=!SV.flags.rookp;bees.material.size=SV.flags.rook?.1:.2;smoke.material.opacity=SV.flags.rook&&!SV.flags.raatp?.28:0;};}
+
+ // ======================= 15. DE KAASBOERDERIJ =======================
+ {const {sc,S}=newScene('kaas',{name:'De Kaasboerderij',desc:'Een weidse bergweide met koeien. Een kaaswiel zit vast tussen rotsen in een beekje.',
+   light:{sky:0xb0cce8,ground:0x5a7a40,hemi:.7,sun:0xffe8b8,sunI:2.8,dir:[-10,22,12],fog:0xd0dcec,fogN:40,fogF:150},
+   bd:{sky:['#4a8ad8','#a8cef0','#eef0e0'],sun:[200,100],seed:161,clouds:[[420,80,1.1],[800,60,.8]],mBase:290,mH:180,mCol:'#8a9cc0',mHaze:'#c8d4e8',snow:true,r1:['#7aa468','#8ab478'],pines:['#4a6a54','#3a5a44'],r2:['#6a9a58','#7aaa68']},
+   g1:'#6a9a46',g2:'#82b25a',seed:160,paths:[[[-9.5,2],[0,1.6],[9.5,2.2],[9.5,4.4],[-9.5,4.4]]],pc1:'#b0966a',pc2:'#d0b88a',blocked:[{x:-3.5,z:-1.5,r:.5},{x:4.6,z:-3.4,r:1.3},{x:-6,z:-.4,r:.3},{x:-7,z:-3.5,r:1.2}]});
+  const rv=makeWater(3.6,14);rv.position.set(5.5,.04,-6);rv.rotation.z=.0;sc.add(rv);rv.rotation.y=0;
+  const stoneG=new THREE.Group();[[0,0,.8],[.9,.1,.6],[-.8,.2,.55],[.1,.8,.5]].forEach((p,i)=>{const q=rockSolid(p[2],i+3,.8);q.position.set(p[0],p[2]*.5,p[1]);stoneG.add(q);});stoneG.position.set(4.6,0,-3.4);sc.add(stoneG);
+  const wheel=M(CYL(.8,.8,.4,28),std({color:0xe8b830,roughness:.6}),4.6,1.0,-3.4);wheel.rotation.x=Math.PI/2;wheel.rotation.z=.2;sc.add(wheel);const bank=M(CYL(.8,.8,.4,28),std({color:0xe8b830,roughness:.6}),1.4,.45,-.6);bank.visible=false;sc.add(bank);
+  const stk=M(CYL(.05,.06,2.2,8),std({map:TX.wood,roughness:.8}),-6,.4,-.4);stk.rotation.z=1.1;sc.add(stk);
+  const st=makeCheeseStack();st.position.set(-7,0,-3.5);st.scale.setScalar(1.3);sc.add(st);
+  [[-8.5,-4.5],[8.5,-5.5]].forEach(p=>{const c=makeCow();c.position.set(p[0],0,p[1]);c.rotation.y=p[0]>0?-2.6:.5;sc.add(c);});
+  const ge=folk({c1:'#6a7a8a',c2:'#4a5a6a',apron:'#e8e0c8',hat:'pet',hc:'#6a4a2a',hair:0x6a4a2a,mus:0x6a4a2a,skin:'#e8b890',seed:132,fat:1.1});ge.root.position.set(-3.5,0,-1.5);ge.root.rotation.y=.5;sc.add(ge.root);S.npcs['Boer Gerrit']=ge;
+  scatterRocks(sc,10,6,-9,9,-3,4,null,.1,.3);scatterFlowers(sc,-9,9,-6,3,180,8,[0xffd447,0xffffff,0xc86cf0],null);grassOver(sc,{n:6500,seed:27,cols:[0x6a9a3a,0x7aaa46,0x5a8a30],avoid:(x,z)=>x>3&&x<8});[[-10,-1,7],[10.5,0,8]].forEach((p,i)=>{const t=makePine(p[2],0x2e4a3a);t.position.set(p[0],0,p[1]);sc.add(t);});addMotes(sc,{n:30,h:4,color:0xffffff,size:.1,op:.4});
+  S.hot=[
+   {id:'gerrit',name:'boer',obj:ge.root,ap:[-2.5,.3],face:fc([-2.5,.3],-3.5,-1.5),look:()=>sayN('Een grote kaasboer met een leren schort en kaaskleurige handen.'),
+     talk:()=>{if(SV.flags.kaasplank)return say('Boer Gerrit','"Een kaasplank om duimen en tenen bij af te likken."');if(!SV.flags.gerritTalk){SV.flags.gerritTalk=1;points('gerrit',1);}say('Boer Gerrit','"Mijn beste kaaswiel is van de berg gerold en zit vast tussen die rotsen in het beekje. Ik kom er niet bij: het water is te koud voor mijn tenen."');say('Boer Gerrit','"Met een lange staak kun je hem losmeppen. Die ligt bij het hek. Breng me het wiel, dan snij ik je de mooiste kaasplank van het land."');},
+     use:{kaas:()=>{if(SV.flags.kaasplank)return;SV.flags.kaasplank=1;take('kaas');points('kaasplank',4);gerecht(15,'Kaasplank van Gerrit');say('Boer Gerrit','"Daar is hij dan, mijn mooie kaas!" Hij snijdt het open en legt het in blokjes op een grote plank met druiven en noten.');sayN('Je krijgt een volle kaasplank. Het derde gerecht voor het banket!');fin(15);}}},
+   {id:'staak',name:'staak',obj:stk,ap:[-5.2,.4],face:fc([-5.2,.4],-6,-.4),vis:()=>!SV.flags.staakp,look:()=>sayN('Een stevige, lange staak, tegen het hek geleund.'),take:()=>{SV.flags.staakp=1;stk.visible=false;give('staak');points('staak',2);sayN('Je pakt de staak. Een mooie hefboom!');}},
+   {id:'rotsen',name:'rotsen in de beek',obj:stoneG,ap:[3.2,-1.2],face:fc([3.2,-1.2],4.6,-3.4),look:()=>sayN(SV.flags.losgewrikt?'De rotsen zijn opzij gerold. Het kaaswiel ligt op de oever.':'Een paar gladde rotsen in het beekje. Er zit een groot kaaswiel tussen vast.'),take:()=>sayN('Veel te zwaar om met je handen te verplaatsen.'),
+     use:{staak:()=>{if(SV.flags.losgewrikt)return;SV.flags.losgewrikt=1;take('staak');points('steen',4);wheel.visible=false;bank.visible=true;SFX.thud&&SFX.thud();sayN('Je steekt de staak onder de rotsen en leunt er met je hele gewicht op. Kraak! De rotsen kantelen opzij en het kaaswiel rolt de oever op, precies voor je voeten.');}}},
+   {id:'wiel',name:'kaaswiel',obj:bank,ap:[.6,.4],face:fc([.6,.4],1.4,-.6),vis:()=>!!SV.flags.losgewrikt&&!SV.flags.kaasp,look:()=>sayN('Een prachtig gouden kaaswiel, een beetje nat.'),take:()=>{SV.flags.kaasp=1;bank.visible=false;give('kaas');points('kaasp',1);sayN('Je tilt het wiel op. Het is zwaar, maar het ruikt zo lekker dat het niet uitmaakt.');}},
+   {id:'stapel',name:'kaaswielen',obj:st,look:()=>sayN('Een stapel kazen die staan te rijpen. Ze ruiken sterk.'),take:()=>sayN('Die zijn van de boer en nog niet rijp. Alleen het wiel in de beek is klaar.')}
+  ];
+  S.update=t=>{updMotes(sc,t);idleFolk(ge,t,14);rv.userData.tex.offset.y=t*.005;stk.visible=!SV.flags.staakp;wheel.visible=!SV.flags.losgewrikt;bank.visible=!!SV.flags.losgewrikt&&!SV.flags.kaasp;};}
+
+ // ======================= 16. DE DRAKENGROT =======================
+ {const {sc,S}=newScene('draak',{name:'De Drakengrot',desc:'Een rotsige vlakte voor een grote grot. In het midden ligt een enorme groene draak, met een dikke wang. Hij kreunt zachtjes.',
+   light:{sky:0x9aa8c8,ground:0x4a4a48,hemi:.6,sun:0xffd8a8,sunI:2.4,dir:[-8,20,10],fog:0xa8b0c4,fogN:22,fogF:90},
+   bd:{sky:['#3a6ab0','#8aa8d0','#d8d8e0'],sun:[200,120],seed:171,clouds:[[420,90,1]],mBase:260,mH:230,mCol:'#6a7898',mHaze:'#a8b0c8',snow:true,r1:['#5a6a58','#6a7a68'],pines:['#2e4234','#243a2c'],r2:['#506048','#5a6a50']},
+   g1:'#6a7060',g2:'#7a8070',seed:170,paths:[[[-9.5,2],[0,1.4],[9.5,2.4],[9.5,4.4],[-9.5,4.4]]],pc1:'#8a7a6a',pc2:'#b0a090',peb:1200,blocked:[{x:-1,z:-3.8,r:3},{x:6,z:-1.5,r:.7},{x:-6.8,z:-1,r:.9}]});
+  const cliff=new THREE.Group();[[-9,3,-11,3.6,1.5],[9,3,-11,3.8,1.5],[-4,7,-12,4.4,1.7],[4,7,-12,4.4,1.7],[0,9.5,-13,4.4,1.8]].forEach((c,i)=>{const r=rockSolid(c[3],i+17,1.1);r.scale.set(c[4],1.2,.8);r.position.set(c[0],c[1],c[2]);cliff.add(r);});cliff.add(M(BOX(22,9,2),std({color:0x5e5e68,roughness:1}),0,4.5,-10.2));sc.add(cliff);
+  const ar=new THREE.Shape();ar.moveTo(-3,0);ar.lineTo(-3,3);ar.absarc(0,3,3,Math.PI,0,true);ar.lineTo(3,0);ar.closePath();const cave=new THREE.Mesh(new THREE.ShapeGeometry(ar),new THREE.MeshBasicMaterial({color:0x040302}));cave.position.set(0,0,-9.15);cave.userData.noOutline=true;sc.add(cave);
+  const gold=new THREE.Group();const gm=std({color:0xf0c030,metalness:.9,roughness:.25,emissive:0x442a00,emissiveIntensity:.3});for(let i=0;i<60;i++)gold.add(M(SPH(.14+R()*.1,8,6),gm,(R()-.5)*4,R()*.9,(R()-.5)*1.4));gold.position.set(0,0,-7.6);sc.add(gold);
+  const dr=makeDragon();dr.root.position.set(-1.4,0,-3.8);dr.root.rotation.y=.2;sc.add(dr.root);S.npcs['Draak Smul']=dr;
+  const tgm=new THREE.Group();A(tgm,M(CYL(.06,.08,1.6,6),std({color:0x5a5a62,metalness:.7,roughness:.4}),-.2,.8,0)).rotation.z=.4;A(tgm,M(CYL(.06,.08,1.6,6),std({color:0x5a5a62,metalness:.7,roughness:.4}),.2,.8,0)).rotation.z=-.4;tgm.position.set(6,0,-1.5);tgm.scale.setScalar(1.4);sc.add(tgm);
+  const anv=M(BOX(1.2,.7,.6),std({color:0x3a3a40,metalness:.8,roughness:.4}),6.2,.35,-1.6);sc.add(anv);
+  const hok=new THREE.Group();const wd=std({map:TX.wood,roughness:.85});hok.add(M(BOX(1.8,1.0,1.1),wd,0,.5,0));hok.add(M(BOX(2,.1,1.3),std({color:0x8a4a2a}),0,1.15,0));[-.5,0,.5].forEach(x=>hok.add(M(BOX(.04,.9,.06),std({color:0x5a5a62,metalness:.6}),x,.5,.56)));hok.position.set(-6.8,0,-1);sc.add(hok);
+  const kipM=new THREE.Group();A(kipM,M(SPH(.3,12,10),mat(0xf4f0e4,.8),0,.35,0)).scale.set(1,.9,1.2);kipM.add(M(SPH(.15,10,8),mat(0xf4f0e4,.8),0,.65,.3));kipM.add(M(SPH(.05,8,6),mat(0xe0402a,.7),0,.85,.3));kipM.position.set(-6.8,1.2,-1);kipM.scale.setScalar(1.3);sc.add(kipM);
+  const tooth=M(new THREE.ConeGeometry(.28,.9,8),std({color:0xfff8e0,roughness:.4}),1.5,.3,-2.2);tooth.rotation.z=1.2;tooth.visible=false;sc.add(tooth);
+  const fireG=new THREE.Group();const fm=new THREE.MeshBasicMaterial({color:0xff8a20,transparent:true,opacity:.85,blending:THREE.AdditiveBlending,depthWrite:false});const ff=M(new THREE.ConeGeometry(.7,3.2,10),fm,0,0,0,false);ff.rotation.z=-Math.PI/2;ff.position.x=1.5;ff.userData.noOutline=true;fireG.add(ff);fireG.position.set(2.8,2.2,-3.6);fireG.visible=false;sc.add(fireG);const fl2=new THREE.PointLight(0xff8a30,0,12,2);fl2.position.set(4,2,-3);sc.add(fl2);
+  scatterRocks(sc,16,12,-9,9,-5,4,null,.1,.4);addMotes(sc,{n:30,h:3,color:0xffffff,size:.1,op:.3});
+  S.hot=[
+   {id:'smul',name:'draak',obj:dr.root,ap:[1.2,.4],face:fc([1.2,.4],-1.4,-3.8),look:()=>sayN(SV.flags.tandUit?'De draak ziet er al veel blijer uit. Hij likt zijn lippen.':'Een kolossale groene draak. Zijn linkerwang is zo dik als een ballon, en in zijn bek zit een loshangende tand.'),
+     talk:()=>{if(SV.flags.braden)return say('Draak Smul','"Mmm! Beste kip ooit. Als je nog eens iets nodig hebt, kom maar."');if(!SV.flags.smulTalk){SV.flags.smulTalk=1;points('smul',1);say('Draak Smul','"Auuu... mijn tand... ik heb zóveel pijn. Ik kan niet eens meer vuur spugen."');say('Draak Smul','"Een smid heeft een tang achtergelaten daar bij het aambeeld. Trek die tand eruit, alsjeblieft! Dan bak ik je alles wat je maar wilt."');}else if(!SV.flags.tandUit)say('Draak Smul','"Auuu... de tang ligt bij het aambeeld."');else say('Draak Smul','"Ik heb weer vuur! Hebben jullie toevallig iets om te braden?"');},
+     take:()=>sayN('De draak is een tikje te groot voor je rugzak.'),
+     use:{tang:()=>{if(SV.flags.tandUit)return;SV.flags.tandUit=1;take('tang');points('tand',3);tooth.visible=true;cheekReset();SFX.thud&&SFX.thud();say('Draak Smul','"Wacht, wacht, even diep ademhalen..." Je klimt op zijn neus, pakt de tand met de tang en trekt met al je kracht. PLOP! De tand schiet door de lucht en landt met een bons op de grond.');say('Draak Smul','"AAAH! Dat voelt zo goed. Dank je wel, kleine mens!"');},
+       kip:()=>{if(!SV.flags.tandUit)return say('Draak Smul','"Auuu, ik kan niet eens vuur spugen met die tand. Eerst die tand eruit."');if(SV.flags.braden)return;SV.flags.braden=1;take('kip');points('braden',4);fireG.visible=true;fl2.intensity=3;gerecht(16,'Gebraden kip van Smul');say('Draak Smul','"Kip! Mijn favoriet!" Hij houdt zijn bek open en WOEEESJ: een vuurstraal zo heet als een oven. Even later hangt er een perfect gebraden, goudbruine kip in de lucht en valt in je handen.');sayN('Je krijgt een geurige gebraden kip. Het vierde gerecht voor het banket!');fin(16);}}},
+   {id:'tang',name:'tang',obj:tgm,ap:[5.2,.2],face:fc([5.2,.2],6,-1.5),vis:()=>!SV.flags.tangp,look:()=>sayN('Een enorme smidstang tegen het aambeeld geleund.'),take:()=>{SV.flags.tangp=1;tgm.visible=false;give('tang');points('tang',2);sayN('Je pakt de tang. Hij is zo groot dat je hem met twee handen moet vasthouden.');}},
+   {id:'kippenhok',name:'kippenhok',obj:hok,look:()=>sayN('Een houten kippenhok met een paar verontwaardigde kippen erin.'),take:()=>sayN('Het hok is zwaar. Pak één kip.')},
+   {id:'kip',name:'kip',obj:kipM,ap:[-5.6,.2],face:fc([-5.6,.2],-6.8,-1),vis:()=>!SV.flags.kipp,look:()=>sayN('Een dikke witte kip met een rode kam. Ze kijkt je wantrouwig aan.'),take:()=>{SV.flags.kipp=1;kipM.visible=false;give('kip');points('kipp',2);sayN('Je tilt de kip uit het hok. Ze kakelt verontwaardigd, maar blijft rustig zitten.');}},
+   {id:'goud',name:'goudhoop',obj:gold,look:()=>sayN('Een berg gouden munten. De draak ligt er al honderd jaar op.'),take:()=>sayN('Dat is de draak zijn goud. Hij kijkt je streng aan.')}
+  ];
+  function cheekReset(){dr.cheek.scale.setScalar(.3);}
+  S.update=t=>{updMotes(sc,t);dr.root.children[0].scale.y=.95+Math.sin(t*.03)*.03;dr.head.rotation.z=Math.sin(t*.015)*.04;tgm.visible=!SV.flags.tangp;kipM.visible=!SV.flags.kipp;if(SV.flags.tandUit)dr.cheek.scale.setScalar(.3);tooth.visible=!!SV.flags.tandUit;const fv=SV.flags.braden&&(G.t%400<80);fireG.visible=!!fv;fl2.intensity=fv?3+Math.sin(t*.5):0;if(fv)ff.scale.set(1+Math.sin(t*.4)*.15,1,1);};}
+
+ // ======================= 17. DE PIRATENHAVEN =======================
+ {const {sc,S}=newScene('haven',{name:'De Piratenhaven',desc:'Een rommelige haven met een groot schip. Overal liggen kisten en vaten. Hoog op de mast zit een felgekleurde papegaai.',
+   light:{sky:0xb8d4f0,ground:0x6a6a50,hemi:.72,sun:0xfff0c8,sunI:2.9,dir:[10,24,10],fog:0xd4e4f0,fogN:40,fogF:150},
+   bd:{sky:['#4a96e4','#b0d8f4','#f8f0d8'],sun:[760,100],seed:181,clouds:[[200,90,1.2],[520,60,.8]],mBase:290,mH:90,mCol:'#7a98b8',mHaze:'#c4d8e8',r1:['#6a9a88','#7aaa98'],r2:['#6a9a60','#7aaa70']},
+   g1:'#a89868',g2:'#c0b080',seed:180,paths:[[[-9.5,-1],[9.5,-1],[9.5,4.4],[-9.5,4.4]]],pc1:'#9a8a68',pc2:'#b8a880',peb:600,blocked:[{x:-4.5,z:-1,r:.5},{x:6.8,z:-1.5,r:.7},{x:3.5,z:-3.2,r:.9},{x:-7,z:-3,r:.8}]});
+  const sea=makeWater(60,18);sea.position.set(0,.05,-15);sc.add(sea);
+  const ship=makeShip();ship.position.set(-1,-.2,-8);ship.scale.setScalar(1.1);sc.add(ship);
+  const pier=new THREE.Group();const pm=std({map:TX.wood,roughness:.85,color:0xa88a60});for(let i=0;i<20;i++)pier.add(M(BOX(.9,.1,.5),pm,-9+i*.95,.3,0));pier.position.set(0,0,-4.2);sc.add(pier);
+  [[-7,0,-3],[-6.2,0,-2.4],[7.5,0,-3.4],[8.4,0,-2.6]].forEach((p,i)=>{const b=i%2?makeBarrel():makeCrate();b.position.set(...p);sc.add(b);});
+  const ck=makeCrate();ck.position.set(3.5,0,-3.2);ck.scale.setScalar(1.6);sc.add(ck);const lid=M(BOX(1.2,.1,.95),std({map:TX.wood,roughness:.8}),3.5,.95,-3.2);sc.add(lid);
+  const tbx=M(BOX(.9,.45,.5),std({color:0x6a3a1a,roughness:.8}),6.8,.23,-1.5);sc.add(tbx);const bki=M(BOX(.9,.08,.08),std({color:0x5a5a62,metalness:.8,roughness:.4}),6.8,.55,-1.5);bki.rotation.z=.25;sc.add(bki);
+  const kr=folk({c1:'#8a2a2a',c2:'#6a1a1a',stripes:true,hat:'hoed',hc:'#2a2a3a',hair:0x2a1a0e,beard:0x2a1a0e,mus:0x2a1a0e,skin:'#d4986a',seed:133,fat:1.15,eye:0x2a3a4a});kr.root.position.set(-4.5,0,-1);kr.root.rotation.y=.5;sc.add(kr.root);S.npcs['Kapitein Krab']=kr;
+  const par=new THREE.Group();A(par,M(SPH(.14,10,8),mat(0xd82a2a,.5),0,0,0)).scale.set(1,1.4,1);par.add(M(SPH(.09,10,8),mat(0xf0c020,.5),0,.2,.08));A(par,M(new THREE.ConeGeometry(.05,.14,6),mat(0xe8e0d0,.4),0,.18,.2)).rotation.x=Math.PI/2;par.add(M(BOX(.06,.3,.04),mat(0x2a6ad8,.6),0,-.2,-.1));par.position.set(-.4,6.2,-7.6);sc.add(par);
+  const oest=new THREE.Group();for(let i=0;i<5;i++)A(oest,M(SPH(.14,8,6),std({color:0x8a8478,roughness:.8}),(i-2)*.2,0,(i%2)*.1)).scale.set(1,.5,1);oest.position.set(3.5,1.05,-3.2);oest.visible=false;sc.add(oest);
+  grassOver(sc,{n:1500,seed:28,cols:[0x8aa050,0x7a9040],avoid:(x,z)=>z<2});addMotes(sc,{n:30,h:4,color:0xffffff,size:.1,op:.3});
+  S.hot=[
+   {id:'krab',name:'kapitein',obj:kr.root,ap:[-3.5,.3],face:fc([-3.5,.3],-4.5,-1),look:()=>sayN('Een brede piraat met een driekantige hoed, een zwarte baard en een goudkleurige tand. Hij heet Kapitein Krab.'),
+     talk:()=>{if(SV.flags.schotel)return say('Kapitein Krab','"Zonder oesters geen feest, jongen. Dat zeg ik altijd."');if(!SV.flags.krabTalk){SV.flags.krabTalk=1;points('krab',1);}say('Kapitein Krab','"Arrr! Oesters voor het banket? Ik heb er een hele kist van, maar die zit potdicht met spijkers. Mijn papegaai heeft de sleutel in zee gegooid."');say('Kapitein Krab','"In dat gereedschapskistje ligt een breekijzer. Wrik die kist open, dan maak ik er een schotel van waar de koning zijn kroon voor afstaat."');},
+     use:{oesters:()=>{if(SV.flags.schotel)return;SV.flags.schotel=1;take('oesters');points('schotel',4);gerecht(17,'Oesterschotel van Krab');say('Kapitein Krab','"Arrr, prachtige oesters!" Hij maakt ze schoon, strooit er citroen en peterselie overheen en schikt ze op een zilveren schaal.');sayN('Je krijgt een glanzende oesterschotel. Het vijfde gerecht voor het banket!');fin(17);}}},
+   {id:'gereedschap',name:'gereedschapskist',obj:tbx,ap:[6.0,.4],face:fc([6,.4],6.8,-1.5),look:()=>sayN('Een kleine kist met gereedschap. Er steekt een breekijzer uit.'),take:()=>sayN('Alleen het breekijzer is nuttig. Pak dat.')},
+   {id:'breekijzer',name:'breekijzer',obj:bki,ap:[6.0,.4],face:fc([6,.4],6.8,-1.5),vis:()=>!SV.flags.brkp,look:()=>sayN('Een zwaar breekijzer in het gereedschapskistje.'),take:()=>{SV.flags.brkp=1;bki.visible=false;give('breekijzer');points('brk',2);sayN('Je pakt het breekijzer. Het is zwaar en het kraakt in je hand.');}},
+   {id:'oesterkist',name:'oesterkist',obj:ck,ap:[3.5,-1.8],face:fc([3.5,-1.8],3.5,-3.2),look:()=>sayN(SV.flags.kistOpen?'De kist staat open. Het ruikt naar de zee.':'Een grote kist, dichtgespijkerd. Er staat OESTERS op in rode letters.'),take:()=>sayN(SV.flags.kistOpen?'Pak de oesters zelf.':'De spijkers zitten muurvast.'),
+     use:{breekijzer:()=>{if(SV.flags.kistOpen)return;SV.flags.kistOpen=1;take('breekijzer');points('kist',3);lid.visible=false;oest.visible=true;SFX.thud&&SFX.thud();sayN('Je zet het breekijzer onder het deksel en wrikt. KRAAK! De spijkers schieten los en het deksel vliegt de lucht in. In de kist liggen glanzende verse oesters, op ijs.');}}},
+   {id:'oesters',name:'oesters',obj:oest,ap:[3.5,-1.8],face:fc([3.5,-1.8],3.5,-3.2),vis:()=>!!SV.flags.kistOpen&&!SV.flags.oestp,look:()=>sayN('Een kist vol glimmende oesters.'),take:()=>{SV.flags.oestp=1;oest.visible=false;give('oesters');points('oestp',2);sayN('Je stopt een flinke zak oesters bij elkaar. Ze ruiken heerlijk naar de zee.');}},
+   {id:'papegaai',name:'papegaai',obj:par,look:()=>sayN('Een felrode papegaai op de mast. Hij kijkt je uitdagend aan.'),talk:()=>{sayN('"Arrr! Schatkist! Arrr!" schreeuwt de papegaai. Daarna zegt hij een woord dat je liever niet herhaalt.');},take:()=>sayN('Hij zit hoog op de mast. En hij bijt.')},
+   {id:'schip',name:'piratenschip',obj:ship,look:()=>sayN('Een groot houten schip met een zwart zeil en een doodshoofdvlag. Het kraakt in de wind.'),take:()=>sayN('Een heel schip in je rugzak? Nee.')}
+  ];
+  S.update=t=>{updMotes(sc,t);idleFolk(kr,t,15);sea.userData.tex.offset.x=t*.0004;ship.rotation.z=Math.sin(t*.02)*.02;ship.position.y=-.2+Math.sin(t*.03)*.08;par.rotation.y=Math.sin(t*.02)*.3;bki.visible=!SV.flags.brkp;lid.visible=!SV.flags.kistOpen;oest.visible=!!SV.flags.kistOpen&&!SV.flags.oestp;};}
+
+ // ======================= 18. HET IJSMEER =======================
+ {const {sc,S}=newScene('ijsmeer',{name:'Het IJsmeer',desc:'Een bevroren meer onder een bleke zon. Er staat een klein houten huisje bij de oever. Midden op het ijs ligt een sneeuwbank.',
+   light:{sky:0xa8c0e0,ground:0x7a8aa8,hemi:.55,sun:0xffeed8,sunI:1.5,dir:[-10,20,12],fog:0xb0c4de,fogN:24,fogF:110},
+   bd:{sky:['#6a9ad8','#b8d4f0','#f0f4fa'],sun:[640,100],seed:191,clouds:[[200,80,1.1],[700,60,.9]],mBase:270,mH:220,mCol:'#9ab0d0',mHaze:'#d0dcec',snow:true,r1:['#c8d8ec','#dce8f6'],pines:['#6a8a88','#5a7a78'],r2:['#dce8f4','#eaf2fa']},
+   g1:'#a8b8d0',g2:'#c0d0e4',seed:190,paths:[[[-9.5,2],[0,1.6],[9.5,2.4],[9.5,4.4],[-9.5,4.4]]],pc1:'#c4ccd8',pc2:'#dce2ec',peb:80,blocked:[{x:-4.6,z:-1,r:.5},{x:-7.6,z:-4.4,r:1.4},{x:6.2,z:-1.2,r:.5},{x:-7.2,z:1.2,r:.4}]});
+  const ice=M(BOX(40,.1,13),new THREE.MeshStandardMaterial({color:0xa8d4f0,roughness:.08,metalness:.35,envMapIntensity:1.2}),0,.06,-8.5);ice.receiveShadow=true;sc.add(ice);
+  const hut=makeHouse('#8a5a3a',173,3,2.4);hut.position.set(-7.6,0,-4.6);sc.add(hut);
+  const stump=makeStump();stump.position.set(6.2,0,-1.2);sc.add(stump);const bijl=M(CYL(.04,.05,1,6),std({map:TX.wood,roughness:.8}),6.2,1.3,-1.2);bijl.rotation.z=.2;sc.add(bijl);sc.add(M(BOX(.5,.35,.08),std({color:0x8aa8c8,metalness:.7,roughness:.3}),6.4,1.65,-1.2));
+  const hgl=M(CYL(.03,.03,2,6),std({map:TX.wood,roughness:.8}),-7.2,.9,1.2);hgl.rotation.z=.3;sc.add(hgl);
+  const hole=M(new THREE.CircleGeometry(.9,24),new THREE.MeshBasicMaterial({color:0x0a2a4a}),1.5,.13,-4.2,false);hole.rotation.x=-Math.PI/2;hole.visible=false;hole.userData.noOutline=true;sc.add(hole);const mark=M(new THREE.CircleGeometry(.6,24),new THREE.MeshBasicMaterial({color:0x8ab4dc,transparent:true,opacity:.7}),1.5,.12,-4.2,false);mark.rotation.x=-Math.PI/2;mark.userData.noOutline=true;sc.add(mark);const hobj=new THREE.Group();hobj.add(hole);hobj.add(mark);hobj.position.set(-1.5,0,4.2);sc.add(hobj);hobj.position.set(0,0,0);
+  const fish=M(SPH(.3,12,8),std({color:0xa8b8c8,metalness:.5,roughness:.3}),1.5,.3,-4.2);fish.scale.set(1.6,.5,.5);fish.visible=false;sc.add(fish);
+  const an=folk({c1:'#4a6a8a',c2:'#3a5a7a',robe:0,hat:'muts',hc:'#c84a3a',hair:0x4a2a1a,skin:'#e8b894',seed:134,blush:true});an.root.position.set(-4.6,0,-1);an.root.rotation.y=.6;sc.add(an.root);S.npcs['Anna']=an;
+  for(let i=0;i<14;i++){const x=-24+R()*48,z=-12-R()*12;const t=makeSnowPine(8+R()*5);t.position.set(x,0,z);sc.add(t);}[[-10,1.5,8],[10.5,0,9]].forEach(p=>{const t=makeSnowPine(p[2]);t.position.set(p[0],0,p[1]);sc.add(t);});
+  addMotes(sc,{n:140,h:8,color:0xffffff,size:.12,op:.9,rise:-.03,sway:3,area:[-14,14,-10,8]});scatterRocks(sc,8,13,-9,9,0,4,null,.1,.25);
+  S.hot=[
+   {id:'anna',name:'visvrouw',obj:an.root,ap:[-3.6,.3],face:fc([-3.6,.3],-4.6,-1),look:()=>sayN('Een stevige visvrouw in een dikke jas met een rode muts. Haar neus is rood van de kou.'),
+     talk:()=>{if(SV.flags.rookforel)return say('Anna','"Mijn rookoven brandt voor jou, hoor. Kom gerust terug!"');if(!SV.flags.annaTalk){SV.flags.annaTalk=1;points('anna',1);}say('Anna','"Gerookte forel voor het banket? Graag! Maar het ijs is zo dik dat ik er geen gat meer in krijg. Mijn ijsbijl zit vast in die boomstronk."');say('Anna','"Mijn hengel staat tegen de oever. Hak een gat in het ijs bij de witte plek en vang een mooie forel. Dan rook ik hem voor je."');},
+     use:{forel:()=>{if(SV.flags.rookforel)return;SV.flags.rookforel=1;take('forel');points('rookforel',3);gerecht(18,'Gerookte forel van Anna');say('Anna','"Wat een prachtige vis!" Ze hangt hem in haar kleine rookoven en laat hem een uurtje smeulen boven houtvuur.');sayN('Je krijgt een geurige gerookte forel. Het zesde gerecht voor het banket!');fin(18);}}},
+   {id:'bijl',name:'ijsbijl',obj:bijl,ap:[5.4,-.3],face:fc([5.4,-.3],6.2,-1.2),vis:()=>!SV.flags.bijlp,look:()=>sayN('Een ijsbijl zit diep in de boomstronk.'),take:()=>{SV.flags.bijlp=1;bijl.visible=false;give('ijsbijl');points('bijl',2);sayN('Je trekt de bijl met een ruk uit de stronk. Hij is zwaar en scherp.');}},
+   {id:'hengel',name:'hengel',obj:hgl,ap:[-6.4,2.2],face:fc([-6.4,2.2],-7.2,1.2),vis:()=>!SV.flags.hengelp,look:()=>sayN('Een lange hengel tegen de oever.'),take:()=>{SV.flags.hengelp=1;hgl.visible=false;give('hengel');points('hengel',1);sayN('Je pakt de hengel. De lijn zit er al aan.');}},
+   {id:'ijs',name:'witte plek op het ijs',obj:hobj,ap:[1.4,-1.8],face:fc([1.4,-1.8],1.5,-4.2),look:()=>sayN(SV.flags.gat?'Een rond gat in het ijs. Het water eronder is donkerblauw en diep.':'Een witte plek op het ijs, waar het ijs wat dunner lijkt.'),take:()=>sayN('Het ijs is hard als steen.'),
+     use:{ijsbijl:()=>{if(SV.flags.gat)return;SV.flags.gat=1;take('ijsbijl');points('gat',3);hole.visible=true;mark.visible=false;SFX.thud&&SFX.thud();sayN('Je zwaait de bijl en hakt: KLONG! Kruimels vliegen in het rond. Na een paar flinke slagen heb je een rond gat, groot genoeg voor een forel.');},hengel:()=>{if(!SV.flags.gat)return sayN('Je kunt de hengel niet door ijs steken. Eerst een gat hakken.');if(SV.flags.forelp)return;SV.flags.forelp=1;take('hengel');give('forel');points('forelp',2);sayN('Je laat de lijn zakken en wacht. Het is stil en koud. Dan trekt er iets! Je haalt een zilveren, spartelende forel op het ijs.');}}}
+  ];
+  S.update=t=>{updMotes(sc,t);idleFolk(an,t,16);bijl.visible=!SV.flags.bijlp;hgl.visible=!SV.flags.hengelp;hole.visible=!!SV.flags.gat;mark.visible=!SV.flags.gat;};}
+
+ // ======================= 19. DE HEKSENKEUKEN =======================
+ {const {sc,S}=newScene('keuken',{name:'De Heksenkeuken',desc:'Een heksentuin in de avondschemering. Een grote ketel staat te pruttelen boven een vuur. Rondom groeien rijen groenten.',
+   light:{sky:0x8a6a9a,ground:0x2a3a20,hemi:.55,sun:0xffa880,sunI:1.8,dir:[-12,16,12],fog:0x6a5a80,fogN:14,fogF:70},
+   bd:{sky:['#2a1a5a','#8a4a8a','#f0a878'],sun:[520,330],seed:201,clouds:[[260,120,1],[720,90,1.1]],mBase:300,mH:120,mCol:'#4a3a7a',mHaze:'#8a6aa0',r1:['#4a3a5a','#5a4a6a'],pines:['#2a2040','#201838'],r2:['#3a3050','#4a4060']},
+   g1:'#4a5a34',g2:'#5a6a40',seed:200,paths:[[[-9.5,.4],[9.5,.8],[9.5,2.2],[-9.5,2]]],pc1:'#6a5a4a',pc2:'#8a7a68',peb:500,blocked:[{x:2.6,z:-3.2,r:1.2},{x:-4,z:-1.6,r:.5},{x:-7.2,z:2.8,r:1.2},{x:0,z:3.2,r:1},{x:6.0,z:2.4,r:1.2}]});
+  const ket=makeCauldron2();ket.position.set(2.6,0,-3.2);ket.scale.setScalar(1.5);sc.add(ket);const kf=makeCampfire();kf.position.set(2.6,0,-3.2);kf.scale.setScalar(.9);kf.userData.logs.visible=true;kf.userData.fire.visible=true;kf.userData.pl.intensity=1.4;sc.add(kf);
+  const pat=(x,z,col,sh)=>{const g=new THREE.Group();g.add(M(BOX(2.2,.2,1.6),std({color:0x3a2a1a,roughness:1}),0,.1,0));for(let i=0;i<9;i++){const px=(i%3-1)*.7,pz=(Math.floor(i/3)-1)*.5;if(sh==='cone'){const c=M(new THREE.ConeGeometry(.12,.4,8),std({color:col,roughness:.6}),px,.35,pz);c.rotation.z=Math.PI;g.add(c);g.add(M(SPH(.12,6,5),std({color:0x4a9a2a,roughness:.8}),px,.65,pz));}else{g.add(M(SPH(.17,10,8),std({color:col,roughness:.6}),px,.28,pz));}}g.position.set(x,0,z);sc.add(g);return g;};
+  const pw=pat(-7.2,2.8,0xe87a1a,'cone'),pu=pat(0,3.2,0xe0b040,'sph'),pa=pat(6.0,2.4,0xa87a48,'sph');
+  const gr=folk({c1:'#4a2a6a',c2:'#6a3a8a',robe:1,hat:'punt',hc:'#2a1a40',hair:0xc8c0d8,skin:'#c8a888',old:true,seed:135,nose:1.4,eye:0x40c040,h:.95});gr.root.position.set(-4,0,-1.6);gr.root.rotation.y=.6;sc.add(gr.root);S.npcs['Heks Grimelda']=gr;
+  [[-1,2,-6],[7.5,-5],[-9,-4]].forEach((p,i)=>{const t=makeDeadTree(4+i,60+i);t.position.set(p[0],0,p[1]||p[2]);sc.add(t);});
+  fill(sc,{seed:31,n:12,dark:true,leaf:[0x2c3c2a,0x243424],skip:(x,z)=>z>-12&&Math.abs(x)<12});addMotes(sc,{n:50,h:3.5,color:0xb8ff80,size:.16,op:.7,twinkle:true,rise:.001,sway:2});grassOver(sc,{n:3000,seed:30,cols:[0x4a5a34,0x3a4a2a],avoid:(x,z)=>false});
+  const putIn=k=>{take(k);SV.flags['in_'+k]=1;points('in_'+k,2);ket.userData.soup.material.emissiveIntensity=.5+(SV.flags.in_wortel?.2:0)+(SV.flags.in_ui?.2:0)+(SV.flags.in_aardappel?.2:0);if(SV.flags.in_wortel&&SV.flags.in_ui&&SV.flags.in_aardappel){points('soep',2);gerecht(19,'Heksensoep van Grimelda');say('Heks Grimelda','"Hmm, hmm, laat eens proeven..." Ze roert, slurpt en knikt dan tevreden. "Hokus pokus, soep voor de koning, nu ook in een kom!" Ze schept een dampend kommetje vol voor je.');sayN('Je krijgt een kom heksensoep, die zachtgroen gloeit. Het zevende gerecht voor het banket!');fin(19);}else say('Heks Grimelda','"Mooi, mooi. Nog '+(['wortel','ui','aardappel'].filter(x=>!SV.flags['in_'+x]).join(' en ')||'niets')+' erin en we zijn er."');};
+  S.hot=[
+   {id:'grimelda',name:'heks',obj:gr.root,ap:[-3,.3],face:fc([-3,.3],-4,-1.6),look:()=>sayN('Grimelda, de heks uit het Donkere Woud, met een puntmuts en een neus waar je een kaars aan kunt hangen. Ze roert in haar ketel.'),
+     talk:()=>{if(SV.flags.soep)return say('Heks Grimelda','"Smakelijk, jongen. En doe de groeten aan Edwijn."');if(!SV.flags.grimTalk){SV.flags.grimTalk=1;points('grim',1);}say('Heks Grimelda','"Soep voor het koninklijk banket? Dat kan. Ik heb een ketel die nooit leeg is, maar ik heb nog drie dingen nodig uit mijn tuin: een wortel, een ui en een aardappel."');say('Heks Grimelda','"De wortels staan links, de uien in het midden en de aardappels rechts. Pak ze zelf, mijn rug doet pijn. En niet in mijn ogen kijken!"');}},
+   {id:'ketel',name:'ketel',obj:ket,ap:[1.6,-1.2],face:fc([1.6,-1.2],2.6,-3.2),look:()=>sayN('Een zwarte ketel met een groenachtig brouwsel erin, dat zachtjes bubbelt.'),take:()=>sayN('Auw! Hij is gloeiend heet.'),
+     use:{wortel:()=>putIn('wortel'),ui:()=>putIn('ui'),aardappel:()=>putIn('aardappel')}},
+   {id:'wortels',name:'wortelbed',obj:pw,ap:[-6,1.2],face:fc([-6,1.2],-7.2,2.8),vis:()=>!SV.flags.wortelp,look:()=>sayN('Dikke oranje wortels steken uit de aarde.'),take:()=>{SV.flags.wortelp=1;give('wortel');points('wortel',1);sayN('Je trekt een dikke wortel uit de grond. Hij ruikt naar aarde.');}},
+   {id:'uien',name:'uienbed',obj:pu,ap:[0,1.6],face:fc([0,1.6],0,3.2),vis:()=>!SV.flags.uip,look:()=>sayN('Gele uien met groene sliertjes erbovenop.'),take:()=>{SV.flags.uip=1;give('ui');points('uip',1);sayN('Je trekt een grote ui uit de grond. Je ogen beginnen meteen te tranen.');}},
+   {id:'aardappels',name:'aardappelbed',obj:pa,ap:[4.8,1.2],face:fc([4.8,1.2],6,2.4),vis:()=>!SV.flags.aardp,look:()=>sayN('Aardappels, half onder de aarde.'),take:()=>{SV.flags.aardp=1;give('aardappel');points('aardp',1);sayN('Je graaft een knobbelige aardappel op.');}}
+  ];
+  S.update=t=>{updMotes(sc,t);idleFolk(gr,t,17);const f=kf.userData.fire;f.children[0].scale.set(1+Math.sin(t*.3)*.15,1+Math.sin(t*.4)*.25,1);kf.userData.pl.intensity=1.4+Math.sin(t*.4)*.4;ket.userData.soup.position.y=1.28+Math.sin(t*.1)*.01;};}
+
+ // ======================= 20. HET SPIEGELPALEIS =======================
+ {const {sc,S}=newScene('spiegel',{name:'Het Spiegelpaleis',desc:'Een hoge, glimmende zaal vol spiegels. Een grote spiegel aan de muur is zo bestoft dat je jezelf er niet in kunt zien. Op een kast ligt iets glanzends.',
+   light:{sky:0xc8b898,ground:0x4a3a2a,hemi:.42,sun:0xffe8c8,sunI:1.0,dir:[4,18,10],fog:0x9a8a70,fogN:30,fogF:110},
+   bd:{sky:['#8a6a4a','#c8a878','#f0d8b0'],seed:211,clouds:[],mBase:340,mH:40,mCol:'#a88a68',mHaze:'#d8c0a0',r1:['#a08868','#b09878'],r2:['#907858','#a08868']},
+   g1:'#8a7a68',g2:'#9a8a78',seed:210,paint:checker('#a89c84','#4a3e30'),blocked:[{x:-4.6,z:-1.2,r:.5},{x:6.6,z:-1.8,r:.6},{x:-9.5,z:-6,r:.5}]});
+  wall(sc,'#a08c6c',-9.6);const cf=makeCrate();
+  [[-6,-9],[-2,-9],[2,-9],[6,-9]].forEach((p,i)=>{const col=M(CYL(.4,.45,9,18),std({color:0xb8aa8a,roughness:.7}),p[0]+2,4.5,p[1]+.4);sc.add(col);});
+  const dust=makeMirrorFrame(3.2,4.2);dust.position.set(3,3.3,-9.2);sc.add(dust);const dm=M(BOX(3.2,4.2,.04),std({color:0x8a8478,transparent:true,opacity:.82,roughness:1}),3,3.3,-9.08,false);dm.userData.noOutline=true;sc.add(dm);
+  [[-5,3.3,-9.2,2.2,3],[-1,3.3,-9.2,2.2,3]].forEach(p=>{const m=makeMirrorFrame(p[3],p[4]);m.position.set(p[0],p[1],p[2]);sc.add(m);});
+  const sh=M(BOX(1.8,3.2,.9),std({map:TX.wood,roughness:.75,color:0x7a5a3a}),-8.2,1.6,-4.2);sc.add(sh);const nest=new THREE.Group();A(nest,M(SPH(.5,12,8,0,6.3,Math.PI/2,Math.PI/2),std({color:0xa87a3a,roughness:1}),0,0,0)).scale.set(1.2,.6,1.2);const egg=makeSeal(0xf0c030);egg.scale.set(.001,.001,.001);nest.add(egg);nest.position.set(-8.2,3.3,-4.2);sc.add(nest);
+  const stl=M(CYL(.3,.35,.7,12),std({map:TX.wood,roughness:.8}),6.6,.35,-1.8);sc.add(stl);const dk=M(BOX(.5,.04,.4),std({color:0xe8e0c8,roughness:.95}),6.6,.72,-1.8);sc.add(dk);
+  const cu=folk({c1:'#6a3a5a',c2:'#8a4a7a',robe:1,hat:'muts',hc:'#e8d8c0',hair:0x9a7a6a,skin:'#f0c4a0',seed:136,blush:true,h:.97});cu.root.position.set(-4.6,0,-1.2);cu.root.rotation.y=.6;sc.add(cu.root);S.npcs['Mevrouw Spiegel']=cu;
+  torch(sc,-8,3.5,-8.8);torch(sc,8,3.5,-8.8);addMotes(sc,{n:50,h:5,color:0xfff0d0,size:.12,op:.5,rise:.0008});
+  const glassWall=(x)=>{};
+  S.hot=[
+   {id:'spiegelvrouw',name:'conservator',obj:cu.root,ap:[-3.6,.3],face:fc([-3.6,.3],-4.6,-1.2),look:()=>sayN('Mevrouw Spiegel, de conservator van het paleis, met een bril aan een kettinkje en altijd een stofdoekje in de hand. Behalve vandaag.'),
+     talk:()=>{if(SV.flags.spiegelei)return say('Mevrouw Spiegel','"Een spiegelei van een gouden ei. Dat is de beste smaak ter wereld!"');if(!SV.flags.spieTalk){SV.flags.spieTalk=1;points('spie',1);}say('Mevrouw Spiegel','"Een gerecht voor de koning? Het Spiegelpaleis is beroemd om zijn spiegeleieren, en die komen uit een gouden ei dat in een nestje boven op die kast ligt. Maar zonder dat ik me in mijn spiegel kan zien, durf ik niet te koken."');say('Mevrouw Spiegel','"Mijn poetsdoek ligt op dat krukje. Poets de grote spiegel, dan zie je misschien waar het nest staat. Ik kom er niet bij: dat nest staat veel te hoog."');},
+     use:{ei:()=>{if(SV.flags.spiegelei)return;SV.flags.spiegelei=1;take('ei');points('spiegelei',3);gerecht(20,'Spiegelei van het Paleis');say('Mevrouw Spiegel','"Het gouden ei!" Ze breekt het in een hete pan en een gouden spiegelei gloeit zachtjes in het boter. Het glanst zo mooi dat je jezelf erin ziet.');sayN('Je krijgt een schitterend gouden spiegelei. Het achtste gerecht voor het banket!');fin(20);}}},
+   {id:'doek',name:'poetsdoek',obj:dk,ap:[5.8,-.8],face:fc([5.8,-.8],6.6,-1.8),vis:()=>!SV.flags.doekp,look:()=>sayN('Een zachte witte poetsdoek op een krukje.'),take:()=>{SV.flags.doekp=1;dk.visible=false;give('poetsdoek');points('doek',2);sayN('Je pakt de poetsdoek. Hij ruikt naar zeep.');}},
+   {id:'grotespiegel',name:'grote spiegel',obj:dust,ap:[3,-2.2],face:fc([3,-2.2],3,-9.2),look:()=>sayN(SV.flags.schoon?'De spiegel glimt. Je ziet de hele zaal erin, en een glimmend nest boven op de kast!':'Een enorme spiegel, bedekt met een dikke laag stof. Je ziet er niets in.'),take:()=>sayN('Hij zit vast aan de muur en is zwaar.'),
+     use:{poetsdoek:()=>{if(SV.flags.schoon)return;SV.flags.schoon=1;points('poets',4);dm.visible=false;sayN('Je veegt met de doek langzaam over het glas. Het stof verdwijnt in banen en je ziet jezelf opduiken, en achter je de hele zaal. En daar, in de spiegel, zie je boven op de kast een glanzend nest met een gouden ei.');}}},
+   {id:'nest',name:'nest',obj:nest,ap:[-7,-1.8],face:fc([-7,-1.8],-8.2,-4.2),vis:()=>!!SV.flags.schoon&&!SV.flags.eip,look:()=>sayN('Een nest met een gouden ei boven op de kast. Je ziet het alleen goed in de spiegel.'),take:()=>{SV.flags.eip=1;egg.visible=false;give('ei');points('eip',2);sayN('Je stapt op een krukje, strekt je uit en pakt het warme gouden ei uit het nest.');}},
+   {id:'kast',name:'kast',obj:sh,look:()=>sayN('Een hoge houten kast. Bovenop ligt iets dat glimt.'),take:()=>sayN('Hij is vast aan de muur geschroefd.')}
+  ];
+  S.update=t=>{updMotes(sc,t);idleFolk(cu,t,18);dk.visible=!SV.flags.doekp;dm.visible=!SV.flags.schoon;const show=!!SV.flags.schoon&&!SV.flags.eip;egg.visible=show;if(show){egg.scale.setScalar(Math.min(1,egg.scale.x+.02)*1);egg.rotation.y=t*.03;}};}
+
+ // ======================= 21. HET WOLKENKASTEEL =======================
+ {const {sc,S}=newScene('wolken',{name:'Het Wolkenkasteel',desc:'Hoog boven Daelenrijk, op een grote, zachte wolk. Een reusachtige man zit bij een wolkenkasteel te geeuwen. Overal drijven pluizige wolkenbanken.',
+   light:{sky:0xa0b4e0,ground:0x8a98c0,hemi:.5,sun:0xffeccc,sunI:1.3,dir:[8,24,10],fog:0xb8c8ee,fogN:50,fogF:200},
+   bd:{sky:['#5a8ae8','#a8c8f8','#fff4e0'],sun:[640,110],seed:221,clouds:[[160,140,1.4],[420,100,1.1],[760,170,1.3],[300,230,1],[880,80,.9]],mBase:380,mH:30,mCol:'#b8c8f0',mHaze:'#e8f0ff',r1:['#d8e4ff','#e8f0ff'],r2:['#e4ecff','#f4f8ff']},
+   g1:'#c8d4f0',g2:'#dce6ff',seed:220,blocked:[{x:-3,z:-2,r:1.2},{x:5.8,z:-2.6,r:.9},{x:-6.4,z:1.4,r:.5}]});
+  const bn=new THREE.Group();const bm=std({color:0xe0e8fc,roughness:1,emissive:0x6878a0,emissiveIntensity:.1});for(let i=0;i<60;i++){const b=M(SPH(1+R()*1.6,14,10),bm,(R()-.5)*34,-.9+R()*.4,-R()*18+2);b.scale.y=.45;b.castShadow=false;bn.add(b);}bn.children.forEach(q=>q.userData.noOutline=true);bn.userData.noOutline=true;sc.add(bn);
+  const cst=new THREE.Group();const cmat=std({color:0xd8d4ec,roughness:.8,emissive:0x6070a0,emissiveIntensity:.1});[[0,0,0,2,6],[-3.4,0,.5,1.4,4.4],[3.4,0,.5,1.4,4.4]].forEach(p=>{cst.add(M(CYL(p[3],p[3]*1.1,p[4],20),cmat,p[0],p[4]/2,p[2]));cst.add(M(new THREE.ConeGeometry(p[3]*1.3,p[4]*.5,20),std({color:0xffd070,roughness:.5,metalness:.4}),p[0],p[4]+p[4]*.25,p[2]));});cst.position.set(1,0,-8);sc.add(cst);
+  const zk=M(SPH(.35,12,10),std({color:0xd8c8a0,roughness:1}),-6.4,.45,1.4);zk.scale.set(1,.9,.8);sc.add(zk);
+  const bank1=makeCloudBank();bank1.position.set(5.8,0,-2.6);bank1.scale.setScalar(1.3);sc.add(bank1);const bank2=makeCloudBank();bank2.position.set(-1,0,-5);bank2.scale.setScalar(1.6);sc.add(bank2);
+  const re=folk({c1:'#8a6a4a',c2:'#6a4a2a',apron:'#f0ead8',hat:'muts',hc:'#f4f0e8',hair:0x8a5a2e,beard:0x8a5a2e,skin:'#f0c4a0',seed:137,fat:1.3,w:1.2});re.root.position.set(-3,0,-2);re.root.rotation.y=.5;re.root.scale.setScalar(1.8);sc.add(re.root);S.npcs['Reus Reinout']=re;
+  addMotes(sc,{n:70,h:6,color:0xffffff,size:.25,op:.55,rise:.004,sway:2});
+  S.hot=[
+   {id:'reinout',name:'reus',obj:re.root,ap:[-1.2,.4],face:fc([-1.2,.4],-3,-2),look:()=>sayN('Een vriendelijke reus met een witte bakkersmuts en een veel te grote schort. Hij geeuwt zo hard dat de wolken ervan trillen.'),
+     talk:()=>{if(SV.flags.wolkentaart)return say('Reus Reinout','"Zo, jongen. Een taart zo licht als een wolk."');if(!SV.flags.reusTalk){SV.flags.reusTalk=1;points('reus',1);}say('Reus Reinout','"Hoi, kleintje! Ik ben Reinout, banketbakker van de wolken. Mijn wolkentaart is beroemd, maar de pluis is op. Zonder pluis geen wolkentaart."');say('Reus Reinout','"Mijn zak ligt daar bij je voeten. Vang er wolkenpluis mee van de wolkenbank en breng me die. Ik heb een slagroomtaart voor de koning in mijn hoofd."');},
+     use:{pluis:()=>{if(SV.flags.wolkentaart)return;SV.flags.wolkentaart=1;take('pluis');points('wolkentaart',5);gerecht(21,'Wolkentaart van Reinout');say('Reus Reinout','"Wolkenpluis! Ik heb het zo nodig!" Hij klopt het met een enorme garde, strooit er suikerkorrels overheen en bakt het in een oven vol zonnestralen.');sayN('Je krijgt een lichte, schuimige wolkentaart, zo zacht als een kussen. Het negende gerecht voor het banket! Eentje nog.');fin(21);}}},
+   {id:'zak',name:'zak',obj:zk,ap:[-5.6,2.2],face:fc([-5.6,2.2],-6.4,1.4),vis:()=>!SV.flags.zakp,look:()=>sayN('Een grote linnen zak ligt op de wolk.'),take:()=>{SV.flags.zakp=1;zk.visible=false;give('zak');points('zak',2);sayN('Je pakt de zak. Hij is zo licht dat hij bijna wegwaait.');}},
+   {id:'wolkenbank',name:'wolkenbank',obj:bank1,ap:[4.4,-.8],face:fc([4.4,-.8],5.8,-2.6),look:()=>sayN('Een dikke wolkenbank, zo zacht als een dikke dekbed. Er dwarrelen pluisjes af.'),take:()=>sayN('Je graait ernaar, maar de pluisjes verdampen tussen je vingers. Je hebt iets nodig om ze in te vangen.'),
+     use:{zak:()=>{if(SV.flags.pluisp)return;SV.flags.pluisp=1;take('zak');give('pluis');points('pluisp',4);sayN('Je houdt de zak open en veegt er een hele wolk in. Pffft! De zak zwelt op tot een witte ballon vol zachte wolkenpluis.');}}},
+   {id:'kasteel',name:'wolkenkasteel',obj:cst,look:()=>sayN('Een kasteel van gestolde wolken, met gouden torenspitsen die glinsteren in de zon.'),take:()=>sayN('Een kasteel van wolken? Dat zou in je rugzak smelten.')}
+  ];
+  S.update=t=>{updMotes(sc,t);idleFolk(re,t,19);bn.children.forEach((b,i)=>{b.position.x+=Math.sin(t*.003+i)*.0015;});zk.visible=!SV.flags.zakp;};}
+
+ // ======================= 22. HET KONINKLIJK BANKET =======================
+ {const {sc,S}=newScene('banket',{name:'De Banketzaal van Daelenrijk',desc:'De grote zaal van kasteel Daelenrijk, met een lange tafel vol bloemen en kaarsen. Koning Edwijn zit aan het hoofd van de tafel. In een hoek zit de draak. Links staat de keuken van Chef Pieter.',
+   light:{sky:0xf0e0c8,ground:0x6a5a4a,hemi:.7,sun:0xffd8a8,sunI:1.8,dir:[0,18,10],fog:0xc8b898,fogN:22,fogF:80},
+   bd:{sky:['#6a4a2a','#a07848','#d8b078'],seed:231,clouds:[],mBase:340,mH:40,mCol:'#8a6a48',mHaze:'#c8a878',r1:['#8a6a48','#9a7a58'],r2:['#7a5a38','#8a6a48']},
+   g1:'#8a6a48',g2:'#9a7a58',seed:230,paint:checker('#b09068','#8a6a48'),blocked:[{x:-1.5,z:-3.4,r:1.7},{x:3.5,z:-3.4,r:1.7},{x:-7.4,z:-3,r:1.4},{x:7.4,z:-1.8,r:1.2},{x:-4.6,z:-1,r:.5}]});
+  wall(sc,'#c8a878',-9.6);[[-7,-9],[-2,-9],[3,-9],[8,-9]].forEach((p,i)=>{const bn2=makeBanner();bn2.position.set(p[0],5,p[1]+.3);bn2.scale.setScalar(1.2);sc.add(bn2);});
+  const tbl=makeTable(8,1.8);tbl.position.set(1,0,-3.4);sc.add(tbl);[[-2,.4],[0,.4],[2,.4],[4,.4]].forEach((p,i)=>{const c=M(CYL(.18,.12,.4,10),std({color:[0xd8302a,0xf0c030,0x4aa84a,0x3a7ad8][i],roughness:.5}),1+p[0],1.2,-3.4+(i%2?.3:-.3));sc.add(c);});
+  const slots=new THREE.Group();slots.position.set(1,0,-3.4);sc.add(slots);
+  const kfx=new THREE.Group();kfx.position.set(-7.4,0,-3);const stv=M(BOX(2,1.2,1.4),std({color:0x3a3a40,metalness:.7,roughness:.5}),0,.6,0);kfx.add(stv);kfx.add(M(CYL(.4,.4,.2,16),std({color:0x1a1a1a,metalness:.6}),.3,1.3,0));sc.add(kfx);
+  const fire=new THREE.Sprite(new THREE.SpriteMaterial({map:TX.glow,color:0xff9a40,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false}));fire.scale.set(1.2,1.2,1);fire.position.set(-7.4,.7,-2.2);sc.add(fire);
+  const vorm=M(CYL(.22,.18,.3,14),std({color:0xc87a3a,metalness:.6,roughness:.4}),-8.4,1.3,-3.6);vorm.userData.noOutline=false;sc.add(vorm);
+  const dr2=makeDragon();dr2.root.scale.setScalar(.4);dr2.root.position.set(7.4,0,-1.8);dr2.root.rotation.y=-2.4;sc.add(dr2.root);S.npcs['Draak Smul']=dr2;dr2.cheek.scale.setScalar(.3);
+  const ko=folk({c1:'#8a1a2a',c2:'#6a1018',robe:1,hair:0xd8d0c0,beard:0xe0d8c8,skin:'#f0c4a0',seed:138,old:true,fat:1.2,w:1.1});ko.root.position.set(4.6,0,-4.8);ko.root.rotation.y=-.4;sc.add(ko.root);S.npcs['Koning Edwijn']=ko;
+  const ch=folk({c1:'#f0ead8',c2:'#e0d8c0',apron:'#ffffff',hat:'muts',hc:'#ffffff',hair:0x4a3220,mus:0x4a3220,skin:'#f0c4a0',seed:139,fat:1.25});ch.root.position.set(-4.6,0,-1);ch.root.rotation.y=.5;sc.add(ch.root);S.npcs['Chef Pieter']=ch;
+  [[-8,3.5,-8.8],[10,3.5,-8.8],[-3,3.5,-8.8],[5,3.5,-8.8]].forEach(p=>torch(sc,...p));addMotes(sc,{n:50,h:5,color:0xfff0c0,size:.12,op:.5,rise:.0008});
+  const feast=()=>{points('feest',5);G.zegelT=0;SFX.win();say('Koning Edwijn','"Tien gerechten! Appeltaart, honing, kaas, kip, oesters, forel, soep, spiegelei, wolkentaart en crème brûlée! Ridder Gijs, dit is het mooiste banket in de geschiedenis van Daelenrijk!"');say('Koning Edwijn','"Aan tafel, iedereen! Edwijn gaat eten!"');sayN('De zaal vult zich met gelach, muziek en de geur van het heerlijkste eten van het koninkrijk. Draak Smul blaast kleine vuurkringetjes, Mechteld breit onder de tafel en de wachter danst met een kip. Het hele Daelenrijk, van het woud tot de wolken, viert feest.');fin(22);};
+  S.hot=[
+   {id:'pieter',name:'chef-kok',obj:ch.root,ap:[-3.6,.3],face:fc([-3.6,.3],-4.6,-1),look:()=>sayN('Chef Pieter, de koninklijke kok, in een witte jas en met een muts die zo hoog is als de kroon van de koning.'),
+     talk:()=>{if(SV.flags.pudding)return say('Chef Pieter','"Een pudding voor de koning! Geef dat maar aan de draak, hij weet hoe je een brûlée maakt."');if(!SV.flags.pieterTalk){SV.flags.pieterTalk=1;points('pieter',1);}say('Chef Pieter','"Negen gerechten, dat is al fantastisch! Maar een banket heeft een toetje nodig. Ik wil een crème brûlée: pudding met een gekarameliseerd korstje."');say('Chef Pieter','"De puddingvorm ligt op de plank bij mijn fornuis. Bak de pudding in mijn oven en laat de draak er met zijn vuur een korstje op branden."');}},
+   {id:'vorm',name:'puddingvorm',obj:vorm,ap:[-7,-1],face:fc([-7,-1],-8.4,-3.6),vis:()=>!SV.flags.vormp,look:()=>sayN('Een koperen puddingvorm op de plank bij het fornuis.'),take:()=>{SV.flags.vormp=1;vorm.visible=false;give('puddingvorm');points('vorm',1);sayN('Je pakt de koperen vorm van de plank. Hij is nog warm van de oven.');}},
+   {id:'fornuis',name:'fornuis',obj:kfx,ap:[-6,-1.4],face:fc([-6,-1.4],-7.4,-3),look:()=>sayN('Een zwart keukenfornuis met een gloeiende oven. Het ruikt er naar vanille.'),take:()=>sayN('Auw! Hij is gloeiend heet.'),
+     use:{puddingvorm:()=>{if(SV.flags.pudding)return;SV.flags.pudding=1;take('puddingvorm');give('pudding');points('pudding',2);sayN('Je vult de vorm met melk, ei en suiker, zet hem in de oven en wacht. Na een poosje ruikt de hele keuken naar vanille. Je haalt een gladde gele pudding eruit.');}}},
+   {id:'smul',name:'draak',obj:dr2.root,ap:[6,.3],face:fc([6,.3],7.4,-1.8),look:()=>sayN('Draak Smul, nu klein genoeg om in de zaal te passen, met een servet onder zijn kin. Hij kijkt hongerig naar de pudding.'),take:()=>sayN('Hij is gelukkig niet meer zo groot als vroeger, maar hij is nog steeds een draak.'),
+     talk:()=>{say('Draak Smul','"Is dat een pudding? Ik kan er wel een korstje op branden, hoor!"');},
+     use:{pudding:()=>{if(SV.flags.brulee)return;SV.flags.brulee=1;take('pudding');points('brulee',3);gerecht(22,'Crème brûlée van Smul');say('Draak Smul','"Eén ogenblikje!" Hij blaast een piepklein vlammetje over de pudding. FSSSST! Er verschijnt een glanzend, goudbruin suikerkorstje.');sayN('Je houdt een perfecte crème brûlée in je handen. Het tiende en laatste gerecht voor het banket!');}}},
+   {id:'koning',name:'koning',obj:ko.root,ap:[4.6,-1.6],face:fc([4.6,-1.6],4.6,-4.8),look:()=>sayN('Koning Edwijn, met een gouden kroon, een rode mantel en een enorme honger.'),
+     talk:()=>{if(SV.flags.feest)return say('Koning Edwijn','"Smaakt het, Ridder Gijs?"');if(SV.gerechten.length<10){say('Koning Edwijn','"Ik heb honger als een draak, Ridder Gijs! Hoeveel gerechten heb je? '+SV.gerechten.length+' van de 10. Ga maar verder zoeken."');if(SV.gerechten.length===9&&!SV.flags.brulee)say('Koning Edwijn','"Eén ontbreekt nog: een toetje. Vraag het maar aan Chef Pieter."');return;}SV.flags.feest=1;feast();}},
+   {id:'tafel',name:'banketttafel',obj:tbl,look:()=>sayN('Een lange tafel met een wit kleed, kaarsen en bloemen. Er zijn tien lege borden. Nog even geduld.'),take:()=>sayN('Eerst eten, dan pakken.')}
+  ];
+  S.update=t=>{updMotes(sc,t);idleFolk(ko,t,20);idleFolk(ch,t,21);vorm.visible=!SV.flags.vormp;fire.material.opacity=.6+Math.sin(t*.2)*.3;dr2.head.rotation.z=Math.sin(t*.02)*.05;};}
+}
+
+// ===================== HOOFDSTUK 13 T/M 22: KAART, UI EN KARAKTERS =====================
+CHX[12].end=['Morvan slaapt als een roos, voor het eerst in honderd jaar.','De slaapvloek op de kroon lost op: koning Edwijn wordt wakker!','Hij noemt jou Ridder van Daelenrijk!'];
+CHX[12].next='Maar de koning heeft een honger als een draak...';
+Object.assign(CHX,{
+ 13:{title:'De Appelboomgaard',scene:'boomgaard',start:[-5.5,2.6],intro:['Koning Edwijn rekt zich uit, geeuwt en rommelt met zijn maag. "Honderd dagen niet gegeten! Ridder Gijs, ik wil een koninklijk banket, met tien gerechten. En Chef Pieter is bij het eerste gesnurk gevlucht."','Jij trekt er opnieuw op uit. Het eerste gerecht moet in een boomgaard vol appels liggen.'],end:['Een goudkleurige appeltaart ligt veilig in je rugzak.','Het eerste gerecht voor het banket is binnen!','Boerin Floor zwaait je na.'],next:'Volgende stop: een weide vol bijen...'},
+ 14:{title:'De Bijenweide',scene:'bijen',start:[-5.5,2.6],intro:['Op een bloemenweide gonst het. Honing is precies wat een banket nodig heeft, maar de bijen zijn vandaag in een slechte bui.'],end:['De bijen zoemen weer zachtjes, de honingpot glanst.','Gerecht nummer twee staat klaar.','Imker Bert geeft je een knipoog.'],next:'Op naar de kaasboerderij in de bergen...'},
+ 15:{title:'De Kaasboerderij',scene:'kaas',start:[-5.5,2.6],intro:['Hoog in de bergen grazen koeien tussen de bloemen. Een banket zonder kaas is geen banket.'],end:['Een prachtige kaasplank, vol blokjes, druiven en noten.','Drie gerechten binnen. Zeven te gaan!','Boer Gerrit klopt je op de schouder.'],next:'Een rotsige vlakte met een kolossale gast wacht...'},
+ 16:{title:'De Drakengrot',scene:'draak',start:[-5.5,2.6],intro:['Je hoort eerst een kreun, dan zie je het: een draak zo groot als een huis, met een dikke wang. Gelukkig lijkt hij meer pijn dan kwaad te hebben.'],end:['Een geurige, goudbruine kip rolt uit de lucht in je handen.','Vier gerechten binnen. Zes te gaan!','Draak Smul likt tevreden zijn lippen.'],next:'In de haven ligt een schip te wachten...'},
+ 17:{title:'De Piratenhaven',scene:'haven',start:[-5.5,2.6],intro:['Je ruikt zout, teer en vis. In de haven ligt een groot piratenschip, en overal staan kisten en vaten.'],end:['Een zilveren schaal vol glanzende oesters.','Vijf gerechten binnen. De helft is gehaald!','Kapitein Krab salueert.'],next:'Daarna wacht een bevroren meer...'},
+ 18:{title:'Het IJsmeer',scene:'ijsmeer',start:[-5.5,2.6],intro:['Je adem wordt wolkjes. Het meer is helemaal bevroren, en in de verte staat een klein houten huisje met een schoorsteen die rookt.'],end:['Een zilveren forel, mooi gerookt, glanst op je bord.','Zes gerechten binnen. Vier te gaan!','Anna steekt haar duim op.'],next:'Het schemert al, en bij een ketel zit een bekende heks...'},
+ 19:{title:'De Heksenkeuken',scene:'keuken',start:[-5.5,2.6],intro:['De avond valt. Achter het Donkere Woud staat een ketel te borrelen en een bekende heks roert erin met een lepel zo groot als een roeispaan.'],end:['Een kom heksensoep gloeit zachtgroen.','Zeven gerechten binnen. Drie te gaan!','Grimelda knipoogt: "Smakelijk, jongen."'],next:'Een glinsterend paleis vol spiegels is de volgende stop...'},
+ 20:{title:'Het Spiegelpaleis',scene:'spiegel',start:[-5.5,2.6],intro:['In het Spiegelpaleis zie je jezelf wel honderd keer. Overal is glas, goud en marmer, en het galmt alsof je in een kerk staat.'],end:['Een gouden spiegelei, zo mooi dat je jezelf erin ziet.','Acht gerechten binnen. Twee te gaan!','Mevrouw Spiegel poetst nog even haar bril.'],next:'Het laatste verre gerecht ligt hoger dan alles...'},
+ 21:{title:'Het Wolkenkasteel',scene:'wolken',start:[-5.5,2.6],intro:['Via een reuzenstaak klim je omhoog, door de wolken, tot je op een zachte, drijvende wolk staat. Een reusachtige banketbakker zwaait vriendelijk.'],end:['Een taart zo licht als een wolk, met slagroom erop.','Negen gerechten binnen. Eén te gaan!','Reus Reinout veegt een traan weg.'],next:'Terug naar het kasteel, voor het toetje en het banket...'},
+ 22:{title:'Het Koninklijk Banket',scene:'banket',start:[-5.5,2.6],intro:['Terug in het kasteel staat de banketzaal in vol ornaat. De tafel is gedekt, de kaarsen branden en koning Edwijn zit al aan tafel. Er ontbreekt alleen nog één gerecht: het toetje.'],end:['Het hele koninkrijk zit aan tafel, van het woud tot de wolken.','Edwijn eet, Smul blaast vuurkringetjes en Mechteld breit onder de tafel.','Jij bent Ridder Gijs van Daelenrijk. Voor altijd.'],next:''}
+});
+function drawBadges(y0){const plates=SV.ch>=13;const zx=612,zy=y0+112;const n=plates?10:9;const got=(plates?SV.gerechten:SV.zegels)||[];txt(plates?'BANKETGERECHTEN':'DROOMZEGELS',zx,zy-6,11,'#e8c880','left',FT);
+  for(let i=0;i<n;i++){const ok=got.includes(plates?13+i:i+2);ctx.save();ctx.translate(zx+10+i*(plates?23:26),zy+13);ctx.beginPath();
+    if(plates){ctx.arc(0,0,9,0,6.283);}else{for(let k=0;k<6;k++){const a=k/6*6.283;ctx.lineTo(Math.cos(a)*9,Math.sin(a)*9);}ctx.closePath();}
+    ctx.fillStyle=ok?(plates?'#f4f0e0':'#ffd85a'):'rgba(0,0,0,.4)';ctx.fill();ctx.strokeStyle=ok?(plates?'#d8a838':'#fff2b0'):'rgba(232,200,128,.35)';ctx.lineWidth=1.5;ctx.stroke();
+    if(plates&&ok){ctx.beginPath();ctx.arc(0,0,5.2,0,6.283);ctx.strokeStyle='#d8a838';ctx.lineWidth=1;ctx.stroke();}ctx.restore();}}
+const NPC3=[
+ ['boomgaard','Boerin Floor',{base:'Superhero_Female_FullBody',outfit:'Female_Peasant',extra:['Hair_Buns']},{hair:0x8a4a1e,wide:1.15}],
+ ['bijen','Imker Bert',{base:'Superhero_Male_FullBody',outfit:'Male_Peasant',extra:['Hair_Beard']},{hair:0xc8c0a0}],
+ ['kaas','Boer Gerrit',{base:'Superhero_Male_FullBody',outfit:'Male_Peasant',extra:['Hair_SimpleParted']},{hair:0x6a4a2a,wide:1.15}],
+ ['haven','Kapitein Krab',{base:'Superhero_Male_FullBody',outfit:'Male_Ranger',extra:['Hair_Beard']},{hair:0x2a1a0e,wide:1.1}],
+ ['ijsmeer','Anna',{base:'Superhero_Female_FullBody',outfit:'Female_Ranger',extra:['Hair_Long']},{hair:0x4a2a1a}],
+ ['keuken','Heks Grimelda',{base:'Superhero_Female_FullBody',outfit:'Female_Ranger',extra:['Hair_Long']},{hair:0xc8c0d8}],
+ ['spiegel','Mevrouw Spiegel',{base:'Superhero_Female_FullBody',outfit:'Female_Peasant',extra:['Hair_Long']},{hair:0x9a7a6a}],
+ ['wolken','Reus Reinout',{base:'Superhero_Male_FullBody',outfit:'Male_Peasant',extra:['Hair_Beard']},{hair:0x8a5a2e,wide:1.2}],
+ ['banket','Chef Pieter',{base:'Superhero_Male_FullBody',outfit:'Male_Peasant',extra:['Hair_SimpleParted']},{hair:0x4a3220,wide:1.2}],
+ ['banket','Koning Edwijn',{base:'Superhero_Male_FullBody',outfit:'Male_Ranger',extra:['Hair_Beard']},{hair:0xe0d8c8,crown:true}]
+];
+NPC2.push(...NPC3);
+
+const MAXSCORE=330;let SV=null;
+function newState(){return{ch:1,scene:'plein',hx:0,hz:3,inv:[],score:0,flags:{},done:{},zegels:[],gerechten:[]};}
 function saveGame(){try{localStorage.setItem('daelen3d_save',JSON.stringify(SV));}catch(e){}}
-function loadGame(){try{const s=JSON.parse(localStorage.getItem('daelen3d_save')||'null');if(s&&s.scene){if(!s.ch)s.ch=1;if(!s.zegels)s.zegels=[];return s;}}catch(e){}return null;}
+function loadGame(){try{const s=JSON.parse(localStorage.getItem('daelen3d_save')||'null');if(s&&s.scene){if(!s.ch)s.ch=1;if(!s.zegels)s.zegels=[];if(!s.gerechten)s.gerechten=[];return s;}}catch(e){}return null;}
 function has(i){return SV.inv.includes(i);}function give(i){if(!has(i))SV.inv.push(i);SFX.pick();}function take(i){SV.inv=SV.inv.filter(x=>x!==i);if(G.sel===i)G.sel=null;}
 function points(key,n){if(SV.done[key])return;SV.done[key]=1;SV.score+=n;SFX.point();G.flashScore=60;saveGame();}
 const G={state:'title',t:0,mode:'walk',sel:null,msgs:[],ui:[],mouse:{x:-100,y:-100,in:false},flashScore:0,fade:0,anims:[],end:false,keys:{L:0,R:0,U:0,D:0}};
@@ -1424,9 +1805,17 @@ function findPath(x1,z1,x2,z2){if(!GRID)buildGrid();if(walkable(x2,z2)&&lineFree
 function arrive(){const h=HERO;h.going=false;const a=h.action;h.action=null;if(a){if(a.face!=null)h.rotT=a.face;a.fn();}}
 function walkTo(x,z,action){HERO.path=findPath(HERO.x,HERO.z,x,z);HERO.action=action||null;HERO.going=true;HERO.stuck=0;if(!HERO.path.length){HERO.going=false;arrive();}}
 function tryMove(h,dx,dz){let ok=false;if(walkable(h.x+dx,h.z+dz)){h.x+=dx;h.z+=dz;ok=true;}else if(dx&&walkable(h.x+dx,h.z)){h.x+=dx;ok=true;}else if(dz&&walkable(h.x,h.z+dz)){h.z+=dz;ok=true;}if(ok){h.moving=true;h.walkT+=.2;h.rotT=Math.atan2(dx,dz);}return ok;}
-function updHero(){const h=HERO;h.moving=false;const sp=HM&&HM.real?.03:.042;const k=G.keys;const kx=(k.R?1:0)-(k.L?1:0),kz=(k.D?1:0)-(k.U?1:0);
-  if(kx||kz){h.going=false;h.action=null;const l=Math.hypot(kx,kz);tryMove(h,kx/l*sp,kz/l*sp);}
-  else if(h.going&&h.path.length){const wp=h.path[0];const dx=wp[0]-h.x,dz=wp[1]-h.z,d=Math.hypot(dx,dz);if(d<sp){h.x=wp[0];h.z=wp[1];h.moving=true;h.path.shift();if(!h.path.length)arrive();}else{if(!tryMove(h,dx/d*sp,dz/d*sp)){if(++h.stuck>15){h.path=[];arrive();}}else h.stuck=0;}}
+function updHero(){const h=HERO;h.px=h.x;h.pz=h.z;const sp=HM&&HM.real?.03:.042;const k=G.keys;const kx=(k.R?1:0)-(k.L?1:0),kz=(k.D?1:0)-(k.U?1:0);
+  if(h.v==null){h.v=0;h.hx=0;h.hz=1;}
+  let tx=0,tz=0,tv=0,intent=false,pathMode=false;
+  if(kx||kz){h.going=false;h.action=null;const l=Math.hypot(kx,kz);tx=kx/l;tz=kz/l;tv=sp;intent=true;}
+  else if(h.going&&h.path.length){const wp=h.path[0];const dx=wp[0]-h.x,dz=wp[1]-h.z,d=Math.hypot(dx,dz);const lastWp=h.path.length===1;
+    if(d<(lastWp?.035:Math.max(.05,h.v+.02))){h.x=wp[0];h.z=wp[1];h.path.shift();if(!h.path.length){h.v=0;h.going=false;h.moving=false;arrive();}}
+    else{tx=dx/d;tz=dz/d;tv=lastWp?Math.min(sp,.011+d*.2):sp;intent=true;pathMode=true;}}
+  if(intent){const dv=tv-h.v;h.v+=dv>0?Math.min(dv,sp*.075):Math.max(dv,-sp*.2);}else h.v=Math.max(0,h.v-sp*.12);
+  if(intent){if(h.v<sp*.12){h.hx=tx;h.hz=tz;}else{h.hx+=(tx-h.hx)*.28;h.hz+=(tz-h.hz)*.28;}const hl=Math.hypot(h.hx,h.hz)||1;h.hx/=hl;h.hz/=hl;}
+  if(h.v>.0015){const ok=tryMove(h,h.hx*h.v,h.hz*h.v);if(pathMode){if(!ok){if(++h.stuck>15){h.path=[];h.v=0;h.going=false;arrive();}}else h.stuck=0;}}
+  h.moving=h.v>.006;
   const ex=SCN.exits;if(ex.right&&h.x>=8.9)goScene(ex.right.to,ex.right.x,ex.right.z);if(ex.left&&h.x<=-8.9)goScene(ex.left.to,ex.left.x,ex.left.z);}
 function goScene(id,x,z){if(G.fade>0)return;G.fade=.001;G.pending={id,x,z};}
 function enterScene(id,x,z,silent){SV.scene=id;SCN=SCENES[id];GRID=null;HERO={x,z,rot:silent===2?0:(x<0?Math.PI/2:-Math.PI/2),rotT:silent===2?0:(x<0?Math.PI/2:-Math.PI/2),walkT:0,moving:false,going:false,action:null,stuck:0,path:[]};SV.hx=x;SV.hz=z;
@@ -1453,27 +1842,27 @@ function sceneDo(hs,m,sx,sy){
 function update(){G.t++;if(G.flashScore>0)G.flashScore--;if(G.zegelT>0)G.zegelT--;if(G.state!=='play')return;
   G.anims.forEach(a=>a.t++);G.anims=G.anims.filter(a=>a.t<45);
   if(G.fade>0){G.fade+=.05;if(G.fade>=1&&G.pending){const p=G.pending;G.pending=null;enterScene(p.id,p.x,p.z);}if(G.fade>=2)G.fade=0;return;}
-  if(!G.msgs.length&&!G.end)updHero();else HERO.moving=false;
+  if(!G.msgs.length&&!G.end)updHero();else{HERO.moving=false;HERO.px=HERO.x;HERO.pz=HERO.z;HERO.v=0;}
   if(G.endPending&&!G.msgs.length){G.endPending=false;G.end=true;SFX.win();}
   if(SCN===SCENES.brug&&SV.flags.trolSlaapt&&G.t%150===0)SFX.snore();}
 let camX=0;
-function sync3D(){const sc=G.state==='title'?SCENES.plein:SCN;const t=G.t;updRealChars();
-  if(G.state==='play'&&HERO){HM.root.position.set(HERO.x,0,HERO.z);let d=HERO.rotT-HERO.rot;while(d>Math.PI)d-=Math.PI*2;while(d<-Math.PI)d+=Math.PI*2;HERO.rot+=d*.2;HM.root.rotation.y=HERO.rot;if(!HM.real)animHero(HM,HERO.moving,HERO.walkT,t);HM.root.visible=true;}
+function sync3D(){const sc=G.state==='title'?SCENES.plein:SCN;const t=G.t+(window.__alpha||0);updRealChars();
+  if(G.state==='play'&&HERO){const _al=window.__alpha||0;HM.root.position.set(HERO.px==null?HERO.x:HERO.px+(HERO.x-HERO.px)*_al,0,HERO.pz==null?HERO.z:HERO.pz+(HERO.z-HERO.pz)*_al);let d=HERO.rotT-HERO.rot;while(d>Math.PI)d-=Math.PI*2;while(d<-Math.PI)d+=Math.PI*2;HERO.rot+=d*(1-Math.exp(-FRAME_DT*14));HM.root.rotation.y=HERO.rot;if(!HM.real)animHero(HM,HERO.moving,HERO.walkT,t);HM.root.visible=true;}
   else if(HM)HM.root.visible=G.state==='play';
-  const cam=sc.cam;const tx=G.state==='title'?Math.sin(t*.004)*2.2:(HERO?clamp(HERO.x*.3,-2.6,2.6):0);camX+=(tx-camX)*.04;
+  const cam=sc.cam;const tx=G.state==='title'?Math.sin(t*.004)*2.2:(HERO?clamp(HERO.x*.3,-2.6,2.6):0);camX+=(tx-camX)*(1-Math.exp(-FRAME_DT*2.6));
   let wantP=new THREE.Vector3(cam.pos[0]+camX,cam.pos[1],cam.pos[2]),wantL=new THREE.Vector3(cam.look[0]+camX*.8,cam.look[1],cam.look[2]);
   const spk=G.state==='play'&&G.msgs.length&&sc.npcs?sc.npcs[G.msgs[0].who]:null;
   if(spk&&spk.head){const a=new THREE.Vector3(),b=new THREE.Vector3();spk.head.getWorldPosition(a);HM.head.getWorldPosition(b);if(HERO){const aN=Math.atan2(a.x-HERO.x,a.z-HERO.z),aC=Math.atan2(camera.position.x-HERO.x,camera.position.z-HERO.z);let dd=aC-aN;while(dd>Math.PI)dd-=Math.PI*2;while(dd<-Math.PI)dd+=Math.PI*2;HERO.rotT=aN+dd*.5;}if(spk.head&&spk!==sc.npcs.Trol){const ha=Math.atan2(b.x-a.x,b.z-a.z);}const mid=a.clone().add(b).multiplyScalar(.5);const sep=a.distanceTo(b);
     wantL=mid.clone();wantL.y-=.08;let nx=-(a.z-b.z),nz=(a.x-b.x);const nl=Math.hypot(nx,nz)||1;nx/=nl;nz/=nl;if(nz<0){nx=-nx;nz=-nz;}if(nz<.35){nz=.35;const l2=Math.hypot(nx,nz);nx/=l2;nz/=l2;}
     const dist=Math.max(1.25,sep*.95+.75)*(G.msgs[0].who==='Trol'?1.5:1);wantP=mid.clone().add(new THREE.Vector3(nx*dist,.1+(G.msgs[0].who==='Trol'?.25:0),nz*dist));wantL.y-=.05;}
-  if(!window.__cp){window.__cp=wantP.clone();window.__cl=wantL.clone();}const k=spk?.07:.06;window.__cp.lerp(wantP,k);window.__cl.lerp(wantL,k);camera.position.copy(window.__cp);camera.lookAt(window.__cl);
+  if(!window.__cp){window.__cp=wantP.clone();window.__cl=wantL.clone();}const k=1-Math.exp(-FRAME_DT*(spk?4.4:3.7));window.__cp.lerp(wantP,k);window.__cl.lerp(wantL,k);camera.position.copy(window.__cp);camera.lookAt(window.__cl);
   (sc.anim||[]).forEach(f=>f(t));if(sc.update)sc.update(t);
   // praten: mond van wie spreekt
   const who=G.msgs.length?G.msgs[0].who:null;if(sc.npcs)Object.entries(sc.npcs).forEach(([n,npc])=>{if(npc.face&&npc.face.mouth){npc.face.mouth.scale.y=n===who?.35+Math.abs(Math.sin(t*.4))*.6:.35;}});
   renderPass.scene=sc.three;}
 function project(obj,dy){obj.getWorldPosition(_hit);_hit.y+=dy||0;_hit.project(camera);return{x:(_hit.x+1)/2*W,y:(1-_hit.y)/2*SH};}
 function drawOverlay(){if(G.state!=='play')return;
-  if(G.zegelT>0){const a=Math.min(1,G.zegelT/30,(220-G.zegelT)/18);ctx.save();ctx.globalAlpha=a;ctx.translate(W/2,86);const g=ctx.createLinearGradient(-300,0,300,0);g.addColorStop(0,'rgba(30,15,60,0)');g.addColorStop(.5,'rgba(40,20,80,.88)');g.addColorStop(1,'rgba(30,15,60,0)');ctx.fillStyle=g;ctx.fillRect(-320,-36,640,84);txt('DROOMZEGEL GEVONDEN',0,-6,22,'#ffe27a','center',FT,'rgba(0,0,0,.7)',4);txt(G.zegelNaam||'',0,26,19,'#fff','center',FB,'rgba(0,0,0,.6)',3);ctx.restore();}
+  if(G.zegelT>0){const a=Math.min(1,G.zegelT/30,(220-G.zegelT)/18);ctx.save();ctx.globalAlpha=a;ctx.translate(W/2,86);const g=ctx.createLinearGradient(-300,0,300,0);g.addColorStop(0,'rgba(30,15,60,0)');g.addColorStop(.5,'rgba(40,20,80,.88)');g.addColorStop(1,'rgba(30,15,60,0)');ctx.fillStyle=g;ctx.fillRect(-320,-36,640,84);txt(G.zegelTitel||'DROOMZEGEL GEVONDEN',0,-6,22,'#ffe27a','center',FT,'rgba(0,0,0,.7)',4);txt(G.zegelNaam||'',0,26,19,'#fff','center',FB,'rgba(0,0,0,.6)',3);ctx.restore();}
   if(SCN===SCENES.brug&&SV.flags.trolSlaapt){const T=SCN.npcs.Trol;const p=project(T.head,.5);const z=(G.t*.6)%80;ctx.save();ctx.globalAlpha=1-z/80;ctx.font='bold '+(16+z*.2)+'px '+FB;ctx.lineWidth=3;ctx.strokeStyle='#2a2a4a';ctx.fillStyle='#fff';ctx.strokeText('Z',p.x+20+z*.4,p.y-z);ctx.fillText('Z',p.x+20+z*.4,p.y-z);ctx.restore();}
   const v=ctx.createRadialGradient(W/2,SH/2,SH*.45,W/2,SH/2,SH*1.05);v.addColorStop(0,'rgba(0,0,0,0)');v.addColorStop(1,'rgba(20,10,0,.32)');ctx.fillStyle=v;ctx.fillRect(0,0,W,SH);}
 function drawTitle3(){ctx.fillStyle='rgba(15,8,2,.4)';ctx.fillRect(0,0,W,H);const g=ctx.createLinearGradient(0,H-220,0,H);g.addColorStop(0,'rgba(20,10,2,0)');g.addColorStop(1,'rgba(20,10,2,.92)');ctx.fillStyle=g;ctx.fillRect(0,H-220,W,220);
@@ -1545,7 +1934,7 @@ function drawUI(){const y0=SH;const g=ctx.createLinearGradient(0,y0,0,H);g.addCo
   // score/menu
   ctx.fillStyle='rgba(0,0,0,.35)';rr(ctx,800,y0+18,142,48,8);ctx.fill();txt('SCORE',812,y0+36,11,'#e8c880','left',FT);const f=G.flashScore>0&&Math.floor(G.flashScore/6)%2;txt(S.score+' van '+MAXSCORE,812,y0+58,18,f?'#fff27a':'#fff','left',FT);
   btn(800,y0+74,66,30,muted?'Geluid uit':'Geluid',()=>setMute(!muted),{size:11,font:FB});btn(874,y0+74,68,30,'Menu',()=>{G.state='title';},{size:13});
-  {const zx=612,zy=y0+112;txt('DROOMZEGELS',zx,zy-6,11,'#e8c880','left',FT);for(let i=0;i<9;i++){const got=(SV.zegels||[]).includes(i+2);ctx.save();ctx.translate(zx+10+i*26,zy+13);ctx.beginPath();for(let k=0;k<6;k++){const a=k/6*6.283;ctx.lineTo(Math.cos(a)*9,Math.sin(a)*9);}ctx.closePath();ctx.fillStyle=got?'#ffd85a':'rgba(0,0,0,.4)';ctx.fill();ctx.strokeStyle=got?'#fff2b0':'rgba(232,200,128,.35)';ctx.lineWidth=1.5;ctx.stroke();ctx.restore();}}
+  drawBadges(y0);
   // status / actie
   const m=G.sel?'Gebruik '+ITEMS[G.sel].name+' met...':(VERBS.find(v=>v.id===G.mode).name);const hv=G.mouse.in&&G.mouse.y<SH?hotAt(G.mouse.x,G.mouse.y):null;
   txt(m+(hv?' '+hv.name:''),ix,y0+125,15,'#f0dcaa','left',FB);}
@@ -1583,7 +1972,7 @@ addEventListener('keyup',e=>{if(KM[e.code])G.keys[KM[e.code]]=0;});
 document.addEventListener('touchmove',e=>e.preventDefault(),{passive:false});
 
 
-let acc=0,last=performance.now();function loop(now){acc+=Math.min(100,now-last);last=now;let n=0;while(acc>=1000/60&&n<5){update();acc-=1000/60;n++;}if(n>=5)acc=0;render();requestAnimationFrame(loop);}
+let FRAME_DT=1/60;let acc=0,last=performance.now();function loop(now){const dtms=now-last;acc+=Math.min(100,dtms);last=now;FRAME_DT=Math.min(.05,Math.max(.001,dtms/1000));let n=0;while(acc>=1000/60&&n<5){update();acc-=1000/60;n++;}if(n>=5)acc=0;window.__alpha=acc/(1000/60);render();requestAnimationFrame(loop);}
 init3D();SV=newState();loadRealChars();
 try{document.getElementById('load').remove();}catch(e){}
 function runHot(id,mode,sel){const hs=SCN.hot.find(h=>h.id===id);if(!hs)throw new Error('geen hotspot '+id+' in '+SV.scene);G.sel=sel||null;const m=sel?'use':mode;if(m==='use'){const f=hs.use&&hs.use[sel];G.sel=null;if(f)f();else sayN('(niets gebeurt)');}else{const f=hs[m];if(f)f();else sayN('(niets gebeurt)');}}
