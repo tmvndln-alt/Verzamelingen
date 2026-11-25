@@ -1521,7 +1521,7 @@ function mOutline(C,th){C.root.traverse(o=>{if(o.isSkinnedMesh)o.userData.noOutl
 function mBone(C,n){return C.bones[n];}
 function mLimb(C,from,to,r0,r1,mt,len){const b=C.bones[from],c=C.bones[to];if(!b||!c)return null;const p=c.position.clone();const L=p.length();const d=p.clone().normalize();const g=CYL(r1,r0,L*(len||1),12);const m=new THREE.Mesh(g,mt);m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),d);m.position.copy(d.clone().multiplyScalar(L*(len||1)/2));m.castShadow=true;m.userData.real=true;b.add(m);return m;}
 function mBlob(C,bone,at,r,sx,sy,sz,mt,off){const b=C.bones[bone];if(!b)return null;let pos=new THREE.Vector3();if(typeof at==='string'){const c=C.bones[at];if(c)pos.copy(c.position);}else pos.set(at[0],at[1],at[2]);if(off)pos.add(new THREE.Vector3(off[0],off[1],off[2]));const m=new THREE.Mesh(SPH(r,16,12),mt);m.scale.set(sx||1,sy||1,sz||1);m.position.copy(pos);m.castShadow=true;m.userData.real=true;b.add(m);return m;}
-function mTufts(C,from,to,n,rad,len,mt,seed,span){const b=C.bones[from],c=C.bones[to];if(!b||!c)return;const L=c.position.length();const d=c.position.clone().normalize();const g=new THREE.ConeGeometry(.034,len,6);g.scale(1,1,.6);g.translate(0,len/2,0);const im=new THREE.InstancedMesh(g,mt,n);const r=mulberry(seed);const dm=new THREE.Object3D();const Y=new THREE.Vector3(0,1,0);const ref=Math.abs(d.y)>.9?new THREE.Vector3(1,0,0):new THREE.Vector3(0,1,0);const t1=new THREE.Vector3().crossVectors(d,ref).normalize(),t2=new THREE.Vector3().crossVectors(d,t1);
+function mTufts(C,from,to,n,rad,len,mt,seed,span,cr){const b=C.bones[from],c=C.bones[to];if(!b||!c)return;const L=c.position.length();const d=c.position.clone().normalize();const g=new THREE.ConeGeometry(cr||.034,len,6);g.scale(1,1,.6);g.translate(0,len/2,0);const im=new THREE.InstancedMesh(g,mt,n);const r=mulberry(seed);const dm=new THREE.Object3D();const Y=new THREE.Vector3(0,1,0);const ref=Math.abs(d.y)>.9?new THREE.Vector3(1,0,0):new THREE.Vector3(0,1,0);const t1=new THREE.Vector3().crossVectors(d,ref).normalize(),t2=new THREE.Vector3().crossVectors(d,t1);
   for(let i=0;i<n;i++){const a=r()*6.283,h=(span?span[0]+r()*(span[1]-span[0]):r())*L;const o=t1.clone().multiplyScalar(Math.cos(a)).addScaledVector(t2,Math.sin(a));dm.position.copy(d.clone().multiplyScalar(h)).addScaledVector(o,rad);const dir=o.clone().multiplyScalar(.5).addScaledVector(d,-.9).normalize();dm.quaternion.setFromUnitVectors(Y,dir);const k=.7+r()*.8;dm.scale.set(k,k*(.8+r()*.8),k);dm.updateMatrix();im.setMatrixAt(i,dm.matrix);}
   im.userData.real=true;im.userData.noOutline=true;im.frustumCulled=false;b.add(im);return im;}
 // assen van het hoofd in het lokale bot-assenstelsel (voor, boven, rechts)
@@ -1533,9 +1533,9 @@ function mHead(C,fn){const ax=mHeadAxes(C);const g=new THREE.Group();const hb=C.
   const q=(rx,ry,rz)=>new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(ax.r,ax.u,ax.f));
   fn(hb,p,ax,mid);}
 async function humanMonster(spec,o){const C=await buildChar(spec);
-  C.root.traverse(m=>{if(m.isSkinnedMesh&&!m.userData.isOutline&&m.material&&/Superhero/.test(m.material.name)){m.material=m.material.clone();if(o.skin!=null){m.material.map=null;m.material.color.set(o.skin);m.material.needsUpdate=true;}if(o.rough!=null)m.material.roughness=o.rough;}});
+  C.root.traverse(m=>{if(m.isSkinnedMesh&&!m.userData.isOutline&&m.material&&/Superhero/.test(m.material.name)){m.material=m.material.clone();if(o.skin!=null){m.material.map=null;m.material.color.set(o.skin);m.material.needsUpdate=true;}if(o.map){const t=o.map;t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(o.rep||3,o.rep||3);t.needsUpdate=true;m.material.map=t;m.material.color.set(o.skin!=null?o.skin:0xffffff);}if(o.rough!=null)m.material.roughness=o.rough;}});
   if(o.hide)C.root.traverse(m=>{if(m.isSkinnedMesh&&o.hide.test(m.name))m.visible=false;});
-  C.root.scale.setScalar(o.scale||1);markReal(C);return C;}
+  C.root.scale.set((o.scale||1)*(o.wx||1),o.scale||1,(o.scale||1)*(o.wx||1));markReal(C);return C;}
 function mAttach(C,n,sc,id){C.root.traverse(o=>{o.userData.real=true;});const T=SCENES[sc].npcs[n];T.root.add(C.root);hideProc(T.root);T.real=C;T.head=C.head;T.talkClip='Idle_Talking_Loop';T.idleClip='Idle_Loop';C.play('Idle_Loop',0);RC.list.push(C);return T;}
 function mEyes(C,hb,p,col,r,sp,fw,up){[-1,1].forEach(s=>{const e=new THREE.Mesh(SPH(r,10,8),std({color:col,emissive:col,emissiveIntensity:1.4,roughness:.3}));e.position.copy(p(fw,up,s*sp));e.userData.real=true;e.userData.noOutline=true;hb.add(e);});}
 function mCone(hb,p,ax,mt,pos,len,r,dir){const c=new THREE.Mesh(new THREE.ConeGeometry(r,len,8),mt);c.position.copy(pos);c.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),dir.clone().normalize());c.userData.real=true;c.castShadow=true;hb.add(c);return c;}
@@ -1555,7 +1555,7 @@ async function loadMonsters2(){
    mBlob(C,'spine_03',[0,.02,-.12],.1,1.6,.6,1,moss[0]);mBlob(C,'spine_03',[.08,.04,-.12],.06,1,.6,1,moss[1]);mBlob(C,'spine_03',[-.08,.0,-.11],.05,1,.6,1,moss[2]);
    [['spine_03',[.1,.1,.1]],['spine_03',[-.09,.03,.11]],['upperarm_r',[.05,.1,.04]],['calf_l',[.0,.1,.06]]].forEach(([b,o2])=>mBlob(C,b,o2,.018,1,1,1,wart));
    // riem en lendendoek
-   {const pv=C.bones.pelvis;const bt=new THREE.Mesh(new THREE.TorusGeometry(.17,.03,8,28),leath);bt.rotation.x=Math.PI/2;bt.scale.set(1.15,1,.9);bt.position.set(0,.05,0);bt.userData.real=true;pv.add(bt);}
+   {const pv=C.bones.pelvis;const bt=new THREE.Mesh(new THREE.TorusGeometry(.125,.024,8,28),leath);bt.rotation.x=Math.PI/2;bt.scale.set(1.12,1,.88);bt.position.set(0,.045,0);bt.userData.real=true;pv.add(bt);const bk=new THREE.Mesh(BOX(.05,.045,.015),std({color:0xc9a23a,roughness:.4,metalness:.6}));bk.position.set(0,.045,.115);bk.userData.real=true;pv.add(bk);}
    {const hb=C.bones.spine_03,ax=mAx(C,'spine_03');const pts=[];for(let i=0;i<=12;i++){const th=(i/12-.5)*Math.PI*1.5;pts.push(ax.u.clone().multiplyScalar(.15-(1-Math.cos(th))*.03).addScaledVector(ax.f,Math.cos(th)*.13+.01).addScaledVector(ax.r,Math.sin(th)*.16));}
      for(let i=0;i<12;i++)mSeg(hb,pts[i],pts[i+1],.008,.008,leath);
      for(let i=1;i<12;i+=1){const sz=i===6?1.7:(i%2?.8:1.1);mCone(hb,null,ax,ivory,pts[i].clone().addScaledVector(ax.u,-.01*sz),.06*sz,.014*sz,ax.u.clone().multiplyScalar(-1).addScaledVector(ax.f,.2));}}
@@ -1571,30 +1571,30 @@ async function loadMonsters2(){
    const club=new THREE.Group();const cm=std({color:0x6a4a2a,roughness:.9});const sh=M(CYL(.025,.03,.7,8),cm,0,.1,0);club.add(sh);const hd=M(SPH(.1,12,10),cm,0,.52,0);hd.scale.set(1,1.5,1);club.add(hd);for(let i=0;i<6;i++){const a=i*1.05;const sp=M(new THREE.ConeGeometry(.018,.07,6),mat(0x8a8a92,.4,.6),Math.sin(a)*.09,.5+(i%3)*.06,Math.cos(a)*.09,false);sp.rotation.z=-Math.sin(a)*1.5;sp.rotation.x=Math.cos(a)*1.5;club.add(sp);}
    club.position.set(0,.04,.04);club.rotation.set(.3,0,0);club.traverse(o=>o.userData.real=true);addOutline(club,.012);C.bones.hand_r.add(club);
    window.__mk='troll-outline';mOutline(C,.012);window.__mk='troll-attach';
-   const T=mAttach(C,'Trol','brug');
+   const T=mAttach(C,'Trol','brug');mPose(C,{pelvis:-.08,spine_01:-.12,spine_02:-.12,spine_03:-.1,neck_01:.2,head:.15,Head:.15,thigh_l:.3,thigh_r:.3,calf_l:-.55,calf_r:-.55,foot_l:.25,foot_r:.25,upperarm_l:.2,upperarm_r:.2,lowerarm_l:.4,lowerarm_r:.4},.1);
    // kroon + slaapstand zoals eerder
    const sc=SCENES.brug;const crown=makeCrown();crown.scale.setScalar(1.7);sc.three.add(crown);addOutline(crown,.01);T.realCrown=crown;T.crown.traverse(o=>{if(o.isMesh)o.visible=false;});
    Object.defineProperty(T,'idleClip',{get:()=>SV&&SV.flags.trolSlaapt?'Sitting_Idle_Loop':'Idle_Loop'});Object.defineProperty(T,'talkClip',{get:()=>SV&&SV.flags.trolSlaapt?'Sitting_Idle_Loop':'Idle_Talking_Loop'});
    const up=new THREE.Vector3(),q=new THREE.Quaternion();const old=sc.update;sc.update=t=>{old(t);const sl=!!(SV&&SV.flags.trolSlaapt);T.body.rotation.set(0,0,0);T.body.position.set(0,0,0);T.body.scale.set(1,1,1);
-     C.root.position.y=sl?-.62:0;crown.visible=!sl&&!(SV&&SV.flags.kroon);if(crown.visible){const hb=C.bones.Head;hb.updateWorldMatrix(true,false);hb.getWorldPosition(up);crown.position.copy(up);crown.position.y+=.2;crown.position.addScaledVector(new THREE.Vector3(Math.sin(T.root.rotation.y),0,Math.cos(T.root.rotation.y)),-.02);crown.rotation.set(-.1,T.root.rotation.y,.08);}};
+     C.poseOff=sl;C.root.position.y=sl?-.62:-(C.poseDrop||0);crown.visible=!sl&&!(SV&&SV.flags.kroon);if(crown.visible){const hb=C.bones.Head;hb.updateWorldMatrix(true,false);hb.getWorldPosition(up);crown.position.copy(up);crown.position.y+=.2;crown.position.addScaledVector(new THREE.Vector3(Math.sin(T.root.rotation.y),0,Math.cos(T.root.rotation.y)),-.02);crown.rotation.set(-.1,T.root.rotation.y,.08);}};
    window.__troll=C;}
   // ---------- JETI ----------
-  window.__mk='jeti0';{const C=await humanMonster({base:'Superhero_Male_FullBody',outfit:'Male_Peasant',extra:[],keepAll:1,skip:['Peasant_Body','Peasant_Arms','Peasant_Legs','Peasant_Feet']},{skin:0x7e9cc6,scale:1.7,rough:.7});
+  window.__mk='jeti0';{const C=await humanMonster({base:'Superhero_Male_FullBody',outfit:'Male_Peasant',extra:[],keepAll:1,skip:['Peasant_Body','Peasant_Arms','Peasant_Legs','Peasant_Feet']},{skin:0xc2d0e8,map:furTex('#d6deec','#ffffff',51),rep:2,scale:1.7,wx:1.14,rough:.95});
    const f1=std({map:furTex('#e6ecf6','#ffffff',51),roughness:1}),f2=std({map:furTex('#b6c4de','#d6e0f2',52),roughness:1});
    const LB=[['upperarm_l','lowerarm_l',.075,.065],['upperarm_r','lowerarm_r',.075,.065],['lowerarm_l','hand_l',.07,.06],['lowerarm_r','hand_r',.07,.06],['thigh_l','calf_l',.115,.09],['thigh_r','calf_r',.115,.09],['calf_l','foot_l',.085,.075],['calf_r','foot_r',.085,.075]];
-   LB.forEach(([a,b,r0,r1],i)=>{mLimb(C,a,b,r0,r1,f1);mTufts(C,a,b,70,(r0+r1)/2,.055,i%2?f2:f1,60+i,[.02,.95]);});
-   mBlob(C,'pelvis',[0,.03,0],.15,1.35,1,1.15,f1);mBlob(C,'spine_01',[0,.09,.03],.19,1.3,1.25,1.2,f1);mBlob(C,'spine_02',[0,.12,.0],.21,1.35,1.25,1.15,f1);
-   [['pelvis','spine_01'],['spine_01','spine_02'],['spine_02','spine_03']].forEach(([a,b],i)=>mTufts(C,a,b,150,.2,.065,i%2?f2:f1,80+i,[0,1]));
-   ['l','r'].forEach(s=>{mBlob(C,'clavicle_'+s,[0,.0,0],.11,1.3,1.2,1.3,f1);mBlob(C,'hand_'+s,[0,.09,0],.085,1.25,1.4,1.15,f2);mBlob(C,'foot_'+s,[0,.04,.08],.075,1,.8,1.8,f2);
+   LB.forEach(([a,b,r0,r1],i)=>{mTufts(C,a,b,220,(r0+r1)/2*.75,.03,f2,60+i,[.02,.95],.016);});
+   [['pelvis','spine_01'],['spine_01','spine_02'],['spine_02','spine_03']].forEach(([a,b],i)=>mTufts(C,a,b,520,.15,.032,f2,80+i,[0,1],.018));
+   mTufts(C,'spine_03','neck_01',260,.13,.034,f2,90,[-.3,1],.018);
+   ['l','r'].forEach(s=>{mBlob(C,'clavicle_'+s,[0,.0,0],.06,1.3,1.1,1.25,f1);mBlob(C,'hand_'+s,[0,.09,0],.042,1.2,1.7,1.1,f2);mBlob(C,'foot_'+s,[0,.04,.08],.07,1,.8,1.8,f2);
      const hb=C.bones['hand_'+s];for(let k=-1;k<=1;k++){const c=new THREE.Mesh(new THREE.ConeGeometry(.012,.08,6),mat(0xdcd4c0,.45));c.position.set(k*.035,.17,.02);c.userData.real=true;hb.add(c);}});
    mHead(C,(hb,p,ax)=>{
-     const hair=new THREE.Mesh(SPH(.105,18,14),f1);hair.scale.set(1.12,.8,.95);hair.position.copy(p(-.045,.075,0));hair.userData.real=true;hb.add(hair);
-     [-1,1].forEach(s=>{const b=new THREE.Mesh(SPH(.05,12,10),f2);b.position.copy(p(0,-.05,s*.095));b.userData.real=true;hb.add(b);
+     const hair=new THREE.Mesh(SPH(.105,18,14),f1);hair.scale.set(1.1,.6,.95);hair.position.copy(p(-.05,.07,0));hair.userData.real=true;hb.add(hair);
+     [-1,1].forEach(s=>{const b=new THREE.Mesh(SPH(.03,12,10),f2);b.scale.set(1,1,.6);b.position.copy(p(-.03,-.05,s*.088));b.userData.real=true;hb.add(b);
        mCone(hb,p,ax,mat(0xeee4c8,.45),p(.0,.1,s*.08),.12,.02,ax.u.clone().addScaledVector(ax.r,s*.7));});
      const brow=new THREE.Mesh(BOX(.15,.025,.04),f2);brow.position.copy(p(.088,.04,0));brow.userData.real=true;hb.add(brow);
      mEyes(C,hb,p,0xbfe4ff,.012,.035,.085,.01);
      [-1,1].forEach(s=>mCone(hb,p,ax,mat(0xf4f0e0,.35),p(.085,-.065,s*.028),.04,.009,ax.u.clone().multiplyScalar(-1)));});
-   window.__mk='jeti-outline';mOutline(C,.012);mAttach(C,'Jeti Jorrit','berg');}
+   window.__mk='jeti-outline';mOutline(C,.012);mAttach(C,'Jeti Jorrit','berg');mPose(C,{pelvis:-.12,spine_01:-.2,spine_02:-.22,spine_03:-.15,neck_01:.3,head:.25,Head:.25,thigh_l:.45,thigh_r:.45,calf_l:-.8,calf_r:-.8,foot_l:.35,foot_r:.35,upperarm_l:.3,upperarm_r:.3,lowerarm_l:.4,lowerarm_r:.4},.18);}
   // ---------- SPOOK ----------
   window.__mk='spook0';{const C=await humanMonster({base:'Superhero_Male_FullBody',outfit:'Male_Ranger',extra:[],skip:['Pauldron','Bracer','Belt','Boots','Ranger_Body','Ranger_Legs','Feet']},{scale:1.1});
    window.__mk='spook-built';const gm=new THREE.MeshStandardMaterial({color:0xdfe6ff,emissive:0x8aa0ff,emissiveIntensity:.55,transparent:true,opacity:.62,roughness:.4,depthWrite:false});
@@ -1618,16 +1618,21 @@ function mTail(C,bn,mt,o){const hb=C.bones[bn],ax=mAx(C,bn);const n=o.n||7,len=o
   return {pts,ax,hb};}
 function mAttachObj(C,obj,body){C.root.traverse(o=>{o.userData.real=true;});obj.add(C.root);hideProc(obj);if(body)body.visible=false;C.play('Idle_Loop',0);RC.list.push(C);}
 
+// houding na de animatie toepassen (gebogen rug, gebogen knieen, armen naar voren)
+function mPose(C,POSE,drop,sway){const PB={};for(const n in POSE)if(C.bones[n])PB[n]=mAx(C,n).r;const qq=new THREE.Quaternion();let pt=Math.random()*5;
+  const o={tick:dt=>{if(C.poseOff)return;pt+=dt;const br=Math.sin(pt*1.7)*(sway==null?.025:sway);for(const n in PB){qq.setFromAxisAngle(PB[n],POSE[n]+(n.startsWith('spine')?br:0));C.bones[n].quaternion.multiply(qq);}}};
+  RC.list.push(o);C.root.position.y-=drop;C.poseDrop=drop;return o;}
 async function loadMonsters3(){
   try{await loadAnims();
   // ---------- WEERWOLF (in plaats van de wolf) ----------
   {const sc=SCENES.woud,T=sc.npcs.Wolf;
-   const C=await humanMonster({base:'Superhero_Male_FullBody',outfit:'Male_Peasant',extra:[],keepAll:1,skip:['Peasant_Body','Peasant_Arms','Peasant_Feet']},{skin:0x4a4a52,scale:.9,rough:.9,hide:/Eyes|Eyebrows/});
+   const C=await humanMonster({base:'Superhero_Male_FullBody',outfit:'Male_Peasant',extra:[],keepAll:1,skip:['Peasant_Body','Peasant_Arms','Peasant_Feet']},{skin:0xffffff,map:furTex('#5c5d65','#9a9ba3',31),rep:3,scale:.9,wx:1.1,rough:.95,hide:/Eyes|Eyebrows/});
    const f1=std({map:furTex('#5c5d65','#9a9ba3',31),roughness:.97}),f2=std({map:furTex('#3d3e45','#6a6b73',32),roughness:.97}),f3=std({map:furTex('#a8a49a','#d4d0c4',33),roughness:.97});
    const claw=mat(0xd8d0bc,.4),dark=mat(0x16161a,.5);
-   [['upperarm_l','lowerarm_l',.07,.062],['upperarm_r','lowerarm_r',.07,.062],['lowerarm_l','hand_l',.062,.05],['lowerarm_r','hand_r',.062,.05],['thigh_l','calf_l',.095,.07],['thigh_r','calf_r',.095,.07],['calf_l','foot_l',.07,.055],['calf_r','foot_r',.07,.055]].forEach(([a,b,r0,r1],i)=>{mLimb(C,a,b,r0,r1,i<4?f1:f2);});
-   mBlob(C,'spine_01',[0,.07,.04],.15,1.25,1.1,1.05,f1);mBlob(C,'spine_02',[0,.09,.02],.16,1.25,1.1,1.05,f1);mBlob(C,'spine_03',[0,.11,.0],.17,1.35,1.0,1.1,f2);mBlob(C,'pelvis',[0,.02,0],.13,1.3,.9,1.1,f1);
-   mBlob(C,'spine_02',[0,.08,.1],.1,1.2,1.3,.7,f3);
+   [['upperarm_l','lowerarm_l',.07,.062],['upperarm_r','lowerarm_r',.07,.062],['lowerarm_l','hand_l',.062,.05],['lowerarm_r','hand_r',.062,.05],['thigh_l','calf_l',.095,.07],['thigh_r','calf_r',.095,.07],['calf_l','foot_l',.07,.055],['calf_r','foot_r',.07,.055]].forEach(([a,b,r0,r1],i)=>{mTufts(C,a,b,80,(r0+r1)/2*.8,.04,i<4?f1:f2,120+i,[.02,.95]);});
+   [['pelvis','spine_01'],['spine_01','spine_02'],['spine_02','spine_03']].forEach(([a,b],i)=>mTufts(C,a,b,160,.15,.045,i%2?f2:f1,130+i,[0,1]));
+   mBlob(C,'spine_03',[0,.1,.0],.12,1.5,.9,1.0,f2);
+   
    mTufts(C,'spine_03','neck_01',100,.15,.05,f2,150,[-.2,1.0]);
    ['l','r'].forEach(s=>{mBlob(C,'clavicle_'+s,[0,0,0],.1,1.3,1.1,1.2,f2);mBlob(C,'hand_'+s,[0,.07,0],.065,1.2,1.4,1.1,f1);mBlob(C,'foot_'+s,[0,.04,.07],.06,1,.8,1.8,f2);
      const hb=C.bones['hand_'+s];for(let k=-1;k<=1;k++){const c=new THREE.Mesh(new THREE.ConeGeometry(.011,.075,6),claw);c.position.set(k*.03,.16,.02);c.userData.real=true;hb.add(c);}});
@@ -1646,14 +1651,15 @@ async function loadMonsters3(){
      [-1,1].forEach(s=>{const pu=new THREE.Mesh(SPH(.007,8,6),mat(0x050505,.2));pu.scale.set(.5,1.9,.6);pu.position.copy(p(.112,.03,s*.052));pu.userData.real=true;hb.add(pu);});});
    mOutline(C,.01);
    mAttachObj(C,T.root,T.body);T.real=null;
+   mPose(C,{pelvis:-.2,spine_01:-.28,spine_02:-.28,spine_03:-.2,neck_01:.35,head:.3,Head:.3,thigh_l:.6,thigh_r:.6,calf_l:-1.0,calf_r:-1.0,foot_l:.5,foot_r:.5,upperarm_l:.45,upperarm_r:.45,lowerarm_l:.55,lowerarm_r:.55,hand_l:.2,hand_r:.2},.3);
   }
   // ---------- DRAAK (Smul, en de kleine draak) ----------
   for(const sid of Object.keys(SCENES)){const T=SCENES[sid].npcs&&SCENES[sid].npcs['Draak Smul'];if(!T)continue;
-   const C=await humanMonster({base:'Superhero_Male_FullBody',outfit:'Male_Peasant',extra:[],keepAll:1,skip:['Peasant_Body','Peasant_Arms','Peasant_Feet','Peasant_Legs']},{skin:0x3c8442,scale:1.25,rough:.7,hide:/Eyes|Eyebrows/});
+   const C=await humanMonster({base:'Superhero_Male_FullBody',outfit:'Male_Peasant',extra:[],keepAll:1,skip:['Peasant_Body','Peasant_Arms','Peasant_Feet','Peasant_Legs']},{skin:0xffffff,map:scaleTex('#3c8442','#68b85a',64,16),rep:4,scale:1.25,wx:1.08,rough:.6,hide:/Eyes|Eyebrows/});
    const g1=std({map:scaleTex('#3c8442','#68b85a',61,16),roughness:.55}),g2=std({map:scaleTex('#2c6a36','#4c9448',62,16),roughness:.55}),belly=std({map:scaleTex('#e8d48a','#f6ecb8',63,22),roughness:.6}),horn=mat(0xe8dcc0,.4),claw=mat(0xf0e8d0,.4);
-   const wm=new THREE.MeshStandardMaterial({color:0xd0702a,roughness:.65,side:THREE.DoubleSide,emissive:0x601808,emissiveIntensity:.25});
+   const wm=new THREE.MeshStandardMaterial({vertexColors:true,color:0xffffff,roughness:.65,side:THREE.DoubleSide,emissive:0x601808,emissiveIntensity:.25});
    [['upperarm_l','lowerarm_l',.062,.055],['upperarm_r','lowerarm_r',.062,.055],['lowerarm_l','hand_l',.055,.046],['lowerarm_r','hand_r',.055,.046],['thigh_l','calf_l',.095,.07],['thigh_r','calf_r',.095,.07],['calf_l','foot_l',.07,.056],['calf_r','foot_r',.07,.056]].forEach(([a,b,r0,r1])=>mLimb(C,a,b,r0,r1,g1));
-   mBlob(C,'spine_01',[0,.06,.04],.14,1.25,1.05,1.0,g1);mBlob(C,'spine_02',[0,.09,.02],.145,1.25,1.05,1.0,g1);mBlob(C,'spine_03',[0,.11,0],.15,1.3,1.0,1.0,g1);mBlob(C,'pelvis',[0,.02,0],.125,1.3,.9,1.1,g1);
+   
    // buikplaten
    mBlob(C,'spine_01',[0,.06,.085],.1,1.1,1.4,.55,belly);mBlob(C,'spine_02',[0,.08,.075],.1,1.1,1.4,.55,belly);mBlob(C,'spine_03',[0,.08,.07],.1,1.15,1.2,.55,belly);
    ['l','r'].forEach(s=>{mBlob(C,'clavicle_'+s,[0,0,0],.085,1.25,1.1,1.2,g2);mBlob(C,'hand_'+s,[0,.07,0],.055,1.2,1.3,1.1,g1);mBlob(C,'foot_'+s,[0,.04,.07],.055,1,.8,1.9,g1);
@@ -1672,7 +1678,7 @@ async function loadMonsters3(){
      const sh=new THREE.Shape();sh.moveTo(0,0);sh.lineTo(el[0],el[1]);sh.lineTo(wr[0],wr[1]);sh.lineTo(tp[0][0],tp[0][1]);
      for(let i=1;i<tp.length;i++){const a=tp[i-1],b=tp[i];sh.quadraticCurveTo((a[0]+b[0])/2-.16,(a[1]+b[1])/2-.05,b[0],b[1]);}
      sh.quadraticCurveTo((tp[3][0]+bk[0])/2+.02,(tp[3][1]+bk[1])/2-.1,bk[0],bk[1]);sh.lineTo(0,0);
-     const m=new THREE.Mesh(new THREE.ShapeGeometry(sh,12),wm);m.userData.real=true;m.userData.noOutline=true;m.castShadow=true;inn.add(m);
+     const wg=new THREE.ShapeGeometry(sh,12);{const ps=wg.attributes.position,cl=new Float32Array(ps.count*3);for(let i=0;i<ps.count;i++){const d=Math.hypot(ps.getX(i)-.5,ps.getY(i)-.3),k=Math.min(1,d/1.1);cl[i*3]=.38+.5*k;cl[i*3+1]=.07+.33*k;cl[i*3+2]=.05+.08*k;}wg.setAttribute('color',new THREE.BufferAttribute(cl,3));}const m=new THREE.Mesh(wg,wm);m.userData.real=true;m.userData.noOutline=true;m.castShadow=true;inn.add(m);
      const P=(q,z)=>new THREE.Vector3(q[0],q[1],z||.006);
      mSeg(inn,P([0,0]),P(el),.034,.026,g2);mSeg(inn,P(el),P(wr),.026,.02,g2);
      tp.forEach(q=>mSeg(inn,P(wr),P(q),.017,.007,g2));mSeg(inn,P(tp[3]),P(bk),.012,.008,g2);
@@ -1688,18 +1694,15 @@ async function loadMonsters3(){
        mCone(hb,p,ax,horn,p(-.035,.085,s*.06),.19,.028,ax.u.clone().addScaledVector(ax.f,-.65).addScaledVector(ax.r,s*.3));
        mCone(hb,p,ax,g2,p(-.03,.0,s*.115),.09,.025,ax.r.clone().multiplyScalar(s).addScaledVector(ax.f,-.5));
        mCone(hb,p,ax,mat(0xf6f2e4,.35),p(.16,-.065,s*.035),.03,.008,ax.u.clone().multiplyScalar(-1));});
+     for(let i=0;i<4;i++)[-1,1].forEach(s=>{mCone(hb,p,ax,mat(0xf6f2e4,.35),p(.07+i*.032,-.062,s*(.052-i*.006)),.032,.007,ax.u.clone().multiplyScalar(-1));mCone(hb,p,ax,mat(0xf6f2e4,.35),p(.08+i*.03,-.1,s*(.04-i*.005)),.026,.006,ax.u.clone());});
+     for(let i=0;i<4;i++)mCone(hb,p,ax,g2,p(-.07-i*.035,.07-i*.012,0),.05,.016,ax.u.clone().addScaledVector(ax.f,-.5));
      [-1,1].forEach(s=>{const e=new THREE.Mesh(SPH(.024,12,10),std({color:0xffc83a,emissive:0xff9400,emissiveIntensity:1.0,roughness:.3}));e.position.copy(p(.098,.04,s*.058));e.userData.real=true;e.userData.noOutline=true;hb.add(e);
        const pu=new THREE.Mesh(SPH(.008,8,6),mat(0x050505,.2));pu.scale.set(.45,1.9,.6);pu.position.copy(p(.118,.041,s*.06));pu.userData.real=true;hb.add(pu);});});
    mOutline(C,.01);
    mAttachObj(C,T.root);
-   // houding: gebogen, gehurkt, kop omhoog; wordt elke frame na de animatie toegepast
-   const PB={};['pelvis','spine_01','spine_02','spine_03','neck_01','Head','head','thigh_l','thigh_r','calf_l','calf_r','foot_l','foot_r','upperarm_l','upperarm_r','lowerarm_l','lowerarm_r','hand_l','hand_r'].forEach(n=>{if(C.bones[n])PB[n]=mAx(C,n).r;});
-   const POSE={pelvis:-.15,spine_01:-.2,spine_02:-.2,spine_03:-.15,neck_01:.3,head:.3,Head:.3,thigh_l:.7,thigh_r:.7,calf_l:-1.05,calf_r:-1.05,foot_l:.5,foot_r:.5,upperarm_l:.35,upperarm_r:.35,lowerarm_l:.9,lowerarm_r:.9,hand_l:.2,hand_r:.2};
-   const qq=new THREE.Quaternion();let pt=0;
-   RC.list.push({tick:dt=>{pt+=dt;wt+=dt;const br=Math.sin(pt*1.7)*.025;
-     for(const n in PB){qq.setFromAxisAngle(PB[n],POSE[n]+(n.startsWith('spine')?br:0));C.bones[n].quaternion.multiply(qq);}
-     wings.forEach(w=>{w.inn.rotation.z=(.5+Math.sin(wt*1.5)*.1);w.inn.rotation.y=-(.2+Math.sin(wt*1.5+.6)*.06);});}});
-   C.root.position.y-=.34;}
+   // houding: gebogen, gehurkt, kop omhoog
+   const dp=mPose(C,{pelvis:-.15,spine_01:-.2,spine_02:-.2,spine_03:-.15,neck_01:.3,head:.3,Head:.3,thigh_l:.7,thigh_r:.7,calf_l:-1.05,calf_r:-1.05,foot_l:.5,foot_r:.5,upperarm_l:.35,upperarm_r:.35,lowerarm_l:.9,lowerarm_r:.9,hand_l:.2,hand_r:.2},.34);
+   RC.list.push({tick:dt=>{wt+=dt;wings.forEach(w=>{w.inn.rotation.z=(.5+Math.sin(wt*1.5)*.1);w.inn.rotation.y=-(.2+Math.sin(wt*1.5+.6)*.06);});}});}
   // ---------- UIL (Oehoe op de tak) ----------
   {const sc=SCENES.vijver;const h=(sc.hot||[]).find(x=>x.id==='oehoe');const ob=h&&h.obj;
    if(ob){const C=await humanMonster({base:'Superhero_Male_FullBody',outfit:'Male_Peasant',extra:[],keepAll:1,skip:['Peasant_Body','Peasant_Arms','Peasant_Feet','Peasant_Legs']},{skin:0x8a6a48,scale:.85,rough:.9,hide:/Eyes|Eyebrows/});
@@ -1723,7 +1726,8 @@ async function loadMonsters3(){
     mOutline(C,.01);C.root.traverse(o=>{o.userData.real=true;});
     ob.add(C.root);hideProc(ob);C.root.position.set(0,0,0);C.root.scale.setScalar(.85/1.7);
     // zittend op de tak
-    C.play('Idle_Loop',0);C.root.position.y=.08;RC.list.push(C);window.__owlC=C;}
+    C.play('Idle_Loop',0);C.root.position.y=.08;RC.list.push(C);window.__owlC=C;
+    mPose(C,{pelvis:-.2,spine_01:-.3,spine_02:-.3,spine_03:-.2,neck_01:.45,head:.3,Head:.3,thigh_l:.8,thigh_r:.8,calf_l:-1.3,calf_r:-1.3,foot_l:.6,foot_r:.6,upperarm_l:-.25,upperarm_r:-.25,lowerarm_l:.3,lowerarm_r:.3},.17);}
   }
   window.__mon3Done=1;}catch(e){console.error('monsters3',e);window.__mon3Err=String(e);}}
 
