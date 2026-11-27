@@ -1622,6 +1622,19 @@ function mAttachObj(C,obj,body){C.root.traverse(o=>{o.userData.real=true;});obj.
 function mPose(C,POSE,drop,sway){const PB={};for(const n in POSE)if(C.bones[n])PB[n]=mAx(C,n).r;const qq=new THREE.Quaternion();let pt=Math.random()*5;
   const o={tick:dt=>{if(C.poseOff)return;pt+=dt;const br=Math.sin(pt*1.7)*(sway==null?.025:sway);for(const n in PB){qq.setFromAxisAngle(PB[n],POSE[n]+(n.startsWith('spine')?br:0));C.bones[n].quaternion.multiply(qq);}}};
   RC.list.push(o);C.root.position.y-=drop;C.poseDrop=drop;return o;}
+// echt draakmodel (Collada, geriggd, met animaties)
+let __dragonProto=null;
+async function loadDragonDae(){
+  if(!__dragonProto){const {ColladaLoader}=await import('three/addons/loaders/ColladaLoader.js');const L=new ColladaLoader();const ld=u=>new Promise((res,rej)=>L.load(u,res,undefined,rej));
+    const base=await ld(MODEL+'draak/dragon.dae');const clips={};
+    for(const [n,f] of [['Idle','dragon_idle.dae'],['Walk','dragon_walk.dae'],['Attack','dragon_attack.dae']]){try{const a=await ld(MODEL+'draak/'+f);const an=(a.scene&&a.scene.animations&&a.scene.animations.length)?a.scene.animations:a.animations;if(an&&an.length){const c=an[0];c.name=n;const mp={};a.scene.traverse(o=>{mp[o.uuid]=o.name;});c.tracks.forEach(tr=>{const i=tr.name.indexOf('.');const nm=mp[tr.name.slice(0,i)];if(nm)tr.name=nm+tr.name.slice(i);});clips[n]=c;}}catch(e){console.warn('draak anim',n,e);}}
+    __dragonProto={scene:base.scene,clips};}
+  const root=SkeletonUtils.clone(__dragonProto.scene);const holder=new THREE.Group();holder.add(root);
+  root.traverse(o=>{if(o.isMesh){o.castShadow=true;o.userData.real=true;if(o.material){const ms=Array.isArray(o.material)?o.material:[o.material];ms.forEach(m=>{if(m.map){m.map.colorSpace=THREE.SRGBColorSpace;m.emissiveMap=m.map;m.emissive.set(0x707070);}m.side=THREE.DoubleSide;m.needsUpdate=true;});}}});
+  holder.traverse(o=>{o.userData.real=true;});
+  const mixer=new THREE.AnimationMixer(root);const acts={};for(const n in __dragonProto.clips){acts[n]=mixer.clipAction(__dragonProto.clips[n]);}
+  if(acts.Idle)acts.Idle.play();
+  return {holder,root,mixer,acts};}
 async function loadMonsters3(){
   try{await loadAnims();
   // ---------- WEERWOLF (in plaats van de wolf) ----------
@@ -1655,6 +1668,11 @@ async function loadMonsters3(){
   }
   // ---------- DRAAK (Smul, en de kleine draak) ----------
   for(const sid of Object.keys(SCENES)){const T=SCENES[sid].npcs&&SCENES[sid].npcs['Draak Smul'];if(!T)continue;
+   try{const D=await loadDragonDae();
+     const bb=new THREE.Box3().setFromObject(D.holder);const sz=bb.getSize(new THREE.Vector3());window.__dragonInfo={size:sz.toArray(),min:bb.min.toArray(),max:bb.max.toArray(),clips:Object.keys(D.acts)};
+     const k=(window.__dragonK||3.4)/Math.max(sz.x,sz.y,sz.z);D.holder.scale.setScalar(k);D.holder.position.set(.2,-bb.min.y*k,.8);D.holder.rotation.y=window.__dragonRot||0;
+     T.root.add(D.holder);hideProc(T.root);RC.list.push({tick:dt=>D.mixer.update(dt)});
+     window.__dragonD=D;continue;}catch(e){console.error('draak dae',e);window.__dragonErr=String(e);}
    const C=await humanMonster({base:'Superhero_Male_FullBody',outfit:'Male_Peasant',extra:[],keepAll:1,skip:['Peasant_Body','Peasant_Arms','Peasant_Feet','Peasant_Legs']},{skin:0xffffff,map:scaleTex('#3c8442','#68b85a',64,16),rep:4,scale:1.25,wx:1.08,rough:.6,hide:/Eyes|Eyebrows/});
    const g1=std({map:scaleTex('#3c8442','#68b85a',61,16),roughness:.55}),g2=std({map:scaleTex('#2c6a36','#4c9448',62,16),roughness:.55}),belly=std({map:scaleTex('#e8d48a','#f6ecb8',63,22),roughness:.6}),horn=mat(0xe8dcc0,.4),claw=mat(0xf0e8d0,.4);
    const wm=new THREE.MeshStandardMaterial({vertexColors:true,color:0xffffff,roughness:.65,side:THREE.DoubleSide,emissive:0x601808,emissiveIntensity:.25});
